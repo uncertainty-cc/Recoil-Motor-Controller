@@ -1,0 +1,9 @@
+../Core/Inc/foc_math.h:18:21:clampf	24	static
+../Core/Src/powerstage.c:13:6:PowerStage_init	24	static
+../Core/Src/powerstage.c:33:9:PowerStage_isEnabled	16	static
+../Core/Src/powerstage.c:37:6:PowerStage_disable	16	static
+../Core/Src/powerstage.c:41:6:PowerStage_enable	16	static
+../Core/Src/powerstage.c:45:6:PowerStage_setBridgeOutput	32	static
+../Core/Src/powerstage.c:63:6:PowerStage_calibratePhaseCurrentOffset	16	static
+../Core/Src/powerstage.c:70:6:PowerStage_getBusVoltage	16	static
+../Core/Src/powerstage.c:74:6:PowerStage_getPhaseCurrent	24	static

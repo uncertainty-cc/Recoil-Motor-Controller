@@ -1,0 +1,2 @@
+../Core/Src/can.c:10:6:CAN_getRxFrame	56	static
+../Core/Src/can.c:41:19:CAN_putTxFrame	56	static
