@@ -63,25 +63,47 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
   MotorController_updatePositionController(&controller);
 }
 
+/**
+ * Procedure following G431 User Manual Section 4.4.2 Option bytes programming
+ *
+ */
 void APP_initFlashOption() {
+  // 1. Unlock the FLASH_CR with the LOCK clearing sequence
+  // Check that no Flash memory operation is on going by checking the BSY bit in the Flash status register (FLASH_SR).
   while (__HAL_FLASH_GET_FLAG(FLASH_FLAG_BSY)) {}
-
   HAL_FLASH_Unlock();
+
+  // 2. Unlock the FLASH Option Byte with the LOCK clearing sequence
+  // Check that no Flash memory operation is on going by checking the BSY bit in the Flash status register (FLASH_SR).
+  while (__HAL_FLASH_GET_FLAG(FLASH_FLAG_BSY)) {}
   HAL_FLASH_OB_Unlock();
 
-  FLASH->OPTR = 0xFBEFF8AA;  // default to boot from flash
+  // 3. program OPTR
+  FLASH->OPTR = 0xFBEFF8AAU;  // default to boot from flash
 
+  // 4. Set the Options Start bit OPTSTRT in the Flash control register (FLASH_CR).
   SET_BITS(FLASH->CR, FLASH_CR_OPTSTRT);
 
+  // 4.1 clear status register
+  SET_BITS(FLASH->SR, FLASH_SR_OPTVERR | FLASH_SR_RDERR);
+
+  // 5. Wait for the BSY bit to be cleared.
   while (__HAL_FLASH_GET_FLAG(FLASH_FLAG_BSY)) {}
 
-  HAL_FLASH_OB_Launch();    // reload the new settings
-  HAL_FLASH_OB_Lock();
+
+  // 6. Lock Flash
+  // If LOCK is set by software, OPTLOCK is automatically set too
   HAL_FLASH_Lock();
+
+  // 7. reload the new settings
+  // seems this line will cause error when put before FLASH_Lock(), which will then corrupt all Flash settings
+  // so putting it here
+  // can also comment out this line and just power cycle to update the flash settings
+  HAL_FLASH_OB_Launch();
 }
 
 void APP_init() {
-//  APP_initFlashOption();
+  APP_initFlashOption();
 
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, 1);
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 1);
@@ -135,10 +157,10 @@ void APP_main() {
 //  sprintf(str, "error: %d encoder:%d\n",
 //      ((uint16_t)controller.position_controller.position_measured) >> 14,
 //      ((uint16_t)controller.position_controller.position_measured) & 0x3FFF);
-  sprintf(str, "pos:%f\tpos_t:%f\tpos_s:%f\n",
-      controller.position_controller.position_measured,
-      controller.position_controller.position_target,
-      controller.position_controller.position_setpoint);
+//  sprintf(str, "pos:%f\tpos_t:%f\tpos_s:%f\n",
+//      controller.position_controller.position_measured,
+//      controller.position_controller.position_target,
+//      controller.position_controller.position_setpoint);
 
 //  sprintf(str, "pos:%f\tq:%f\tt:%f\tq_set:%f\tt_set:%f\r\n",
 //      controller.position_controller.position_measured,
@@ -168,9 +190,9 @@ void APP_main() {
 //      controller.current_controller.i_a_measured,
 //      controller.current_controller.i_b_measured,
 //      controller.current_controller.i_c_measured);
-//    sprintf(str, "pos:%f\tvbus:%f\r\n",
-//        controller.position_controller.position_measured,
-//        controller.powerstage.bus_voltage_measured);
+    sprintf(str, "pos:%f\tvbus:%f\r\n",
+        controller.position_controller.position_measured,
+        controller.powerstage.bus_voltage_measured);
   HAL_UART_Transmit(&huart3, (uint8_t *)str, strlen(str), 1000);
 ////
   HAL_Delay(5);
