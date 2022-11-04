@@ -1,3 +1,3 @@
 ../Core/Inc/foc_math.h:18:21:clampf	24	static
 ../Core/Src/position_controller.c:10:6:PositionController_init	16	static
-../Core/Src/position_controller.c:22:6:PositionController_update	16	static
+../Core/Src/position_controller.c:29:6:PositionController_update	24	static

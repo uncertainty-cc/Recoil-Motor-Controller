@@ -16,6 +16,7 @@ typedef struct {
   float position_kp;
   float position_ki;
   float position_kd;
+  float position_kdd;
 
   float torque_limit_upper;
   float torque_limit_lower;
@@ -23,6 +24,9 @@ typedef struct {
   float velocity_limit_lower;
   float position_limit_upper;
   float position_limit_lower;
+
+  float acceleration_limit_upper;
+  float acceleration_limit_lower;
 
   float torque_target;
   float torque_measured;
@@ -36,6 +40,7 @@ typedef struct {
   float position_measured;
   float position_setpoint;
 
+  float acceleration_measured;
 } PositionController;
 
 

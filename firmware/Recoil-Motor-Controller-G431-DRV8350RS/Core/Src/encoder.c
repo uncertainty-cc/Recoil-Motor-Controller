@@ -29,8 +29,14 @@ void Encoder_init(Encoder *encoder, SPI_HandleTypeDef *hspi, TIM_HandleTypeDef *
 
   encoder->cpr = -16384;  // 14 bit precision
 
-  encoder->velocity_filter_alpha = 0.02;
+  encoder->position_filter_alpha = 0.03;
+  encoder->velocity_filter_alpha = 0.003;
+  encoder->acceleration_filter_alpha = 0.003;
   encoder->position_offset = 0;
+
+  encoder->position_raw = 0;
+  encoder->position = 0;
+  encoder->velocity = 0;
 
   encoder->n_rotations = 0;
 }
@@ -44,20 +50,19 @@ void Encoder_setOffset(Encoder *encoder, float offset) {
 }
 
 void Encoder_triggerUpdate(Encoder *encoder) {
-  __HAL_TIM_SET_COUNTER(encoder->htim, 0);
-
   encoder->spi_tx_buffer = 0x3FFF;
   encoder->spi_tx_buffer |= 1 << 14;
   encoder->spi_tx_buffer |= getParity(encoder->spi_tx_buffer) << 15;
 
+  __HAL_TIM_SET_COUNTER(encoder->htim, 0);
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, 0);
   HAL_SPI_TransmitReceive_IT(encoder->hspi, (uint8_t *)&encoder->spi_tx_buffer, (uint8_t *)&encoder->spi_rx_buffer, 1);
 }
 
 void Encoder_update(Encoder *encoder) {
-  float dt = (float)__HAL_TIM_GET_COUNTER(encoder->htim) / 100000.;
+//  float dt = (float)__HAL_TIM_GET_COUNTER(encoder->htim) / 1000000.;
 //
-//  float dt = 1/4000.;
+  float dt = 1 / 4000.;
 
   uint16_t reading = READ_BITS(encoder->spi_rx_buffer, 0x3FFF);
 //  uint16_t error = READ_BITS(encoder->spi_rx_buffer, 0x4000);
@@ -74,9 +79,14 @@ void Encoder_update(Encoder *encoder) {
   }
 
   encoder->position_relative = position_relative;
-  encoder->position_raw = encoder->position_relative + (encoder->n_rotations * (2*M_PI));
+  encoder->position_raw += encoder->position_filter_alpha * ((encoder->position_relative + (encoder->n_rotations * (2*M_PI))) - encoder->position_raw);
   encoder->position = encoder->position_raw + encoder->position_offset;
-  encoder->velocity = (encoder->velocity_filter_alpha * delta_position / dt) + ((1 - encoder->velocity_filter_alpha) * encoder->velocity);
+  if (dt > 0) {
+    float prev_velocity = encoder->velocity;
+    encoder->velocity += encoder->velocity_filter_alpha * ((delta_position / dt) - encoder->velocity);
+    float delta_velocity = encoder->velocity - prev_velocity;
+    encoder->acceleration += encoder->acceleration_filter_alpha * ((delta_velocity / dt) - encoder->acceleration);
+  }
 }
 
 float Encoder_getRelativePosition(Encoder *encoder) {
@@ -93,4 +103,8 @@ float Encoder_getPosition(Encoder *encoder) {
 
 float Encoder_getVelocity(Encoder *encoder) {
   return encoder->velocity;
+}
+
+float Encoder_getAcceleration(Encoder *encoder) {
+  return encoder->acceleration;
 }

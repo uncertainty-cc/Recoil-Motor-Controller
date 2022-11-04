@@ -121,7 +121,7 @@ void MotorController_setMode(MotorController *controller, Mode mode) {
     case MODE_OPEN_VALPHABETA:
     case MODE_OPEN_VABC:
     case MODE_OPEN_IDQ:
-      if (controller->mode != MODE_IDLE) {
+      if (controller->mode != MODE_IDLE && controller->mode != mode) {
         PowerStage_disable(&controller->powerstage);
         controller->mode = MODE_DISABLED;
         controller->error = ERROR_INVALID_MODE_SWITCH;
@@ -158,7 +158,7 @@ void MotorController_loadConfig(MotorController *controller) {
 
   controller->encoder.cpr                       = config->encoder_cpr;
   controller->encoder.position_offset           = config->encoder_position_offset;
-  controller->encoder.velocity_filter_alpha     = config->encoder_velocity_filter_alpha;
+//  controller->encoder.velocity_filter_alpha     = config->encoder_velocity_filter_alpha;
 
   controller->powerstage.undervoltage_threshold = config->powerstage_undervoltage_threshold;
   controller->powerstage.overvoltage_threshold  = config->powerstage_overvoltage_threshold;
@@ -167,21 +167,21 @@ void MotorController_loadConfig(MotorController *controller) {
   controller->motor.kv_rating                   = config->motor_kv_rating;
   controller->motor.flux_angle_offset           = config->motor_flux_angle_offset;
 
-  controller->current_controller.current_filter_alpha   =   config->current_controller_current_filter_alpha;
-  controller->current_controller.i_q_kp         = config->current_controller_i_q_kp;
-  controller->current_controller.i_q_ki         = config->current_controller_i_q_ki;
-  controller->current_controller.i_d_kp         = config->current_controller_i_d_kp;
-  controller->current_controller.i_d_ki         = config->current_controller_i_d_ki;
+//  controller->current_controller.current_filter_alpha   =   config->current_controller_current_filter_alpha;
+//  controller->current_controller.i_q_kp         = config->current_controller_i_q_kp;
+//  controller->current_controller.i_q_ki         = config->current_controller_i_q_ki;
+//  controller->current_controller.i_d_kp         = config->current_controller_i_d_kp;
+//  controller->current_controller.i_d_ki         = config->current_controller_i_d_ki;
 
-  controller->position_controller.position_kp   = config->position_controller_position_kp;
-  controller->position_controller.position_ki   = config->position_controller_position_ki;
-  controller->position_controller.position_kd   = config->position_controller_position_kd;
-  controller->position_controller.torque_limit_upper    = config->position_controller_torque_limit_upper;
-  controller->position_controller.torque_limit_lower    = config->position_controller_torque_limit_lower;
-  controller->position_controller.velocity_limit_upper  = config->position_controller_velocity_limit_upper;
-  controller->position_controller.velocity_limit_lower  = config->position_controller_velocity_limit_lower;
-  controller->position_controller.position_limit_upper  = config->position_controller_position_limit_upper;
-  controller->position_controller.position_limit_lower  = config->position_controller_position_limit_lower;
+//  controller->position_controller.position_kp   = config->position_controller_position_kp;
+//  controller->position_controller.position_ki   = config->position_controller_position_ki;
+//  controller->position_controller.position_kd   = config->position_controller_position_kd;
+//  controller->position_controller.torque_limit_upper    = config->position_controller_torque_limit_upper;
+//  controller->position_controller.torque_limit_lower    = config->position_controller_torque_limit_lower;
+//  controller->position_controller.velocity_limit_upper  = config->position_controller_velocity_limit_upper;
+//  controller->position_controller.velocity_limit_lower  = config->position_controller_velocity_limit_lower;
+//  controller->position_controller.position_limit_upper  = config->position_controller_position_limit_upper;
+//  controller->position_controller.position_limit_lower  = config->position_controller_position_limit_lower;
 }
 
 uint32_t MotorController_storeConfig(MotorController *controller) {
@@ -325,6 +325,7 @@ void MotorController_updatePositionReading(MotorController *controller) {
 
   controller->position_controller.position_measured = Encoder_getPosition(&controller->encoder);
   controller->position_controller.velocity_measured = Encoder_getVelocity(&controller->encoder);
+  controller->position_controller.acceleration_measured = Encoder_getAcceleration(&controller->encoder);
   controller->position_controller.torque_measured = (8.3 * controller->current_controller.i_q_measured) / (float)controller->motor.kv_rating;
 }
 

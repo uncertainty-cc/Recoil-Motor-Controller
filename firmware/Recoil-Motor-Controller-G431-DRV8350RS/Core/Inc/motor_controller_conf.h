@@ -12,11 +12,11 @@
 
 #define DEVICE_CAN_ID                   1
 
+#define INITIAL_PROG                    0
 #define OVERWRITE_CONFIG                0
 #define SAFETY_WATCHDOG_ENABLED         1
 
 #define CALIBRATION_CURRENT             3
-
 
 
 #define ADC_RESOLUTION                  4096    // 12-bit ADC
@@ -25,6 +25,11 @@
 // = ((3V3 / ADC_RESOLUTION) / opamp_factor) / R
 #define ADC_OPAMP_CURRENT_COEFFICIENT   ((ADC_READING_COEFFICIENT / 16.) / 0.003) // convert ADC bits to Amps
 
+// overwrite setting
+#if INITIAL_PROG
+#undef  OVERWRITE_CONFIG
+#define OVERWRITE_CONFIG                1
+#endif
 
 typedef enum {
   CAN_ID_ESTOP              = 0x00U,

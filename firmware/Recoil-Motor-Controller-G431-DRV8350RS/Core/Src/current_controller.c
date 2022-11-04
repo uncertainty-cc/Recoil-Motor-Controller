@@ -2,12 +2,12 @@
 #include "current_controller.h"
 
 void CurrentController_init(CurrentController *controller) {
-  controller->current_filter_alpha = 0.5;
+  controller->current_filter_alpha = 0.1;
 
-  controller->i_q_kp = 1.;
+  controller->i_q_kp = 3.;
   controller->i_q_ki = 0.; // 0.01
 
-  controller->i_d_kp = 1.;
+  controller->i_d_kp = 3.;
   controller->i_d_ki = 0.;
 
   controller->i_q_measured = 0;
@@ -36,16 +36,8 @@ void CurrentController_update(CurrentController *controller, Mode mode, float si
     controller->i_beta_measured,
     sin_theta, cos_theta);
 
-  controller->i_q_measured = (
-      controller->current_filter_alpha * i_q
-      + (1.-controller->current_filter_alpha) * controller->i_q_measured
-      );
-
-  controller->i_d_measured = (
-      controller->current_filter_alpha * i_d
-      + (1.-controller->current_filter_alpha) * controller->i_d_measured
-      );
-
+  controller->i_q_measured = controller->current_filter_alpha * (i_q - controller->i_q_measured);
+  controller->i_d_measured = controller->current_filter_alpha * (i_d - controller->i_d_measured);
 
   if (mode != MODE_OPEN_IDQ) {
     controller->i_q_setpoint = controller->i_q_target - controller->i_q_measured;

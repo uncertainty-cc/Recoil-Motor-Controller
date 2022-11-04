@@ -103,7 +103,9 @@ void APP_initFlashOption() {
 }
 
 void APP_init() {
+  #if INITIAL_PROG
   APP_initFlashOption();
+  #endif
 
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, 1);
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 1);
@@ -113,9 +115,9 @@ void APP_init() {
 
   MotorController_setMode(&controller, MODE_IDLE);
 
-  controller.position_controller.position_kp = 0.5;
-  controller.position_controller.torque_limit_lower = -3;
-  controller.position_controller.torque_limit_upper = 3;
+//  controller.position_controller.position_kp = 0.1;
+  controller.position_controller.torque_limit_lower = -0.2;
+  controller.position_controller.torque_limit_upper = 0.2;
 
 //  HAL_Delay(5000);
 //  MotorController_setMode(&controller, MODE_CALIBRATION);
@@ -130,7 +132,6 @@ void APP_init() {
 
 void APP_main() {
   MotorController_updateService(&controller);
-
 
   if (controller.mode != MODE_IDLE) {
     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, 1);    // blue LED
@@ -157,10 +158,16 @@ void APP_main() {
 //  sprintf(str, "error: %d encoder:%d\n",
 //      ((uint16_t)controller.position_controller.position_measured) >> 14,
 //      ((uint16_t)controller.position_controller.position_measured) & 0x3FFF);
-//  sprintf(str, "pos:%f\tpos_t:%f\tpos_s:%f\n",
-//      controller.position_controller.position_measured,
-//      controller.position_controller.position_target,
-//      controller.position_controller.position_setpoint);
+
+//  sprintf(str, "ts:%f\ttm:%f\n",
+//      controller.position_controller.torque_setpoint*100,
+//      controller.position_controller.torque_measured*100);
+
+
+    sprintf(str, "pos:%f\tvel:%f\taccel:%f\n",
+        controller.position_controller.position_measured,
+        controller.position_controller.velocity_measured,
+        controller.position_controller.acceleration_measured);
 
 //  sprintf(str, "pos:%f\tq:%f\tt:%f\tq_set:%f\tt_set:%f\r\n",
 //      controller.position_controller.position_measured,
@@ -169,10 +176,10 @@ void APP_main() {
 //      controller.current_controller.i_q_setpoint,
 //      controller.position_controller.torque_setpoint);
 //  sprintf(str, "%d\r\n", val);
-//  sprintf(str, "pos:%f\tiq:%f\tid:%f\r\n",
-//      controller.position_controller.position_measured,
+//  sprintf(str, "pos:%f\tiqs:%f\tiqm:%f\r\n",
+//      controller.position_controller.velocity_measured,
 //      controller.current_controller.i_q_setpoint,
-//      controller.current_controller.i_d_setpoint);
+//      controller.current_controller.i_q_measured);
 //  sprintf(str, "pos:%f\tvq:%f\tvd:%f\r\n",
 //      controller.position_controller.position_measured,
 //      controller.current_controller.v_q_setpoint,
@@ -190,9 +197,9 @@ void APP_main() {
 //      controller.current_controller.i_a_measured,
 //      controller.current_controller.i_b_measured,
 //      controller.current_controller.i_c_measured);
-    sprintf(str, "pos:%f\tvbus:%f\r\n",
-        controller.position_controller.position_measured,
-        controller.powerstage.bus_voltage_measured);
+//    sprintf(str, "pos:%f\tvbus:%f\r\n",
+//        controller.position_controller.position_measured,
+//        controller.powerstage.bus_voltage_measured);
   HAL_UART_Transmit(&huart3, (uint8_t *)str, strlen(str), 1000);
 ////
   HAL_Delay(5);

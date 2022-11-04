@@ -24,7 +24,9 @@ typedef struct {
 
   int32_t   cpr;
   float     position_offset;      // in range (-inf, inf)
+  float     position_filter_alpha;
   float     velocity_filter_alpha;
+  float     acceleration_filter_alpha;
 
   int32_t   n_rotations;
   float     position_relative;    // in range [0, 2PI)
@@ -32,6 +34,7 @@ typedef struct {
 
   float     position;             // in range (-inf, inf), with offset
   float     velocity;
+  float     acceleration;
 } Encoder;
 
 
@@ -52,5 +55,7 @@ float Encoder_getRawPosition(Encoder *encoder);
 float Encoder_getPosition(Encoder *encoder);
 
 float Encoder_getVelocity(Encoder *encoder);
+
+float Encoder_getAcceleration(Encoder *encoder);
 
 #endif /* INC_ENCODER_H_ */
