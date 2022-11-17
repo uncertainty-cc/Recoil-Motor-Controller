@@ -39,8 +39,6 @@ typedef struct {
   float position_target;
   float position_measured;
   float position_setpoint;
-
-  float acceleration_measured;
 } PositionController;
 
 

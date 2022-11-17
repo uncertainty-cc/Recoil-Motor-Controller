@@ -9,6 +9,7 @@
 #define INC_MOTOR_CONTROLLER_H_
 
 #include "stm32g4xx_hal.h"
+#include "stm32g4xx_ll_cordic.h"
 
 #include "can.h"
 #include "motor_controller_conf.h"
@@ -37,7 +38,7 @@ typedef struct {
   uint32_t  device_id;
   uint32_t  firmware_version;
 
-  int32_t   encoder_cpr;
+  int32_t   encoder_dir_cpr;
   float     encoder_position_offset;
   float     encoder_velocity_filter_alpha;
 

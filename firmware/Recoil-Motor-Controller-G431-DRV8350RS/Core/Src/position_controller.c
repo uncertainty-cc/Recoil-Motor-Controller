@@ -56,15 +56,11 @@ void PositionController_update(PositionController *controller) {
   controller->velocity_setpoint =
       controller->velocity_target - controller->velocity_measured;
 
-  float acceleration_setpoint = clampf(
-      controller->acceleration_measured,
-      controller->acceleration_limit_lower,
-      controller->acceleration_limit_upper) - controller->acceleration_measured;
 
   controller->torque_target =
       controller->position_kp * controller->position_setpoint
     + controller->position_kd * controller->velocity_setpoint
-    + controller->position_kdd * acceleration_setpoint;
+    + controller->position_kdd * 0;
 
   controller->torque_target = clampf(
       controller->torque_target,

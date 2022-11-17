@@ -14,7 +14,7 @@
 
 #define INITIAL_PROG                    0
 #define OVERWRITE_CONFIG                0
-#define SAFETY_WATCHDOG_ENABLED         1
+#define SAFETY_WATCHDOG_ENABLED         0
 
 #define CALIBRATION_CURRENT             3
 
@@ -43,11 +43,10 @@ typedef enum {
 
 
   CAN_ID_ENCODER_CPR                                    = 0x10U,
-  CAN_ID_ENCODER_POSITION_OFFSET                        = 0x11U,
-  CAN_ID_ENCODER_VELOCITY_FILTER_ALPHA                  = 0x12U,
+  CAN_ID_ENCODER_FILTER_BANDWIDTH                       = 0x11U,
+  CAN_ID_ENCODER_POSITION_OFFSET                        = 0x12U,
   CAN_ID_ENCODER_N_ROTATIONS                            = 0x13U,
   CAN_ID_ENCODER_POSITION_RELATIVE                      = 0x14U,
-  CAN_ID_ENCODER_POSITION_RAW                           = 0x15U,
   CAN_ID_ENCODER_POSITION                               = 0x16U,
   CAN_ID_ENCODER_VELOCITY                               = 0x17U,
 

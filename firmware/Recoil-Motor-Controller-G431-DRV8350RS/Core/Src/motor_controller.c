@@ -14,6 +14,7 @@
 
 extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc2;
+extern CORDIC_HandleTypeDef hcordic;
 extern FDCAN_HandleTypeDef hfdcan1;
 extern OPAMP_HandleTypeDef hopamp1;
 extern OPAMP_HandleTypeDef hopamp2;
@@ -41,6 +42,16 @@ void MotorController_init(MotorController *controller) {
 
   HAL_StatusTypeDef status = HAL_OK;
 
+  CORDIC_ConfigTypeDef cordic_config;
+  cordic_config.Function = CORDIC_FUNCTION_COSINE; // ouput : cosine, then sine
+  cordic_config.Scale = CORDIC_SCALE_0; // not used
+  cordic_config.InSize = CORDIC_INSIZE_32BITS; // q31
+  cordic_config.OutSize = CORDIC_OUTSIZE_32BITS; // q31
+  cordic_config.NbWrite = CORDIC_NBWRITE_1; // ARG2 is 1 default
+  cordic_config.NbRead = CORDIC_NBREAD_2; // read cosine and sine
+  cordic_config.Precision = CORDIC_PRECISION_5CYCLES; // better than 10-3
+  HAL_CORDIC_Configure(&hcordic, &cordic_config);
+
   status |= HAL_FDCAN_ConfigFilter(&hfdcan1, &filter_config);
 
   status |= HAL_FDCAN_Start(&hfdcan1);
@@ -59,6 +70,8 @@ void MotorController_init(MotorController *controller) {
 #else
   MotorController_loadConfig(controller);
 #endif
+
+  Encoder_setFilterBandwidth(&controller->encoder, controller->encoder.filter_bandwidth);
 
   PowerStage_start(&controller->powerstage);
 
@@ -156,9 +169,9 @@ void MotorController_loadConfig(MotorController *controller) {
   controller->firmware_version                  = config->firmware_version;
   controller->device_id                         = config->device_id;
 
-  controller->encoder.cpr                       = config->encoder_cpr;
+  controller->encoder.cpr                       = abs(config->encoder_dir_cpr);
+  controller->encoder.direction                 = config->encoder_dir_cpr > 0 ? 1 : -1;
   controller->encoder.position_offset           = config->encoder_position_offset;
-//  controller->encoder.velocity_filter_alpha     = config->encoder_velocity_filter_alpha;
 
   controller->powerstage.undervoltage_threshold = config->powerstage_undervoltage_threshold;
   controller->powerstage.overvoltage_threshold  = config->powerstage_overvoltage_threshold;
@@ -167,21 +180,21 @@ void MotorController_loadConfig(MotorController *controller) {
   controller->motor.kv_rating                   = config->motor_kv_rating;
   controller->motor.flux_angle_offset           = config->motor_flux_angle_offset;
 
-//  controller->current_controller.current_filter_alpha   =   config->current_controller_current_filter_alpha;
-//  controller->current_controller.i_q_kp         = config->current_controller_i_q_kp;
-//  controller->current_controller.i_q_ki         = config->current_controller_i_q_ki;
-//  controller->current_controller.i_d_kp         = config->current_controller_i_d_kp;
-//  controller->current_controller.i_d_ki         = config->current_controller_i_d_ki;
+  controller->current_controller.current_filter_alpha   =   config->current_controller_current_filter_alpha;
+  controller->current_controller.i_q_kp         = config->current_controller_i_q_kp;
+  controller->current_controller.i_q_ki         = config->current_controller_i_q_ki;
+  controller->current_controller.i_d_kp         = config->current_controller_i_d_kp;
+  controller->current_controller.i_d_ki         = config->current_controller_i_d_ki;
 
-//  controller->position_controller.position_kp   = config->position_controller_position_kp;
-//  controller->position_controller.position_ki   = config->position_controller_position_ki;
-//  controller->position_controller.position_kd   = config->position_controller_position_kd;
-//  controller->position_controller.torque_limit_upper    = config->position_controller_torque_limit_upper;
-//  controller->position_controller.torque_limit_lower    = config->position_controller_torque_limit_lower;
-//  controller->position_controller.velocity_limit_upper  = config->position_controller_velocity_limit_upper;
-//  controller->position_controller.velocity_limit_lower  = config->position_controller_velocity_limit_lower;
-//  controller->position_controller.position_limit_upper  = config->position_controller_position_limit_upper;
-//  controller->position_controller.position_limit_lower  = config->position_controller_position_limit_lower;
+  controller->position_controller.position_kp   = config->position_controller_position_kp;
+  controller->position_controller.position_ki   = config->position_controller_position_ki;
+  controller->position_controller.position_kd   = config->position_controller_position_kd;
+  controller->position_controller.torque_limit_upper    = config->position_controller_torque_limit_upper;
+  controller->position_controller.torque_limit_lower    = config->position_controller_torque_limit_lower;
+  controller->position_controller.velocity_limit_upper  = config->position_controller_velocity_limit_upper;
+  controller->position_controller.velocity_limit_lower  = config->position_controller_velocity_limit_lower;
+  controller->position_controller.position_limit_upper  = config->position_controller_position_limit_upper;
+  controller->position_controller.position_limit_lower  = config->position_controller_position_limit_lower;
 }
 
 uint32_t MotorController_storeConfig(MotorController *controller) {
@@ -190,9 +203,8 @@ uint32_t MotorController_storeConfig(MotorController *controller) {
   config.firmware_version                     = controller->firmware_version;
   config.device_id                            = controller->device_id;
 
-  config.encoder_cpr                          = controller->encoder.cpr;
+  config.encoder_dir_cpr                      = controller->encoder.direction * (int32_t)controller->encoder.cpr;
   config.encoder_position_offset              = controller->encoder.position_offset;
-  config.encoder_velocity_filter_alpha        = controller->encoder.velocity_filter_alpha;
 
   config.powerstage_undervoltage_threshold    = controller->powerstage.undervoltage_threshold;
   config.powerstage_overvoltage_threshold     = controller->powerstage.overvoltage_threshold;
@@ -267,8 +279,30 @@ void MotorController_updateCommutation(MotorController *controller, ADC_HandleTy
   float position_measured = Encoder_getRelativePosition(&controller->encoder);
 
   float theta = wrapTo2Pi((position_measured * (float)controller->motor.pole_pairs) - controller->motor.flux_angle_offset);
+
+//  int32_t cordic_arg[1];
+//  int32_t cordic_res[2];
+////  cordic_arg[0] = FLOAT_TO_Q31(theta / M_PI);
+//  int32_t theta_q31 = FLOAT_TO_Q31(theta / M_PI);
+//
+//  float cos_theta;
+//  float sin_theta;
+//  LL_CORDIC_WriteData(hcordic.Instance, theta_q31);
+//  cos_theta = Q31_TO_FLOAT(LL_CORDIC_ReadData(hcordic.Instance));
+//  sin_theta = Q31_TO_FLOAT(LL_CORDIC_ReadData(hcordic.Instance));
+
+//  if (HAL_CORDIC_Calculate(&hcordic, cordic_arg, cordic_res, 1, 10) == HAL_OK) {
+//    cos_theta = Q31_TO_FLOAT(cordic_res[0]);
+//    sin_theta = Q31_TO_FLOAT(cordic_res[1]);
+//  }
+//  else {
+//    cos_theta = cosf(theta);
+//    sin_theta = sinf(theta);
+//  }
+
   float sin_theta = sinf(theta);
   float cos_theta = cosf(theta);
+
 
   PowerStage_getPhaseCurrent(&controller->powerstage,
     &controller->current_controller.i_a_measured,
@@ -325,7 +359,6 @@ void MotorController_updatePositionReading(MotorController *controller) {
 
   controller->position_controller.position_measured = Encoder_getPosition(&controller->encoder);
   controller->position_controller.velocity_measured = Encoder_getVelocity(&controller->encoder);
-  controller->position_controller.acceleration_measured = Encoder_getAcceleration(&controller->encoder);
   controller->position_controller.torque_measured = (8.3 * controller->current_controller.i_q_measured) / (float)controller->motor.kv_rating;
 }
 
@@ -501,15 +534,11 @@ void MotorController_handleCANMessage(MotorController *controller, CAN_Frame *rx
         break;
       case CAN_ID_ENCODER_CPR:
         tx_frame.size = 4;
-        *((uint32_t *)tx_frame.data) = controller->encoder.cpr;
+        *((int32_t *)tx_frame.data) = controller->encoder.direction * (int32_t)controller->encoder.cpr;
         break;
       case CAN_ID_ENCODER_POSITION_OFFSET:
         tx_frame.size = 4;
         *((float *)tx_frame.data) = controller->encoder.position_offset;
-        break;
-      case CAN_ID_ENCODER_VELOCITY_FILTER_ALPHA:
-        tx_frame.size = 4;
-        *((float *)tx_frame.data) = controller->encoder.velocity_filter_alpha;
         break;
       case CAN_ID_ENCODER_N_ROTATIONS:
         tx_frame.size = 4;
@@ -518,10 +547,6 @@ void MotorController_handleCANMessage(MotorController *controller, CAN_Frame *rx
       case CAN_ID_ENCODER_POSITION_RELATIVE:
         tx_frame.size = 4;
         *((float *)tx_frame.data) = controller->encoder.position_relative;
-        break;
-      case CAN_ID_ENCODER_POSITION_RAW:
-        tx_frame.size = 4;
-        *((float *)tx_frame.data) = controller->encoder.position_raw;
         break;
       case CAN_ID_ENCODER_POSITION:
         tx_frame.size = 4;
@@ -724,13 +749,11 @@ void MotorController_handleCANMessage(MotorController *controller, CAN_Frame *rx
         MotorController_setMode(controller, (Mode)*((uint8_t *)rx_frame->data));
         break;
       case CAN_ID_ENCODER_CPR:
-        controller->encoder.cpr = *((uint32_t *)rx_frame->data);
+        controller->encoder.cpr = abs(*((int32_t *)rx_frame->data));
+        controller->encoder.direction = *((int32_t *)rx_frame->data) > 0 ? 1 : -1;
         break;
       case CAN_ID_ENCODER_POSITION_OFFSET:
         controller->encoder.position_offset = *((float *)rx_frame->data);
-        break;
-      case CAN_ID_ENCODER_VELOCITY_FILTER_ALPHA:
-        controller->encoder.velocity_filter_alpha = *((float *)rx_frame->data);
         break;
       case CAN_ID_POWERSTAGE_VOLTAGE_THREASHOLD:
         controller->powerstage.undervoltage_threshold = *((float *)rx_frame->data);

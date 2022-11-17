@@ -8,12 +8,24 @@
 #ifndef INC_FOC_MATH_H_
 #define INC_FOC_MATH_H_
 
+#include <stdint.h>
 #include <math.h>
 
 #define SET_BITS(REG, BIT)                    ((REG) |= (BIT))
 #define CLEAR_BITS(REG, BIT)                  ((REG) &= ~(BIT))
 #define READ_BITS(REG, BIT)                   ((REG) & (BIT))
 #define WRITE_BITS(REG, CLEARMASK, SETMASK)   ((REG) = (((REG) & (~(CLEARMASK))) | (SETMASK)))
+
+#define Q31_TO_FLOAT(x)                       ((float)(x) / (float)(0x80000000))
+#define FLOAT_TO_Q31(x)                       ((int32_t)((float)(x) * (float)0x7FFFFFFF))
+
+static inline int32_t max(int32_t a, int32_t b) {
+  return a > b ? a : b;
+}
+
+static inline int32_t min(int32_t a, int32_t b) {
+  return a < b ? a : b;
+}
 
 static inline float clampf(float value, float min, float max) {
   return (value > max) ? max : ((value < min) ? min : value);

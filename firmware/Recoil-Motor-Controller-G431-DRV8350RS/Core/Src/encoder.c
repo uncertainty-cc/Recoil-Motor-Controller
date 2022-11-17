@@ -27,26 +27,27 @@ void Encoder_init(Encoder *encoder, SPI_HandleTypeDef *hspi, TIM_HandleTypeDef *
   encoder->hspi = hspi;
   encoder->htim = htim;
 
-  encoder->cpr = -16384;  // 14 bit precision
+  encoder->cpr = 1U << 14;  // 14 bit precision
+  encoder->direction = -1;
 
-  encoder->position_filter_alpha = 0.03;
-  encoder->velocity_filter_alpha = 0.003;
-  encoder->acceleration_filter_alpha = 0.003;
   encoder->position_offset = 0;
 
-  encoder->position_raw = 0;
+  encoder->filter_bandwidth = 400;
+
+  encoder->filter_integral = 0;
+
+  encoder->position_reading = 0;
   encoder->position = 0;
   encoder->velocity = 0;
 
   encoder->n_rotations = 0;
 }
 
-float Encoder_getOffset(Encoder *encoder) {
-  return encoder->position_offset;
-}
-
-void Encoder_setOffset(Encoder *encoder, float offset) {
-  encoder->position_offset = offset;
+void Encoder_setFilterBandwidth(Encoder *encoder, float bandwidth) {
+  encoder->filter_bandwidth = bandwidth;
+  float w3db = (1. / 8000.) * 2 * M_PI * encoder->filter_bandwidth;
+  encoder->filter_k_p = .5 * (2 * w3db);
+  encoder->filter_k_i = .5 * (w3db * w3db);
 }
 
 void Encoder_triggerUpdate(Encoder *encoder) {
@@ -61,40 +62,48 @@ void Encoder_triggerUpdate(Encoder *encoder) {
 
 void Encoder_update(Encoder *encoder) {
 //  float dt = (float)__HAL_TIM_GET_COUNTER(encoder->htim) / 1000000.;
-//
   float dt = 1 / 4000.;
 
-  uint16_t reading = READ_BITS(encoder->spi_rx_buffer, 0x3FFF);
-//  uint16_t error = READ_BITS(encoder->spi_rx_buffer, 0x4000);
+  int16_t reading = READ_BITS(encoder->spi_rx_buffer, 0x3FFF) - (encoder->cpr / 2);
 
-  float position_relative = ((float)reading / (float)encoder->cpr) * (2*M_PI);
-
-  float delta_position = position_relative - encoder->position_relative;
-
-  if (fabsf(delta_position) > 0.75 * (2*M_PI)) {
-    encoder->n_rotations += (delta_position > 0) ? -1 : 1;
-
-    // unwrap delta pos to correct value for velocity calculation
-    delta_position += (delta_position > 0) ? -2*M_PI : 2*M_PI;
+  // handle multi-rotation crossing
+  int16_t reading_delta = encoder->position_reading - reading;
+  if (abs(reading_delta) > 0.75 * encoder->cpr) {
+    encoder->n_rotations += (reading_delta > 0) ? -1 : 1;
   }
 
-  encoder->position_relative = position_relative;
-  encoder->position_raw += encoder->position_filter_alpha * ((encoder->position_relative + (encoder->n_rotations * (2*M_PI))) - encoder->position_raw);
-  encoder->position = encoder->position_raw + encoder->position_offset;
+  encoder->position_reading = reading;
+  float position_measured = (encoder->direction * ((float)reading / (float)encoder->cpr) * (2*M_PI)
+      + encoder->n_rotations * 2 * M_PI
+      + encoder->position_offset);
+  float position_prev = encoder->position;
+  float position_error = position_measured - position_prev;
+
+  encoder->filter_integral += encoder->filter_k_i * position_error;
+
+  float position_tune = encoder->filter_k_p * position_error + encoder->filter_integral;
+
+  encoder->position = position_prev + position_tune;
+
+  // subtract the offset to get "true" revolution
+  encoder->position_relative = wrapTo2Pi(encoder->position - encoder->position_offset);
+
+  float delta_position = encoder->position - position_prev;
   if (dt > 0) {
-    float prev_velocity = encoder->velocity;
-    encoder->velocity += encoder->velocity_filter_alpha * ((delta_position / dt) - encoder->velocity);
-    float delta_velocity = encoder->velocity - prev_velocity;
-    encoder->acceleration += encoder->acceleration_filter_alpha * ((delta_velocity / dt) - encoder->acceleration);
+    encoder->velocity = (delta_position / dt);
   }
+}
+
+float Encoder_getOffset(Encoder *encoder) {
+  return encoder->position_offset;
+}
+
+void Encoder_setOffset(Encoder *encoder, float offset) {
+  encoder->position_offset = offset;
 }
 
 float Encoder_getRelativePosition(Encoder *encoder) {
   return encoder->position_relative;
-}
-
-float Encoder_getRawPosition(Encoder *encoder) {
-  return encoder->position_raw;
 }
 
 float Encoder_getPosition(Encoder *encoder) {
@@ -105,6 +114,3 @@ float Encoder_getVelocity(Encoder *encoder) {
   return encoder->velocity;
 }
 
-float Encoder_getAcceleration(Encoder *encoder) {
-  return encoder->acceleration;
-}

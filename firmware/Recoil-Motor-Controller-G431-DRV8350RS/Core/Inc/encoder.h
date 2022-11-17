@@ -8,6 +8,7 @@
 #ifndef INC_ENCODER_H_
 #define INC_ENCODER_H_
 
+#include <stdlib.h>
 #include <stdint.h>
 #include <math.h>
 
@@ -22,23 +23,26 @@ typedef struct {
   uint16_t  spi_tx_buffer;
   uint16_t  spi_rx_buffer;
 
-  int32_t   cpr;
+  uint16_t  cpr;
+  int8_t    direction;
   float     position_offset;      // in range (-inf, inf)
-  float     position_filter_alpha;
-  float     velocity_filter_alpha;
-  float     acceleration_filter_alpha;
+  float     filter_bandwidth;
 
+  float     filter_k_p;
+  float     filter_k_i;
+  float     filter_integral;
+
+  int16_t   position_reading;     // in range (-cpr/2, cpr/2)
   int32_t   n_rotations;
   float     position_relative;    // in range [0, 2PI)
-  float     position_raw;         // in range (-inf, inf), without offset
-
   float     position;             // in range (-inf, inf), with offset
   float     velocity;
-  float     acceleration;
 } Encoder;
 
 
 void Encoder_init(Encoder *encoder, SPI_HandleTypeDef *hi2c, TIM_HandleTypeDef *htim);
+
+void Encoder_setFilterBandwidth(Encoder *encoder, float bandwidth);
 
 float Encoder_getOffset(Encoder *encoder);
 
@@ -55,7 +59,5 @@ float Encoder_getRawPosition(Encoder *encoder);
 float Encoder_getPosition(Encoder *encoder);
 
 float Encoder_getVelocity(Encoder *encoder);
-
-float Encoder_getAcceleration(Encoder *encoder);
 
 #endif /* INC_ENCODER_H_ */
