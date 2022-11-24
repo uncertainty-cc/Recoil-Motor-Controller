@@ -126,20 +126,23 @@ void MotorController_setMode(MotorController *controller, Mode mode) {
       PowerStage_enable(&controller->powerstage);
       break;
 
+    case MODE_CURRENT:
     case MODE_TORQUE:
     case MODE_VELOCITY:
     case MODE_POSITION:
     case MODE_DEBUG:
-    case MODE_OPEN_VDQ:
-    case MODE_OPEN_VALPHABETA:
-    case MODE_OPEN_VABC:
-    case MODE_OPEN_IDQ:
+    case MODE_VQD_OVERRIDE:
+    case MODE_VALPHABETA_OVERRIDE:
+    case MODE_VABC_OVERRIDE:
+    case MODE_IQD_OVERRIDE:
       if (controller->mode != MODE_IDLE && controller->mode != mode) {
         PowerStage_disable(&controller->powerstage);
         controller->mode = MODE_DISABLED;
         controller->error = ERROR_INVALID_MODE_SWITCH;
         return;  // return directly, do not update mode
       }
+      controller->position_controller.position_setpoint = controller->position_controller.position_measured;
+      controller->position_controller.velocity_setpoint = controller->position_controller.velocity_measured;
       PowerStage_enable(&controller->powerstage);
       break;
 
@@ -159,8 +162,8 @@ void MotorController_setFluxAngle(MotorController *controller, float angle_setpo
   float v_q = 0.0;
   float v_d = voltage_setpoint;
 
-  controller->current_controller.v_alpha_target = -sin_theta * v_q + cos_theta * v_d;
-  controller->current_controller.v_beta_target =   cos_theta * v_q + sin_theta * v_d;
+  controller->current_controller.v_alpha_setpoint = -sin_theta * v_q + cos_theta * v_d;
+  controller->current_controller.v_beta_setpoint  =  cos_theta * v_q + sin_theta * v_d;
 }
 
 void MotorController_loadConfig(MotorController *controller) {
@@ -180,21 +183,21 @@ void MotorController_loadConfig(MotorController *controller) {
   controller->motor.kv_rating                   = config->motor_kv_rating;
   controller->motor.flux_angle_offset           = config->motor_flux_angle_offset;
 
-  controller->current_controller.current_filter_alpha   =   config->current_controller_current_filter_alpha;
-  controller->current_controller.i_q_kp         = config->current_controller_i_q_kp;
-  controller->current_controller.i_q_ki         = config->current_controller_i_q_ki;
-  controller->current_controller.i_d_kp         = config->current_controller_i_d_kp;
-  controller->current_controller.i_d_ki         = config->current_controller_i_d_ki;
+//  controller->current_controller.current_filter_alpha   =   config->current_controller_current_filter_alpha;
+//  controller->current_controller.i_q_kp         = config->current_controller_i_q_kp;
+//  controller->current_controller.i_q_ki         = config->current_controller_i_q_ki;
+//  controller->current_controller.i_d_kp         = config->current_controller_i_d_kp;
+//  controller->current_controller.i_d_ki         = config->current_controller_i_d_ki;
 
-  controller->position_controller.position_kp   = config->position_controller_position_kp;
-  controller->position_controller.position_ki   = config->position_controller_position_ki;
-  controller->position_controller.position_kd   = config->position_controller_position_kd;
-  controller->position_controller.torque_limit_upper    = config->position_controller_torque_limit_upper;
-  controller->position_controller.torque_limit_lower    = config->position_controller_torque_limit_lower;
-  controller->position_controller.velocity_limit_upper  = config->position_controller_velocity_limit_upper;
-  controller->position_controller.velocity_limit_lower  = config->position_controller_velocity_limit_lower;
-  controller->position_controller.position_limit_upper  = config->position_controller_position_limit_upper;
-  controller->position_controller.position_limit_lower  = config->position_controller_position_limit_lower;
+//  controller->position_controller.position_kp   = config->position_controller_position_kp;
+//  controller->position_controller.position_ki   = config->position_controller_position_ki;
+//  controller->position_controller.position_kd   = config->position_controller_position_kd;
+//  controller->position_controller.torque_limit_upper    = config->position_controller_torque_limit_upper;
+//  controller->position_controller.torque_limit_lower    = config->position_controller_torque_limit_lower;
+//  controller->position_controller.velocity_limit_upper  = config->position_controller_velocity_limit_upper;
+//  controller->position_controller.velocity_limit_lower  = config->position_controller_velocity_limit_lower;
+//  controller->position_controller.position_limit_upper  = config->position_controller_position_limit_upper;
+//  controller->position_controller.position_limit_lower  = config->position_controller_position_limit_lower;
 }
 
 uint32_t MotorController_storeConfig(MotorController *controller) {
@@ -222,10 +225,9 @@ uint32_t MotorController_storeConfig(MotorController *controller) {
   config.position_controller_position_kp      = controller->position_controller.position_kp;
   config.position_controller_position_ki      = controller->position_controller.position_ki;
   config.position_controller_position_kd      = controller->position_controller.position_kd;
-  config.position_controller_torque_limit_upper       = controller->position_controller.torque_limit_upper;
-  config.position_controller_torque_limit_upper       = controller->position_controller.torque_limit_lower;
-  config.position_controller_velocity_limit_upper     = controller->position_controller.velocity_limit_upper;
-  config.position_controller_velocity_limit_lower     = controller->position_controller.velocity_limit_lower;
+  config.position_controller_torque_limit       = controller->position_controller.torque_limit;
+  config.position_controller_acceleration_limit       = controller->position_controller.acceleration_limit;
+  config.position_controller_velocity_limit     = controller->position_controller.velocity_limit;
   config.position_controller_position_limit_upper     = controller->position_controller.position_limit_upper;
   config.position_controller_position_limit_lower     = controller->position_controller.position_limit_lower;
 
@@ -335,13 +337,14 @@ void MotorController_triggerPositionUpdate(MotorController *controller) {
     PowerStage_disable(&controller->powerstage);
   }
   else if (controller->mode == MODE_CALIBRATION
+      || controller->mode == MODE_CURRENT
       || controller->mode == MODE_TORQUE
       || controller->mode == MODE_VELOCITY
       || controller->mode == MODE_POSITION
-      || controller->mode == MODE_OPEN_VDQ
-      || controller->mode == MODE_OPEN_VALPHABETA
-      || controller->mode == MODE_OPEN_VABC
-      || controller->mode == MODE_OPEN_IDQ) {
+      || controller->mode == MODE_VQD_OVERRIDE
+      || controller->mode == MODE_VALPHABETA_OVERRIDE
+      || controller->mode == MODE_VABC_OVERRIDE
+      || controller->mode == MODE_IQD_OVERRIDE) {
     PowerStage_enable(&controller->powerstage);
   }
   else {
@@ -363,9 +366,9 @@ void MotorController_updatePositionReading(MotorController *controller) {
 }
 
 void MotorController_updatePositionController(MotorController *controller) {
-  PositionController_update(&controller->position_controller);
+  PositionController_update(&controller->position_controller, controller->mode);
 
-  if (controller->mode != MODE_OPEN_IDQ) {
+  if (controller->mode != MODE_CURRENT) {
     controller->current_controller.i_q_target = (controller->position_controller.torque_setpoint * (float)controller->motor.kv_rating) / 8.3;
     controller->current_controller.i_d_target = 0;
   }
@@ -377,11 +380,11 @@ void MotorController_updateService(MotorController *controller) {
     return;
   }
   if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_8)) {
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, 1);
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, 1);
   }
   else {
     // red
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, 0);
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, 0);
   }
 }
 
@@ -390,9 +393,6 @@ void MotorController_runCalibrationSequence(MotorController *controller) {
   MotorController_setMode(controller, MODE_CALIBRATION);
 
   // open loop calibration
-  float prev_v_alpha_target = controller->current_controller.v_alpha_target;
-  float prev_v_beta_target = controller->current_controller.v_beta_target;
-
   float flux_angle_setpoint = 0;
   float voltage_setpoint = 0.2;
 
@@ -416,6 +416,7 @@ void MotorController_runCalibrationSequence(MotorController *controller) {
     }
   }
 
+  HAL_Delay(500);
 
   float start_position = Encoder_getPosition(&controller->encoder);
 
@@ -445,9 +446,6 @@ void MotorController_runCalibrationSequence(MotorController *controller) {
 
   // release motor
   PowerStage_disable(&controller->powerstage);
-
-  controller->current_controller.v_alpha_target = prev_v_alpha_target;
-  controller->current_controller.v_beta_target = prev_v_beta_target;
 
   float delta_position = end_position - start_position;
 
@@ -603,19 +601,13 @@ void MotorController_handleCANMessage(MotorController *controller, CAN_Frame *rx
         *((float *)tx_frame.data) = controller->current_controller.i_d_kp;
         *((float *)tx_frame.data + 1) = controller->current_controller.i_d_ki;
         break;
-      case CAN_ID_CURRENT_CONTROLLER_V_A_TARGET_I_A_MEASURED:
+      case CAN_ID_CURRENT_CONTROLLER_I_A_I_B_MEASURED:
         tx_frame.size = 8;
-        *((float *)tx_frame.data) = controller->current_controller.v_a_target;
-        *((float *)tx_frame.data + 1) = controller->current_controller.i_a_measured;
-        break;
-      case CAN_ID_CURRENT_CONTROLLER_V_B_TARGET_I_B_MEASURED:
-        tx_frame.size = 8;
-        *((float *)tx_frame.data) = controller->current_controller.v_b_target;
+        *((float *)tx_frame.data) = controller->current_controller.i_a_measured;
         *((float *)tx_frame.data + 1) = controller->current_controller.i_b_measured;
         break;
-      case CAN_ID_CURRENT_CONTROLLER_V_C_TARGET_I_C_MEASURED:
-        tx_frame.size = 8;
-        *((float *)tx_frame.data) = controller->current_controller.v_c_target;
+      case CAN_ID_CURRENT_CONTROLLER_I_C_MEASURED:
+        tx_frame.size = 4;
         *((float *)tx_frame.data + 1) = controller->current_controller.i_c_measured;
         break;
       case CAN_ID_CURRENT_CONTROLLER_V_A_V_B_SETPOINT:
@@ -627,14 +619,9 @@ void MotorController_handleCANMessage(MotorController *controller, CAN_Frame *rx
         tx_frame.size = 4;
         *((float *)tx_frame.data) = controller->current_controller.v_c_setpoint;
         break;
-      case CAN_ID_CURRENT_CONTROLLER_V_ALPHA_TARGET_I_ALPHA_MEASURED:
+      case CAN_ID_CURRENT_CONTROLLER_I_ALPHA_I_BETA_MEASURED:
         tx_frame.size = 8;
-        *((float *)tx_frame.data) = controller->current_controller.v_alpha_target;
-        *((float *)tx_frame.data + 1) = controller->current_controller.i_alpha_measured;
-        break;
-      case CAN_ID_CURRENT_CONTROLLER_V_BETA_TARGET_I_BETA_MEASURED:
-        tx_frame.size = 8;
-        *((float *)tx_frame.data) = controller->current_controller.v_beta_target;
+        *((float *)tx_frame.data) = controller->current_controller.i_alpha_measured;
         *((float *)tx_frame.data + 1) = controller->current_controller.i_beta_measured;
         break;
       case CAN_ID_CURRENT_CONTROLLER_V_ALPHA_V_BETA_SETPOINT:
@@ -642,25 +629,20 @@ void MotorController_handleCANMessage(MotorController *controller, CAN_Frame *rx
         *((float *)tx_frame.data) = controller->current_controller.v_alpha_setpoint;
         *((float *)tx_frame.data + 1) = controller->current_controller.v_beta_setpoint;
         break;
-      case CAN_ID_CURRENT_CONTROLLER_V_Q_V_D_TARGET:
-        tx_frame.size = 8;
-        *((float *)tx_frame.data) = controller->current_controller.v_q_target;
-        *((float *)tx_frame.data + 1) = controller->current_controller.v_d_target;
-        break;
       case CAN_ID_CURRENT_CONTROLLER_V_Q_V_D_SETPOINT:
         tx_frame.size = 8;
         *((float *)tx_frame.data) = controller->current_controller.v_q_setpoint;
         *((float *)tx_frame.data + 1) = controller->current_controller.v_d_setpoint;
         break;
-      case CAN_ID_CURRENT_CONTROLLER_I_Q_TARGET_MEASURED:
+      case CAN_ID_CURRENT_CONTROLLER_I_Q_I_D_MEASURED:
+        tx_frame.size = 8;
+        *((float *)tx_frame.data) = controller->current_controller.i_q_measured;
+        *((float *)tx_frame.data + 1) = controller->current_controller.i_d_measured;
+        break;
+      case CAN_ID_CURRENT_CONTROLLER_I_Q_I_D_TARGET:
         tx_frame.size = 8;
         *((float *)tx_frame.data) = controller->current_controller.i_q_target;
-        *((float *)tx_frame.data + 1) = controller->current_controller.i_q_measured;
-        break;
-      case CAN_ID_CURRENT_CONTROLLER_I_D_TARGET_MEASURED:
-        tx_frame.size = 8;
-        *((float *)tx_frame.data) = controller->current_controller.i_d_target;
-        *((float *)tx_frame.data + 1) = controller->current_controller.i_d_measured;
+        *((float *)tx_frame.data + 1) = controller->current_controller.i_d_target;
         break;
       case CAN_ID_CURRENT_CONTROLLER_I_Q_I_D_SETPOINT:
         tx_frame.size = 8;
@@ -683,13 +665,12 @@ void MotorController_handleCANMessage(MotorController *controller, CAN_Frame *rx
         break;
       case CAN_ID_POSITION_CONTROLLER_TORQUE_LIMIT:
         tx_frame.size = 8;
-        *((float *)tx_frame.data) = controller->position_controller.torque_limit_lower;
-        *((float *)tx_frame.data + 1) = controller->position_controller.torque_limit_upper;
+        *((float *)tx_frame.data) = controller->position_controller.torque_limit;
+        *((float *)tx_frame.data + 1) = controller->position_controller.acceleration_limit;
         break;
       case CAN_ID_POSITION_CONTROLLER_VELOCITY_LIMIT:
         tx_frame.size = 8;
-        *((float *)tx_frame.data) = controller->position_controller.velocity_limit_lower;
-        *((float *)tx_frame.data + 1) = controller->position_controller.velocity_limit_upper;
+        *((float *)tx_frame.data) = controller->position_controller.velocity_limit;
         break;
       case CAN_ID_POSITION_CONTROLLER_POSITION_LIMIT:
         tx_frame.size = 8;
@@ -770,30 +751,24 @@ void MotorController_handleCANMessage(MotorController *controller, CAN_Frame *rx
         controller->current_controller.i_d_kp = *((float *)rx_frame->data);
         controller->current_controller.i_d_ki = *((float *)rx_frame->data + 1);
         break;
-      case CAN_ID_CURRENT_CONTROLLER_V_A_TARGET_I_A_MEASURED:
-        controller->current_controller.v_a_target = *((float *)rx_frame->data);
+      case CAN_ID_CURRENT_CONTROLLER_V_A_V_B_SETPOINT:
+        controller->current_controller.v_a_setpoint = *((float *)rx_frame->data);
+        controller->current_controller.v_b_setpoint = *((float *)rx_frame->data + 1);
         break;
-      case CAN_ID_CURRENT_CONTROLLER_V_B_TARGET_I_B_MEASURED:
-        controller->current_controller.v_b_target = *((float *)rx_frame->data);
+      case CAN_ID_CURRENT_CONTROLLER_V_C_SETPOINT:
+        controller->current_controller.v_c_setpoint = *((float *)rx_frame->data);
         break;
-      case CAN_ID_CURRENT_CONTROLLER_V_C_TARGET_I_C_MEASURED:
-        controller->current_controller.v_c_target = *((float *)rx_frame->data);
+      case CAN_ID_CURRENT_CONTROLLER_V_ALPHA_V_BETA_SETPOINT:
+        controller->current_controller.v_alpha_setpoint = *((float *)rx_frame->data);
+        controller->current_controller.v_beta_setpoint = *((float *)rx_frame->data + 1);
         break;
-      case CAN_ID_CURRENT_CONTROLLER_V_ALPHA_TARGET_I_ALPHA_MEASURED:
-        controller->current_controller.v_alpha_target = *((float *)rx_frame->data);
+      case CAN_ID_CURRENT_CONTROLLER_V_Q_V_D_SETPOINT:
+        controller->current_controller.v_q_setpoint = *((float *)rx_frame->data);
+        controller->current_controller.v_d_setpoint = *((float *)rx_frame->data + 1);
         break;
-      case CAN_ID_CURRENT_CONTROLLER_V_BETA_TARGET_I_BETA_MEASURED:
-        controller->current_controller.v_beta_target = *((float *)rx_frame->data);
-        break;
-      case CAN_ID_CURRENT_CONTROLLER_V_Q_V_D_TARGET:
-        controller->current_controller.v_q_target = *((float *)rx_frame->data);
-        controller->current_controller.v_d_target = *((float *)rx_frame->data + 1);
-        break;
-      case CAN_ID_CURRENT_CONTROLLER_I_Q_TARGET_MEASURED:
-        controller->current_controller.i_q_target = *((float *)rx_frame->data);
-        break;
-      case CAN_ID_CURRENT_CONTROLLER_I_D_TARGET_MEASURED:
-        controller->current_controller.i_d_target = *((float *)rx_frame->data);
+      case CAN_ID_CURRENT_CONTROLLER_I_Q_I_D_SETPOINT:
+        controller->current_controller.i_q_setpoint = *((float *)rx_frame->data);
+        controller->current_controller.i_d_setpoint = *((float *)rx_frame->data + 1);
         break;
       case CAN_ID_POSITION_CONTROLLER_KP_KI:
         controller->position_controller.position_kp = *((float *)rx_frame->data);
@@ -803,12 +778,11 @@ void MotorController_handleCANMessage(MotorController *controller, CAN_Frame *rx
         controller->position_controller.position_kd = *((float *)rx_frame->data);
         break;
       case CAN_ID_POSITION_CONTROLLER_TORQUE_LIMIT:
-        controller->position_controller.torque_limit_lower = *((float *)rx_frame->data);
-        controller->position_controller.torque_limit_upper = *((float *)rx_frame->data + 1);
+        controller->position_controller.torque_limit = *((float *)rx_frame->data);
+        controller->position_controller.acceleration_limit= *((float *)rx_frame->data + 1);
         break;
       case CAN_ID_POSITION_CONTROLLER_VELOCITY_LIMIT:
-        controller->position_controller.velocity_limit_lower = *((float *)rx_frame->data);
-        controller->position_controller.velocity_limit_upper = *((float *)rx_frame->data + 1);
+        controller->position_controller.velocity_limit = *((float *)rx_frame->data);
         break;
       case CAN_ID_POSITION_CONTROLLER_POSITION_LIMIT:
         controller->position_controller.position_limit_lower = *((float *)rx_frame->data);

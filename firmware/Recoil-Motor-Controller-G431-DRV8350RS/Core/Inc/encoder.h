@@ -32,6 +32,8 @@ typedef struct {
   float     filter_k_i;
   float     filter_integral;
 
+  float dt;
+
   int16_t   position_reading;     // in range (-cpr/2, cpr/2)
   int32_t   n_rotations;
   float     position_relative;    // in range [0, 2PI)

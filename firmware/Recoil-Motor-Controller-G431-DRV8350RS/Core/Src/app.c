@@ -112,26 +112,29 @@ void APP_init() {
   APP_initFlashOption();
   #endif
 
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, 1);
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 1);
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, 1);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, 1);    // green
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 1);    // blue
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, 1);    // red
 
   MotorController_init(&controller);
 
   MotorController_setMode(&controller, MODE_IDLE);
-
-//  controller.position_controller.position_kp = 0.1;
-  controller.position_controller.torque_limit_lower = -0.2;
-  controller.position_controller.torque_limit_upper = 0.2;
-
+  controller.position_controller.position_target = 0;
   HAL_Delay(3000);
+
 //  MotorController_setMode(&controller, MODE_CALIBRATION);
 //  MotorController_updateService(&controller);
 //  MotorController_setMode(&controller, MODE_POSITION);
 
-  controller.current_controller.i_q_target = 0.1;
-//  controller.current_controller.v_d_target = 0;
-  MotorController_setMode(&controller, MODE_OPEN_IDQ);
+//  MotorController_setMode(&controller, MODE_IQD_OVERRIDE);
+//  controller.current_controller.i_q_setpoint = 0.05;
+//  controller.current_controller.i_d_setpoint = 0;
+
+//  MotorController_setMode(&controller, MODE_TORQUE);
+//  controller.position_controller.torque_target = 0;
+
+  MotorController_setMode(&controller, MODE_POSITION);
+  controller.position_controller.position_target = 0;
 }
 
 
@@ -145,69 +148,70 @@ void APP_main() {
     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, 0);    // blue LED
   }
 
-//  PowerStage_enable(&controller.powerstage);
-//  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, 1);
-//  PowerStage_setBridgeOutput(&controller.powerstage, 0, 0, 0);
-//
-//  if (APP_getUserButton(&controller)) {
-//    controller.current_controller.i_d_target = 0.;
-//    controller.current_controller.i_q_target = 0.5;
-//    MotorController_setMode(&controller, MODE_OPEN_IDQ);
-//
-//    MotorController_setMode(&controller, MODE_CALIBRATION);
-//
-////    MotorController_setMode(&controller, MODE_DISABLED);
-//  }
+//  controller.position_controller.torque_target = 0.001;
+
+  controller.position_controller.position_target = 10 * ((HAL_GetTick() / 4000) % 2);
+
 
   char str[128];
-//  sprintf(str, "error: %d encoder:%d\n",
-//      ((uint16_t)controller.position_controller.position_measured) >> 14,
-//      ((uint16_t)controller.position_controller.position_measured) & 0x3FFF);
 
-  sprintf(str, "ts:%f\ttm:%f\n",
-      controller.current_controller.i_q_measured,
-      controller.position_controller.torque_measured*1000);
+  //    sprintf(str, "pos:%f\tvbus:%f\r\n",
+  //        controller.position_controller.position_measured,
+  //        controller.powerstage.bus_voltage_measured);
+
+  //    sprintf(str, "prel:%f\tpos:%f\tvel:%f\n",
+  //        Encoder_getRelativePosition(&controller.encoder),
+  //        Encoder_getPosition(&controller.encoder),
+  //        Encoder_getVelocity(&controller.encoder));
+
+  //  sprintf(str, "ia:%f\tib:%f\tic:%f\r\n",
+  //      controller.current_controller.i_a_measured,
+  //      controller.current_controller.i_b_measured,
+  //      controller.current_controller.i_c_measured);
+
+  //  sprintf(str, "pos:%f\tva:%f\tvb:%f\tvc:%f\r\n",
+  //      controller.position_controller.position_measured,
+  //      controller.current_controller.v_a_setpoint,
+  //      controller.current_controller.v_b_setpoint,
+  //      controller.current_controller.v_c_setpoint);
 
 
-//    sprintf(str, "prel:%f\tpos:%f\tvel:%f\n",
-//        Encoder_getRelativePosition(&controller.encoder),
-//        Encoder_getPosition(&controller.encoder),
-//        Encoder_getVelocity(&controller.encoder));
 
-//  sprintf(str, "pos:%f\tq:%f\tt:%f\tq_set:%f\tt_set:%f\r\n",
-//      controller.position_controller.position_measured,
-//      controller.current_controller.i_q_measured,
-//      controller.position_controller.torque_measured,
-//      controller.current_controller.i_q_setpoint,
-//      controller.position_controller.torque_setpoint);
-//  sprintf(str, "%d\r\n", val);
-//  sprintf(str, "pos:%f\tiqs:%f\tiqm:%f\r\n",
-//      controller.position_controller.velocity_measured,
-//      controller.current_controller.i_q_setpoint,
-//      controller.current_controller.i_q_measured);
-//  sprintf(str, "pos:%f\tvq:%f\tvd:%f\r\n",
-//      controller.position_controller.position_measured,
-//      controller.current_controller.v_q_setpoint,
-//      controller.current_controller.v_d_setpoint);
-//  sprintf(str, "pos:%f\tvalpha:%f\tvbeta:%f\r\n",
-//      controller.position_controller.position_measured,
-//      controller.current_controller.v_alpha_setpoint,
-//      controller.current_controller.v_beta_setpoint);
-//  sprintf(str, "pos:%f\tva:%f\tvb:%f\tvc:%f\r\n",
-//      controller.position_controller.position_measured,
-//      controller.current_controller.v_a_setpoint,
-//      controller.current_controller.v_b_setpoint,
-//      controller.current_controller.v_c_setpoint);
-//  sprintf(str, "ia:%f\tib:%f\tic:%f\r\n",
-//      controller.current_controller.i_a_measured,
-//      controller.current_controller.i_b_measured,
-//      controller.current_controller.i_c_measured);
-//    sprintf(str, "pos:%f\tvbus:%f\r\n",
+//  sprintf(str, "iq_set:%f\tid_set:%f\tiq_mea:%f\tid_mea:%f\r\n",
+//      controller.current_controller.i_q_setpoint * 1000,
+//      controller.current_controller.i_d_setpoint * 1000,
+//      controller.current_controller.i_q_measured * 1000,
+//      controller.current_controller.i_d_measured * 1000);
+
+
+//  sprintf(str, "t_tar:%f\tt_mea:%f\n",
+//      controller.position_controller.torque_target * 1000,
+//      controller.position_controller.torque_measured * 1000);
+
+
+
+  sprintf(str, "p_tar:%f\tp_mea:%f\tv_tar:%f\tv_mea:%f\tv_set:%f\tv_lim:%f\tt_set:%f\tt_mea:%f\r\n",
+      controller.position_controller.position_target,
+      controller.position_controller.position_measured,
+      controller.position_controller.velocity_target,
+      controller.position_controller.velocity_measured,
+      controller.position_controller.velocity_setpoint,
+      controller.position_controller.velocity_limit,
+      controller.position_controller.torque_setpoint * 1000,
+      controller.position_controller.torque_measured * 1000);
+
+//    sprintf(str, "p_tar:%f\tp_mea:%f\tdx:%f\taccel:%f\tvel_mea:%f\tvel_set:%f\tpos_set:%f\tt_tar:%f\r\n",
+//        controller.position_controller.position_target,
 //        controller.position_controller.position_measured,
-//        controller.powerstage.bus_voltage_measured);
-  HAL_UART_Transmit(&huart3, (uint8_t *)str, strlen(str), 1000);
-////
-  HAL_Delay(1);
+//        controller.position_controller.dx,
+//        controller.position_controller.accel * .5,
+//        controller.position_controller.velocity_measured,
+//        controller.position_controller.velocity_setpoint,
+//        controller.position_controller.position_setpoint,
+//        controller.position_controller.torque_target*5 + 5);
 
+
+  HAL_UART_Transmit(&huart3, (uint8_t *)str, strlen(str), 1000);
+  HAL_Delay(5);
 }
 

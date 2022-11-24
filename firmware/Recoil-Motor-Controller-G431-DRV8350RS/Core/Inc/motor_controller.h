@@ -58,10 +58,9 @@ typedef struct {
   float     position_controller_position_kp;
   float     position_controller_position_ki;
   float     position_controller_position_kd;
-  float     position_controller_torque_limit_upper;
-  float     position_controller_torque_limit_lower;
-  float     position_controller_velocity_limit_upper;
-  float     position_controller_velocity_limit_lower;
+  float     position_controller_torque_limit;
+  float     position_controller_acceleration_limit;
+  float     position_controller_velocity_limit;
   float     position_controller_position_limit_upper;
   float     position_controller_position_limit_lower;
 } EEPROMConfig;

@@ -32,7 +32,7 @@ void Encoder_init(Encoder *encoder, SPI_HandleTypeDef *hspi, TIM_HandleTypeDef *
 
   encoder->position_offset = 0;
 
-  encoder->filter_bandwidth = 400;
+  encoder->filter_bandwidth = 100;
 
   encoder->filter_integral = 0;
 
@@ -40,11 +40,14 @@ void Encoder_init(Encoder *encoder, SPI_HandleTypeDef *hspi, TIM_HandleTypeDef *
   encoder->position = 0;
   encoder->velocity = 0;
 
+  encoder->dt = 0.1;
+
   encoder->n_rotations = 0;
 }
 
 void Encoder_setFilterBandwidth(Encoder *encoder, float bandwidth) {
-  encoder->filter_bandwidth = bandwidth;
+//  encoder->filter_bandwidth = bandwidth;
+  encoder->filter_bandwidth = 50;
   float w3db = (1. / 8000.) * 2 * M_PI * encoder->filter_bandwidth;
   encoder->filter_k_p = .5 * (2 * w3db);
   encoder->filter_k_i = .5 * (w3db * w3db);
@@ -55,13 +58,13 @@ void Encoder_triggerUpdate(Encoder *encoder) {
   encoder->spi_tx_buffer |= 1 << 14;
   encoder->spi_tx_buffer |= getParity(encoder->spi_tx_buffer) << 15;
 
-  __HAL_TIM_SET_COUNTER(encoder->htim, 0);
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, 0);
   HAL_SPI_TransmitReceive_IT(encoder->hspi, (uint8_t *)&encoder->spi_tx_buffer, (uint8_t *)&encoder->spi_rx_buffer, 1);
 }
 
 void Encoder_update(Encoder *encoder) {
-//  float dt = (float)__HAL_TIM_GET_COUNTER(encoder->htim) / 1000000.;
+  encoder->dt = (float)__HAL_TIM_GET_COUNTER(encoder->htim) / 1000000.;
+  __HAL_TIM_SET_COUNTER(encoder->htim, 0);
   float dt = 1 / 4000.;
 
   int16_t reading = READ_BITS(encoder->spi_rx_buffer, 0x3FFF) - (encoder->cpr / 2);
@@ -89,8 +92,8 @@ void Encoder_update(Encoder *encoder) {
   encoder->position_relative = wrapTo2Pi(encoder->position - encoder->position_offset);
 
   float delta_position = encoder->position - position_prev;
-  if (dt > 0) {
-    encoder->velocity = (delta_position / dt);
+  if (encoder->dt > 0) {
+    encoder->velocity = (delta_position / encoder->dt);
   }
 }
 

@@ -2,13 +2,13 @@
 #include "current_controller.h"
 
 void CurrentController_init(CurrentController *controller) {
-  controller->current_filter_alpha = 0.1;
+  controller->current_filter_alpha = 0.2;
 
-  controller->i_q_kp = 3.;
-  controller->i_q_ki = 0.; // 0.01
+  controller->i_q_kp = 30.;
+  controller->i_q_ki = 0.01; // 0.01
 
-  controller->i_d_kp = 3.;
-  controller->i_d_ki = 0.;
+  controller->i_d_kp = 30.;
+  controller->i_d_ki = 0.01;
 
   controller->i_q_measured = 0;
   controller->i_d_measured = 0;
@@ -39,29 +39,24 @@ void CurrentController_update(CurrentController *controller, Mode mode, float si
   controller->i_q_measured = controller->current_filter_alpha * (i_q - controller->i_q_measured);
   controller->i_d_measured = controller->current_filter_alpha * (i_d - controller->i_d_measured);
 
-  if (mode != MODE_OPEN_IDQ) {
+  if (mode != MODE_IQD_OVERRIDE) {
     controller->i_q_setpoint = controller->i_q_target - controller->i_q_measured;
     controller->i_d_setpoint = controller->i_d_target - controller->i_d_measured;
+    controller->i_q_integrator = clampf(
+        controller->i_q_integrator + controller->i_q_ki * controller->i_q_setpoint, -5, 5);
+    controller->i_d_integrator = clampf(
+        controller->i_d_integrator + controller->i_d_ki * controller->i_d_setpoint, -5, 5);
   }
   else {
-    controller->i_q_setpoint = controller->i_q_target;
-    controller->i_d_setpoint = controller->i_d_target;
+    controller->i_q_integrator = 0;
+    controller->i_d_integrator = 0;
   }
 
-  if (mode != MODE_OPEN_VDQ) {
-    controller->i_q_integrator = clampf(
-        controller->i_q_integrator + controller->i_q_ki * controller->i_q_setpoint, -1, 1);
-    controller->i_d_integrator = clampf(
-        controller->i_d_integrator + controller->i_d_ki * controller->i_d_setpoint, -1, 1);
-
+  if (mode != MODE_VQD_OVERRIDE) {
     controller->v_q_setpoint =
         controller->i_q_kp * controller->i_q_setpoint + controller->i_q_integrator;
     controller->v_d_setpoint =
         controller->i_d_kp * controller->i_d_setpoint + controller->i_d_integrator;
-  }
-  else {
-    controller->v_q_setpoint = controller->v_q_target;
-    controller->v_d_setpoint = controller->v_d_target;
   }
 
   // clamp voltage
@@ -79,7 +74,8 @@ void CurrentController_update(CurrentController *controller, Mode mode, float si
     }
   }
 
-  if (mode != MODE_OPEN_VALPHABETA && mode != MODE_CALIBRATION) {
+  if (mode != MODE_VALPHABETA_OVERRIDE && mode != MODE_CALIBRATION) {
+    // calibration mode needs to override v_alpha_setpoint and v_beta_setpoint
     FOC_invParkTransform(
       &controller->v_alpha_setpoint,
       &controller->v_beta_setpoint,
@@ -87,23 +83,14 @@ void CurrentController_update(CurrentController *controller, Mode mode, float si
       controller->v_d_setpoint,
       sin_theta, cos_theta);
   }
-  else {
-    controller->v_alpha_setpoint = controller->v_alpha_target;
-    controller->v_beta_setpoint = controller->v_beta_target;
-  }
 
-  if (mode != MODE_OPEN_VABC) {
+  if (mode != MODE_VABC_OVERRIDE) {
     FOC_invClarkSVPWM(
       &controller->v_a_setpoint,
       &controller->v_b_setpoint,
       &controller->v_c_setpoint,
       controller->v_alpha_setpoint,
       controller->v_beta_setpoint);
-  }
-  else {
-    controller->v_a_setpoint = controller->v_a_target;
-    controller->v_b_setpoint = controller->v_b_target;
-    controller->v_c_setpoint = controller->v_c_target;
   }
 }
 
