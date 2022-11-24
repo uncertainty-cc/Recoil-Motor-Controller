@@ -1480,127 +1480,126 @@ void APP_main() {
 
 //  controller.position_controller.torque_target = 0.001;
 
-  controller.position_controller.position_target = 10 * ((HAL_GetTick() / 4000) % 2);
+  controller.position_controller.position_target = 50 * ((HAL_GetTick() / 4000) % 2);
  800110e:	f004 f97f 	bl	8005410 <HAL_GetTick>
  8001112:	4603      	mov	r3, r0
  8001114:	4a46      	ldr	r2, [pc, #280]	; (8001230 <APP_main+0x154>)
  8001116:	fba2 2303 	umull	r2, r3, r2, r3
  800111a:	0a1b      	lsrs	r3, r3, #8
- 800111c:	f003 0201 	and.w	r2, r3, #1
- 8001120:	4613      	mov	r3, r2
- 8001122:	009b      	lsls	r3, r3, #2
- 8001124:	4413      	add	r3, r2
- 8001126:	005b      	lsls	r3, r3, #1
- 8001128:	ee07 3a90 	vmov	s15, r3
- 800112c:	eef8 7a67 	vcvt.f32.u32	s15, s15
- 8001130:	4b3e      	ldr	r3, [pc, #248]	; (800122c <APP_main+0x150>)
- 8001132:	edc3 7a44 	vstr	s15, [r3, #272]	; 0x110
+ 800111c:	f003 0301 	and.w	r3, r3, #1
+ 8001120:	2232      	movs	r2, #50	; 0x32
+ 8001122:	fb02 f303 	mul.w	r3, r2, r3
+ 8001126:	ee07 3a90 	vmov	s15, r3
+ 800112a:	eef8 7a67 	vcvt.f32.u32	s15, s15
+ 800112e:	4b3f      	ldr	r3, [pc, #252]	; (800122c <APP_main+0x150>)
+ 8001130:	edc3 7a44 	vstr	s15, [r3, #272]	; 0x110
 //      controller.position_controller.torque_measured * 1000);
 
 
 
   sprintf(str, "p_tar:%f\tp_mea:%f\tv_tar:%f\tv_mea:%f\tv_set:%f\tv_lim:%f\tt_set:%f\tt_mea:%f\r\n",
       controller.position_controller.position_target,
- 8001136:	4b3d      	ldr	r3, [pc, #244]	; (800122c <APP_main+0x150>)
- 8001138:	f8d3 3110 	ldr.w	r3, [r3, #272]	; 0x110
+ 8001134:	4b3d      	ldr	r3, [pc, #244]	; (800122c <APP_main+0x150>)
+ 8001136:	f8d3 3110 	ldr.w	r3, [r3, #272]	; 0x110
   sprintf(str, "p_tar:%f\tp_mea:%f\tv_tar:%f\tv_mea:%f\tv_set:%f\tv_lim:%f\tt_set:%f\tt_mea:%f\r\n",
- 800113c:	4618      	mov	r0, r3
- 800113e:	f7ff fa2b 	bl	8000598 <__aeabi_f2d>
- 8001142:	e9c7 0106 	strd	r0, r1, [r7, #24]
+ 800113a:	4618      	mov	r0, r3
+ 800113c:	f7ff fa2c 	bl	8000598 <__aeabi_f2d>
+ 8001140:	e9c7 0106 	strd	r0, r1, [r7, #24]
       controller.position_controller.position_measured,
- 8001146:	4b39      	ldr	r3, [pc, #228]	; (800122c <APP_main+0x150>)
- 8001148:	f8d3 3114 	ldr.w	r3, [r3, #276]	; 0x114
+ 8001144:	4b39      	ldr	r3, [pc, #228]	; (800122c <APP_main+0x150>)
+ 8001146:	f8d3 3114 	ldr.w	r3, [r3, #276]	; 0x114
   sprintf(str, "p_tar:%f\tp_mea:%f\tv_tar:%f\tv_mea:%f\tv_set:%f\tv_lim:%f\tt_set:%f\tt_mea:%f\r\n",
- 800114c:	4618      	mov	r0, r3
- 800114e:	f7ff fa23 	bl	8000598 <__aeabi_f2d>
- 8001152:	4682      	mov	sl, r0
- 8001154:	468b      	mov	fp, r1
+ 800114a:	4618      	mov	r0, r3
+ 800114c:	f7ff fa24 	bl	8000598 <__aeabi_f2d>
+ 8001150:	4682      	mov	sl, r0
+ 8001152:	468b      	mov	fp, r1
       controller.position_controller.velocity_target,
- 8001156:	4b35      	ldr	r3, [pc, #212]	; (800122c <APP_main+0x150>)
- 8001158:	f8d3 3100 	ldr.w	r3, [r3, #256]	; 0x100
+ 8001154:	4b35      	ldr	r3, [pc, #212]	; (800122c <APP_main+0x150>)
+ 8001156:	f8d3 3100 	ldr.w	r3, [r3, #256]	; 0x100
   sprintf(str, "p_tar:%f\tp_mea:%f\tv_tar:%f\tv_mea:%f\tv_set:%f\tv_lim:%f\tt_set:%f\tt_mea:%f\r\n",
- 800115c:	4618      	mov	r0, r3
- 800115e:	f7ff fa1b 	bl	8000598 <__aeabi_f2d>
- 8001162:	e9c7 0104 	strd	r0, r1, [r7, #16]
+ 800115a:	4618      	mov	r0, r3
+ 800115c:	f7ff fa1c 	bl	8000598 <__aeabi_f2d>
+ 8001160:	e9c7 0104 	strd	r0, r1, [r7, #16]
       controller.position_controller.velocity_measured,
- 8001166:	4b31      	ldr	r3, [pc, #196]	; (800122c <APP_main+0x150>)
- 8001168:	f8d3 3104 	ldr.w	r3, [r3, #260]	; 0x104
+ 8001164:	4b31      	ldr	r3, [pc, #196]	; (800122c <APP_main+0x150>)
+ 8001166:	f8d3 3104 	ldr.w	r3, [r3, #260]	; 0x104
   sprintf(str, "p_tar:%f\tp_mea:%f\tv_tar:%f\tv_mea:%f\tv_set:%f\tv_lim:%f\tt_set:%f\tt_mea:%f\r\n",
- 800116c:	4618      	mov	r0, r3
- 800116e:	f7ff fa13 	bl	8000598 <__aeabi_f2d>
- 8001172:	e9c7 0102 	strd	r0, r1, [r7, #8]
+ 800116a:	4618      	mov	r0, r3
+ 800116c:	f7ff fa14 	bl	8000598 <__aeabi_f2d>
+ 8001170:	e9c7 0102 	strd	r0, r1, [r7, #8]
       controller.position_controller.velocity_setpoint,
- 8001176:	4b2d      	ldr	r3, [pc, #180]	; (800122c <APP_main+0x150>)
- 8001178:	f8d3 3108 	ldr.w	r3, [r3, #264]	; 0x108
+ 8001174:	4b2d      	ldr	r3, [pc, #180]	; (800122c <APP_main+0x150>)
+ 8001176:	f8d3 3108 	ldr.w	r3, [r3, #264]	; 0x108
   sprintf(str, "p_tar:%f\tp_mea:%f\tv_tar:%f\tv_mea:%f\tv_set:%f\tv_lim:%f\tt_set:%f\tt_mea:%f\r\n",
- 800117c:	4618      	mov	r0, r3
- 800117e:	f7ff fa0b 	bl	8000598 <__aeabi_f2d>
- 8001182:	e9c7 0100 	strd	r0, r1, [r7]
+ 800117a:	4618      	mov	r0, r3
+ 800117c:	f7ff fa0c 	bl	8000598 <__aeabi_f2d>
+ 8001180:	e9c7 0100 	strd	r0, r1, [r7]
       controller.position_controller.velocity_limit,
- 8001186:	4b29      	ldr	r3, [pc, #164]	; (800122c <APP_main+0x150>)
- 8001188:	f8d3 30e8 	ldr.w	r3, [r3, #232]	; 0xe8
+ 8001184:	4b29      	ldr	r3, [pc, #164]	; (800122c <APP_main+0x150>)
+ 8001186:	f8d3 30e8 	ldr.w	r3, [r3, #232]	; 0xe8
   sprintf(str, "p_tar:%f\tp_mea:%f\tv_tar:%f\tv_mea:%f\tv_set:%f\tv_lim:%f\tt_set:%f\tt_mea:%f\r\n",
- 800118c:	4618      	mov	r0, r3
- 800118e:	f7ff fa03 	bl	8000598 <__aeabi_f2d>
- 8001192:	4680      	mov	r8, r0
- 8001194:	4689      	mov	r9, r1
+ 800118a:	4618      	mov	r0, r3
+ 800118c:	f7ff fa04 	bl	8000598 <__aeabi_f2d>
+ 8001190:	4680      	mov	r8, r0
+ 8001192:	4689      	mov	r9, r1
       controller.position_controller.torque_setpoint * 1000,
- 8001196:	4b25      	ldr	r3, [pc, #148]	; (800122c <APP_main+0x150>)
- 8001198:	edd3 7a3f 	vldr	s15, [r3, #252]	; 0xfc
- 800119c:	ed9f 7a25 	vldr	s14, [pc, #148]	; 8001234 <APP_main+0x158>
- 80011a0:	ee67 7a87 	vmul.f32	s15, s15, s14
+ 8001194:	4b25      	ldr	r3, [pc, #148]	; (800122c <APP_main+0x150>)
+ 8001196:	edd3 7a3f 	vldr	s15, [r3, #252]	; 0xfc
+ 800119a:	ed9f 7a26 	vldr	s14, [pc, #152]	; 8001234 <APP_main+0x158>
+ 800119e:	ee67 7a87 	vmul.f32	s15, s15, s14
   sprintf(str, "p_tar:%f\tp_mea:%f\tv_tar:%f\tv_mea:%f\tv_set:%f\tv_lim:%f\tt_set:%f\tt_mea:%f\r\n",
- 80011a4:	ee17 0a90 	vmov	r0, s15
- 80011a8:	f7ff f9f6 	bl	8000598 <__aeabi_f2d>
- 80011ac:	4604      	mov	r4, r0
- 80011ae:	460d      	mov	r5, r1
+ 80011a2:	ee17 0a90 	vmov	r0, s15
+ 80011a6:	f7ff f9f7 	bl	8000598 <__aeabi_f2d>
+ 80011aa:	4604      	mov	r4, r0
+ 80011ac:	460d      	mov	r5, r1
       controller.position_controller.torque_measured * 1000);
- 80011b0:	4b1e      	ldr	r3, [pc, #120]	; (800122c <APP_main+0x150>)
- 80011b2:	edd3 7a3e 	vldr	s15, [r3, #248]	; 0xf8
- 80011b6:	ed9f 7a1f 	vldr	s14, [pc, #124]	; 8001234 <APP_main+0x158>
- 80011ba:	ee67 7a87 	vmul.f32	s15, s15, s14
+ 80011ae:	4b1f      	ldr	r3, [pc, #124]	; (800122c <APP_main+0x150>)
+ 80011b0:	edd3 7a3e 	vldr	s15, [r3, #248]	; 0xf8
+ 80011b4:	ed9f 7a1f 	vldr	s14, [pc, #124]	; 8001234 <APP_main+0x158>
+ 80011b8:	ee67 7a87 	vmul.f32	s15, s15, s14
   sprintf(str, "p_tar:%f\tp_mea:%f\tv_tar:%f\tv_mea:%f\tv_set:%f\tv_lim:%f\tt_set:%f\tt_mea:%f\r\n",
- 80011be:	ee17 0a90 	vmov	r0, s15
- 80011c2:	f7ff f9e9 	bl	8000598 <__aeabi_f2d>
- 80011c6:	4602      	mov	r2, r0
- 80011c8:	460b      	mov	r3, r1
- 80011ca:	f107 0020 	add.w	r0, r7, #32
- 80011ce:	e9cd 230c 	strd	r2, r3, [sp, #48]	; 0x30
- 80011d2:	e9cd 450a 	strd	r4, r5, [sp, #40]	; 0x28
- 80011d6:	e9cd 8908 	strd	r8, r9, [sp, #32]
- 80011da:	ed97 7b00 	vldr	d7, [r7]
- 80011de:	ed8d 7b06 	vstr	d7, [sp, #24]
- 80011e2:	ed97 7b02 	vldr	d7, [r7, #8]
- 80011e6:	ed8d 7b04 	vstr	d7, [sp, #16]
- 80011ea:	ed97 7b04 	vldr	d7, [r7, #16]
- 80011ee:	ed8d 7b02 	vstr	d7, [sp, #8]
- 80011f2:	e9cd ab00 	strd	sl, fp, [sp]
- 80011f6:	e9d7 2306 	ldrd	r2, r3, [r7, #24]
- 80011fa:	490f      	ldr	r1, [pc, #60]	; (8001238 <APP_main+0x15c>)
- 80011fc:	f00b fde2 	bl	800cdc4 <siprintf>
+ 80011bc:	ee17 0a90 	vmov	r0, s15
+ 80011c0:	f7ff f9ea 	bl	8000598 <__aeabi_f2d>
+ 80011c4:	4602      	mov	r2, r0
+ 80011c6:	460b      	mov	r3, r1
+ 80011c8:	f107 0020 	add.w	r0, r7, #32
+ 80011cc:	e9cd 230c 	strd	r2, r3, [sp, #48]	; 0x30
+ 80011d0:	e9cd 450a 	strd	r4, r5, [sp, #40]	; 0x28
+ 80011d4:	e9cd 8908 	strd	r8, r9, [sp, #32]
+ 80011d8:	ed97 7b00 	vldr	d7, [r7]
+ 80011dc:	ed8d 7b06 	vstr	d7, [sp, #24]
+ 80011e0:	ed97 7b02 	vldr	d7, [r7, #8]
+ 80011e4:	ed8d 7b04 	vstr	d7, [sp, #16]
+ 80011e8:	ed97 7b04 	vldr	d7, [r7, #16]
+ 80011ec:	ed8d 7b02 	vstr	d7, [sp, #8]
+ 80011f0:	e9cd ab00 	strd	sl, fp, [sp]
+ 80011f4:	e9d7 2306 	ldrd	r2, r3, [r7, #24]
+ 80011f8:	490f      	ldr	r1, [pc, #60]	; (8001238 <APP_main+0x15c>)
+ 80011fa:	f00b fde3 	bl	800cdc4 <siprintf>
 //        controller.position_controller.velocity_setpoint,
 //        controller.position_controller.position_setpoint,
 //        controller.position_controller.torque_target*5 + 5);
 
 
   HAL_UART_Transmit(&huart3, (uint8_t *)str, strlen(str), 1000);
- 8001200:	f107 0320 	add.w	r3, r7, #32
- 8001204:	4618      	mov	r0, r3
- 8001206:	f7ff f80b 	bl	8000220 <strlen>
- 800120a:	4603      	mov	r3, r0
- 800120c:	b29a      	uxth	r2, r3
- 800120e:	f107 0120 	add.w	r1, r7, #32
- 8001212:	f44f 737a 	mov.w	r3, #1000	; 0x3e8
- 8001216:	4809      	ldr	r0, [pc, #36]	; (800123c <APP_main+0x160>)
- 8001218:	f00a fb1d 	bl	800b856 <HAL_UART_Transmit>
+ 80011fe:	f107 0320 	add.w	r3, r7, #32
+ 8001202:	4618      	mov	r0, r3
+ 8001204:	f7ff f80c 	bl	8000220 <strlen>
+ 8001208:	4603      	mov	r3, r0
+ 800120a:	b29a      	uxth	r2, r3
+ 800120c:	f107 0120 	add.w	r1, r7, #32
+ 8001210:	f44f 737a 	mov.w	r3, #1000	; 0x3e8
+ 8001214:	4809      	ldr	r0, [pc, #36]	; (800123c <APP_main+0x160>)
+ 8001216:	f00a fb1e 	bl	800b856 <HAL_UART_Transmit>
   HAL_Delay(5);
- 800121c:	2005      	movs	r0, #5
- 800121e:	f004 f903 	bl	8005428 <HAL_Delay>
+ 800121a:	2005      	movs	r0, #5
+ 800121c:	f004 f904 	bl	8005428 <HAL_Delay>
 }
- 8001222:	bf00      	nop
- 8001224:	37a0      	adds	r7, #160	; 0xa0
- 8001226:	46bd      	mov	sp, r7
- 8001228:	e8bd 8fb0 	ldmia.w	sp!, {r4, r5, r7, r8, r9, sl, fp, pc}
+ 8001220:	bf00      	nop
+ 8001222:	37a0      	adds	r7, #160	; 0xa0
+ 8001224:	46bd      	mov	sp, r7
+ 8001226:	e8bd 8fb0 	ldmia.w	sp!, {r4, r5, r7, r8, r9, sl, fp, pc}
+ 800122a:	bf00      	nop
  800122c:	20000218 	.word	0x20000218
  8001230:	10624dd3 	.word	0x10624dd3
  8001234:	447a0000 	.word	0x447a0000
@@ -8263,7 +8262,7 @@ void PositionController_init(PositionController *controller) {
  80043ee:	b083      	sub	sp, #12
  80043f0:	af00      	add	r7, sp, #0
  80043f2:	6078      	str	r0, [r7, #4]
-  controller->position_kp = 30;
+  controller->position_kp = 10;
  80043f4:	687b      	ldr	r3, [r7, #4]
  80043f6:	4a17      	ldr	r2, [pc, #92]	; (8004454 <PositionController_init+0x68>)
  80043f8:	601a      	str	r2, [r3, #0]
@@ -8285,7 +8284,7 @@ void PositionController_init(PositionController *controller) {
  8004410:	4a13      	ldr	r2, [pc, #76]	; (8004460 <PositionController_init+0x74>)
  8004412:	611a      	str	r2, [r3, #16]
 
-  controller->velocity_limit = 10;
+  controller->velocity_limit = 100;
  8004414:	687b      	ldr	r3, [r7, #4]
  8004416:	4a13      	ldr	r2, [pc, #76]	; (8004464 <PositionController_init+0x78>)
  8004418:	619a      	str	r2, [r3, #24]
@@ -8322,11 +8321,11 @@ void PositionController_init(PositionController *controller) {
  800444c:	46bd      	mov	sp, r7
  800444e:	f85d 7b04 	ldr.w	r7, [sp], #4
  8004452:	4770      	bx	lr
- 8004454:	41f00000 	.word	0x41f00000
+ 8004454:	41200000 	.word	0x41200000
  8004458:	3a83126f 	.word	0x3a83126f
  800445c:	3649539c 	.word	0x3649539c
  8004460:	3c23d70a 	.word	0x3c23d70a
- 8004464:	41200000 	.word	0x41200000
+ 8004464:	42c80000 	.word	0x42c80000
  8004468:	ff800000 	.word	0xff800000
 
 0800446c <PositionController_update>:

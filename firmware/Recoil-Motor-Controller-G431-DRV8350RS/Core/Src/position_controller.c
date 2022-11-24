@@ -8,14 +8,14 @@
 #include "position_controller.h"
 
 void PositionController_init(PositionController *controller) {
-  controller->position_kp = 30;
+  controller->position_kp = 10;
   controller->position_ki = 0;
   controller->velocity_kp = 0.001;
   controller->velocity_ki = 0.000003;
 
   controller->torque_limit = 0.01;
 
-  controller->velocity_limit = 10;
+  controller->velocity_limit = 100;
 
   controller->position_limit_lower = -INFINITY;
   controller->position_limit_upper = INFINITY;

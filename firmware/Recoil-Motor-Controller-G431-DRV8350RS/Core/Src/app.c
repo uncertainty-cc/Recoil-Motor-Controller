@@ -150,7 +150,7 @@ void APP_main() {
 
 //  controller.position_controller.torque_target = 0.001;
 
-  controller.position_controller.position_target = 10 * ((HAL_GetTick() / 4000) % 2);
+  controller.position_controller.position_target = 50 * ((HAL_GetTick() / 4000) % 2);
 
 
   char str[128];
