@@ -15,7 +15,8 @@
 typedef struct {
   float position_kp;
   float position_ki;
-  float position_kd;
+  float velocity_kp;
+  float velocity_ki;
 
   float torque_limit;
   float acceleration_limit;

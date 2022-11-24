@@ -141,7 +141,11 @@ void MotorController_setMode(MotorController *controller, Mode mode) {
         controller->error = ERROR_INVALID_MODE_SWITCH;
         return;  // return directly, do not update mode
       }
+      controller->current_controller.i_q_integrator = 0;
+      controller->current_controller.i_d_integrator = 0;
       controller->position_controller.position_setpoint = controller->position_controller.position_measured;
+      controller->position_controller.position_integrator = 0;
+      controller->position_controller.velocity_integrator = 0;
       controller->position_controller.velocity_setpoint = controller->position_controller.velocity_measured;
       PowerStage_enable(&controller->powerstage);
       break;
@@ -224,7 +228,8 @@ uint32_t MotorController_storeConfig(MotorController *controller) {
 
   config.position_controller_position_kp      = controller->position_controller.position_kp;
   config.position_controller_position_ki      = controller->position_controller.position_ki;
-  config.position_controller_position_kd      = controller->position_controller.position_kd;
+  config.position_controller_velocity_kp      = controller->position_controller.velocity_kp;
+  config.position_controller_velocity_ki      = controller->position_controller.velocity_ki;
   config.position_controller_torque_limit       = controller->position_controller.torque_limit;
   config.position_controller_acceleration_limit       = controller->position_controller.acceleration_limit;
   config.position_controller_velocity_limit     = controller->position_controller.velocity_limit;
@@ -654,14 +659,15 @@ void MotorController_handleCANMessage(MotorController *controller, CAN_Frame *rx
         *((float *)tx_frame.data) = controller->current_controller.i_q_integrator;
         *((float *)tx_frame.data + 1) = controller->current_controller.i_d_integrator;
         break;
-      case CAN_ID_POSITION_CONTROLLER_KP_KI:
+      case CAN_ID_POSITION_CONTROLLER_POSITION_KP_KI:
         tx_frame.size = 8;
         *((float *)tx_frame.data) = controller->position_controller.position_kp;
         *((float *)tx_frame.data + 1) = controller->position_controller.position_ki;
         break;
-      case CAN_ID_POSITION_CONTROLLER_KD:
-        tx_frame.size = 4;
-        *((float *)tx_frame.data) = controller->position_controller.position_kd;
+      case CAN_ID_POSITION_CONTROLLER_VELOCITY_KP_KI:
+        tx_frame.size = 8;
+        *((float *)tx_frame.data) = controller->position_controller.velocity_kp;
+        *((float *)tx_frame.data + 1) = controller->position_controller.velocity_ki;
         break;
       case CAN_ID_POSITION_CONTROLLER_TORQUE_LIMIT:
         tx_frame.size = 8;
@@ -770,12 +776,13 @@ void MotorController_handleCANMessage(MotorController *controller, CAN_Frame *rx
         controller->current_controller.i_q_setpoint = *((float *)rx_frame->data);
         controller->current_controller.i_d_setpoint = *((float *)rx_frame->data + 1);
         break;
-      case CAN_ID_POSITION_CONTROLLER_KP_KI:
+      case CAN_ID_POSITION_CONTROLLER_POSITION_KP_KI:
         controller->position_controller.position_kp = *((float *)rx_frame->data);
         controller->position_controller.position_ki = *((float *)rx_frame->data + 1);
         break;
-      case CAN_ID_POSITION_CONTROLLER_KD:
-        controller->position_controller.position_kd = *((float *)rx_frame->data);
+      case CAN_ID_POSITION_CONTROLLER_VELOCITY_KP_KI:
+        controller->position_controller.velocity_kp = *((float *)rx_frame->data);
+        controller->position_controller.velocity_ki = *((float *)rx_frame->data + 1);
         break;
       case CAN_ID_POSITION_CONTROLLER_TORQUE_LIMIT:
         controller->position_controller.torque_limit = *((float *)rx_frame->data);

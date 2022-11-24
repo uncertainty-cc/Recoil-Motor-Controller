@@ -134,7 +134,7 @@ void APP_init() {
 //  controller.position_controller.torque_target = 0;
 
   MotorController_setMode(&controller, MODE_POSITION);
-  controller.position_controller.position_target = 0;
+//  controller.position_controller.velocity_target = 0;
 }
 
 

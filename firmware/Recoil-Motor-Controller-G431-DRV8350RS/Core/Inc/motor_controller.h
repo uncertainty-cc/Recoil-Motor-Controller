@@ -57,7 +57,8 @@ typedef struct {
 
   float     position_controller_position_kp;
   float     position_controller_position_ki;
-  float     position_controller_position_kd;
+  float     position_controller_velocity_kp;
+  float     position_controller_velocity_ki;
   float     position_controller_torque_limit;
   float     position_controller_acceleration_limit;
   float     position_controller_velocity_limit;
