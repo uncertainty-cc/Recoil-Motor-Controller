@@ -58,6 +58,7 @@ void Encoder_triggerUpdate(Encoder *encoder) {
   encoder->spi_tx_buffer |= 1 << 14;
   encoder->spi_tx_buffer |= getParity(encoder->spi_tx_buffer) << 15;
 
+  // SPI CS pin control
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, 0);
   HAL_SPI_TransmitReceive_IT(encoder->hspi, (uint8_t *)&encoder->spi_tx_buffer, (uint8_t *)&encoder->spi_rx_buffer, 1);
 }

@@ -1,6 +1,6 @@
 ../Core/Src/app.c:31:6:HAL_FDCAN_RxFifo0Callback	32	static
 ../Core/Src/app.c:37:6:HAL_TIM_PeriodElapsedCallback	16	static
 ../Core/Src/app.c:56:6:HAL_SPI_TxRxCpltCallback	16	static
-../Core/Src/app.c:75:6:APP_initFlashOption	8	static
+../Core/Src/app.c:76:6:APP_initFlashOption	8	static
 ../Core/Src/app.c:110:6:APP_init	8	static
-../Core/Src/app.c:141:6:APP_main	248	static
+../Core/Src/app.c:141:6:APP_main	152	static

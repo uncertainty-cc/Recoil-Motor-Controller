@@ -15,10 +15,6 @@ void CurrentController_init(CurrentController *controller) {
 }
 
 void CurrentController_update(CurrentController *controller, Mode mode, float sin_theta, float cos_theta, float v_bus) {
-  //  current_error = command_current - feedback_current
-  //  current_integrator = limit(current_integrator + ki * current_error, ilimit)
-  //  voltage = current_integrator + kp * current_error
-
   FOC_clarkTransform(
     &controller->i_alpha_measured,
     &controller->i_beta_measured,

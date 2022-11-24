@@ -187,21 +187,20 @@ void MotorController_loadConfig(MotorController *controller) {
   controller->motor.kv_rating                   = config->motor_kv_rating;
   controller->motor.flux_angle_offset           = config->motor_flux_angle_offset;
 
-//  controller->current_controller.current_filter_alpha   =   config->current_controller_current_filter_alpha;
-//  controller->current_controller.i_q_kp         = config->current_controller_i_q_kp;
-//  controller->current_controller.i_q_ki         = config->current_controller_i_q_ki;
-//  controller->current_controller.i_d_kp         = config->current_controller_i_d_kp;
-//  controller->current_controller.i_d_ki         = config->current_controller_i_d_ki;
+  controller->current_controller.current_filter_alpha   =   config->current_controller_current_filter_alpha;
+  controller->current_controller.i_q_kp         = config->current_controller_i_q_kp;
+  controller->current_controller.i_q_ki         = config->current_controller_i_q_ki;
+  controller->current_controller.i_d_kp         = config->current_controller_i_d_kp;
+  controller->current_controller.i_d_ki         = config->current_controller_i_d_ki;
 
-//  controller->position_controller.position_kp   = config->position_controller_position_kp;
-//  controller->position_controller.position_ki   = config->position_controller_position_ki;
-//  controller->position_controller.position_kd   = config->position_controller_position_kd;
-//  controller->position_controller.torque_limit_upper    = config->position_controller_torque_limit_upper;
-//  controller->position_controller.torque_limit_lower    = config->position_controller_torque_limit_lower;
-//  controller->position_controller.velocity_limit_upper  = config->position_controller_velocity_limit_upper;
-//  controller->position_controller.velocity_limit_lower  = config->position_controller_velocity_limit_lower;
-//  controller->position_controller.position_limit_upper  = config->position_controller_position_limit_upper;
-//  controller->position_controller.position_limit_lower  = config->position_controller_position_limit_lower;
+  controller->position_controller.position_kp   = config->position_controller_position_kp;
+  controller->position_controller.position_ki   = config->position_controller_position_ki;
+  controller->position_controller.velocity_kp   = config->position_controller_velocity_kp;
+  controller->position_controller.velocity_ki   = config->position_controller_velocity_ki;
+  controller->position_controller.torque_limit  = config->position_controller_torque_limit;
+  controller->position_controller.velocity_limit        = config->position_controller_velocity_limit;
+  controller->position_controller.position_limit_upper  = config->position_controller_position_limit_upper;
+  controller->position_controller.position_limit_lower  = config->position_controller_position_limit_lower;
 }
 
 uint32_t MotorController_storeConfig(MotorController *controller) {
@@ -231,7 +230,6 @@ uint32_t MotorController_storeConfig(MotorController *controller) {
   config.position_controller_velocity_kp      = controller->position_controller.velocity_kp;
   config.position_controller_velocity_ki      = controller->position_controller.velocity_ki;
   config.position_controller_torque_limit       = controller->position_controller.torque_limit;
-  config.position_controller_acceleration_limit       = controller->position_controller.acceleration_limit;
   config.position_controller_velocity_limit     = controller->position_controller.velocity_limit;
   config.position_controller_position_limit_upper     = controller->position_controller.position_limit_upper;
   config.position_controller_position_limit_lower     = controller->position_controller.position_limit_lower;
@@ -384,12 +382,21 @@ void MotorController_updateService(MotorController *controller) {
     MotorController_runCalibrationSequence(controller);
     return;
   }
-  if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_8)) {
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, 1);
+
+  // blue LED reflects if mode is operational
+  if (controller->mode != MODE_IDLE && controller->mode != MODE_DISABLED) {
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 0);    // blue
   }
   else {
-    // red
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 1);    // blue
+  }
+
+  // red LED reflects gate driver fault status and error status
+  if (!HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_8) || controller->error != ERROR_NO_ERROR) {
     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, 0);
+  }
+  else {
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, 1);
   }
 }
 
@@ -669,14 +676,10 @@ void MotorController_handleCANMessage(MotorController *controller, CAN_Frame *rx
         *((float *)tx_frame.data) = controller->position_controller.velocity_kp;
         *((float *)tx_frame.data + 1) = controller->position_controller.velocity_ki;
         break;
-      case CAN_ID_POSITION_CONTROLLER_TORQUE_LIMIT:
+      case CAN_ID_POSITION_CONTROLLER_TORQUE_VELOCITY_LIMIT:
         tx_frame.size = 8;
         *((float *)tx_frame.data) = controller->position_controller.torque_limit;
-        *((float *)tx_frame.data + 1) = controller->position_controller.acceleration_limit;
-        break;
-      case CAN_ID_POSITION_CONTROLLER_VELOCITY_LIMIT:
-        tx_frame.size = 8;
-        *((float *)tx_frame.data) = controller->position_controller.velocity_limit;
+        *((float *)tx_frame.data + 1) = controller->position_controller.velocity_limit;
         break;
       case CAN_ID_POSITION_CONTROLLER_POSITION_LIMIT:
         tx_frame.size = 8;
@@ -784,12 +787,9 @@ void MotorController_handleCANMessage(MotorController *controller, CAN_Frame *rx
         controller->position_controller.velocity_kp = *((float *)rx_frame->data);
         controller->position_controller.velocity_ki = *((float *)rx_frame->data + 1);
         break;
-      case CAN_ID_POSITION_CONTROLLER_TORQUE_LIMIT:
+      case CAN_ID_POSITION_CONTROLLER_TORQUE_VELOCITY_LIMIT:
         controller->position_controller.torque_limit = *((float *)rx_frame->data);
-        controller->position_controller.acceleration_limit= *((float *)rx_frame->data + 1);
-        break;
-      case CAN_ID_POSITION_CONTROLLER_VELOCITY_LIMIT:
-        controller->position_controller.velocity_limit = *((float *)rx_frame->data);
+        controller->position_controller.velocity_limit = *((float *)rx_frame->data + 1);
         break;
       case CAN_ID_POSITION_CONTROLLER_POSITION_LIMIT:
         controller->position_controller.position_limit_lower = *((float *)rx_frame->data);

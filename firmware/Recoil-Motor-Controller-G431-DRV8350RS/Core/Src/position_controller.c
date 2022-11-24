@@ -15,7 +15,7 @@ void PositionController_init(PositionController *controller) {
 
   controller->torque_limit = 0.01;
 
-  controller->velocity_limit = 100;
+  controller->velocity_limit = 20;
 
   controller->position_limit_lower = -INFINITY;
   controller->position_limit_upper = INFINITY;

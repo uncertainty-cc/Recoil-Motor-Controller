@@ -8,13 +8,13 @@
 #ifndef INC_MOTOR_CONTROLLER_CONF_H_
 #define INC_MOTOR_CONTROLLER_CONF_H_
 
-#define FIRMWARE_VERSION                0x00100003    // (MAJOR [7:5]) . (MINOR [4:2]) . (PATCH [1:0])
+#define FIRMWARE_VERSION                0x00200000    // (MAJOR [7:5]) . (MINOR [4:2]) . (PATCH [1:0])
 
 #define DEVICE_CAN_ID                   1
 
 #define INITIAL_PROG                    0
 #define OVERWRITE_CONFIG                0
-#define SAFETY_WATCHDOG_ENABLED         0
+#define SAFETY_WATCHDOG_ENABLED         1
 
 #define CALIBRATION_CURRENT             3
 
@@ -40,6 +40,7 @@ typedef enum {
 
   // controller
   CAN_ID_MODE                                           = 0x06U,
+  CAN_ID_STATUS                                         = 0x07U,
 
 
   CAN_ID_ENCODER_CPR                                    = 0x10U,
@@ -62,22 +63,22 @@ typedef enum {
   CAN_ID_CURRENT_CONTROLLER_CURRENT_FILTER_ALPHA        = 0x40U,
   CAN_ID_CURRENT_CONTROLLER_I_Q_KP_KI                   = 0x41U,
   CAN_ID_CURRENT_CONTROLLER_I_D_KP_KI                   = 0x42U,
-  CAN_ID_CURRENT_CONTROLLER_I_A_I_B_MEASURED     = 0x44U,
-  CAN_ID_CURRENT_CONTROLLER_I_C_MEASURED     = 0x45U,
+  CAN_ID_CURRENT_CONTROLLER_I_A_I_B_MEASURED            = 0x44U,
+  CAN_ID_CURRENT_CONTROLLER_I_C_MEASURED                = 0x45U,
   CAN_ID_CURRENT_CONTROLLER_V_A_V_B_SETPOINT            = 0x46U,
   CAN_ID_CURRENT_CONTROLLER_V_C_SETPOINT                = 0x47U,
-  CAN_ID_CURRENT_CONTROLLER_I_ALPHA_I_BETA_MEASURED = 0x48U,
-  CAN_ID_CURRENT_CONTROLLER_V_ALPHA_V_BETA_SETPOINT         = 0x4AU,
+  CAN_ID_CURRENT_CONTROLLER_I_ALPHA_I_BETA_MEASURED     = 0x48U,
+  CAN_ID_CURRENT_CONTROLLER_V_ALPHA_V_BETA_SETPOINT     = 0x4AU,
   CAN_ID_CURRENT_CONTROLLER_V_Q_V_D_TARGET              = 0x4BU,
   CAN_ID_CURRENT_CONTROLLER_V_Q_V_D_SETPOINT            = 0x4CU,
-  CAN_ID_CURRENT_CONTROLLER_I_Q_I_D_MEASURED         = 0x4DU,
-  CAN_ID_CURRENT_CONTROLLER_I_Q_I_D_TARGET         = 0x4EU,
+  CAN_ID_CURRENT_CONTROLLER_I_Q_I_D_MEASURED            = 0x4DU,
+  CAN_ID_CURRENT_CONTROLLER_I_Q_I_D_TARGET              = 0x4EU,
   CAN_ID_CURRENT_CONTROLLER_I_Q_I_D_SETPOINT            = 0x4FU,
   CAN_ID_CURRENT_CONTROLLER_I_Q_I_D_INTEGRATOR          = 0x50U,
 
-  CAN_ID_POSITION_CONTROLLER_POSITION_KP_KI                      = 0x60U,
-  CAN_ID_POSITION_CONTROLLER_VELOCITY_KP_KI                         = 0x61U,
-  CAN_ID_POSITION_CONTROLLER_TORQUE_LIMIT               = 0x62U,
+  CAN_ID_POSITION_CONTROLLER_POSITION_KP_KI             = 0x60U,
+  CAN_ID_POSITION_CONTROLLER_VELOCITY_KP_KI             = 0x61U,
+  CAN_ID_POSITION_CONTROLLER_TORQUE_VELOCITY_LIMIT      = 0x62U,
   CAN_ID_POSITION_CONTROLLER_VELOCITY_LIMIT             = 0x63U,
   CAN_ID_POSITION_CONTROLLER_POSITION_LIMIT             = 0x64U,
   CAN_ID_POSITION_CONTROLLER_TORQUE_TARGET_MEASURED     = 0x65U,
@@ -93,10 +94,10 @@ typedef enum {
 
 
 typedef enum {
-  MODE_DISABLED           = 0x00U,
-  MODE_IDLE               = 0x01U,
+  MODE_DISABLED             = 0x00U,
+  MODE_IDLE                 = 0x01U,
 
-  MODE_CALIBRATION        = 0x05U,
+  MODE_CALIBRATION          = 0x05U,
 
   // these are closed-loop modes
   MODE_CURRENT              = 0x10U,
@@ -110,7 +111,7 @@ typedef enum {
   MODE_VQD_OVERRIDE         = 0x22U,
   MODE_IQD_OVERRIDE         = 0x23U,
 
-  MODE_DEBUG              = 0x80U,
+  MODE_DEBUG                = 0x80U,
 } Mode;
 
 typedef enum {
