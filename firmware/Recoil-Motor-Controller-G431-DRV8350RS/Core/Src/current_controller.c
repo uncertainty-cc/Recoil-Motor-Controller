@@ -4,11 +4,19 @@
 void CurrentController_init(CurrentController *controller) {
   controller->current_filter_alpha = 0.2;
 
-  controller->i_q_kp = 30.;
-  controller->i_q_ki = 0.01; // 0.01
+  // 5010 setting
+//  controller->i_q_kp = 30.;
+//  controller->i_q_ki = 0.01;
+//
+//  controller->i_d_kp = 30.;
+//  controller->i_d_ki = 0.01;
 
-  controller->i_d_kp = 30.;
-  controller->i_d_ki = 0.01;
+  // M6C12 setting
+  controller->i_q_kp = 10.;
+  controller->i_q_ki = 0.003;
+
+  controller->i_d_kp = 10.;
+  controller->i_d_ki = 0.003;
 
   controller->i_q_measured = 0;
   controller->i_d_measured = 0;

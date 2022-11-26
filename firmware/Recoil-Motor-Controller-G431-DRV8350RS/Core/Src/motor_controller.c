@@ -25,6 +25,7 @@ extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim4;
 extern TIM_HandleTypeDef htim6;
+extern TIM_HandleTypeDef htim15;
 extern UART_HandleTypeDef huart3;
 
 void MotorController_init(MotorController *controller) {
@@ -80,11 +81,19 @@ void MotorController_init(MotorController *controller) {
   status |= HAL_OPAMP_Start(&hopamp3);
 
   status |= HAL_TIM_Base_Start_IT(&htim2);    // safety watchdog timer
+  status |= HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);       // LED PWM timer, RED
+  status |= HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);       // LED PWM timer, BLUE
+  status |= HAL_TIM_PWM_Start(&htim15, TIM_CHANNEL_2);      // LED PWM timer, GREEN
   status |= HAL_TIM_Base_Start_IT(&htim4);    // position update trigger timer
   status |= HAL_TIM_Base_Start(&htim6);       // time keeper timer
 
   status |= HAL_ADCEx_InjectedStart(&hadc1);
   status |= HAL_ADCEx_InjectedStart(&hadc2);
+
+
+  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, __HAL_TIM_GET_AUTORELOAD(&htim3)); // red
+  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, __HAL_TIM_GET_AUTORELOAD(&htim3)); // blue
+  __HAL_TIM_SET_COMPARE(&htim15, TIM_CHANNEL_1, __HAL_TIM_GET_AUTORELOAD(&htim15)); // green
 
   if (status != HAL_OK) {
     while (1) {
@@ -101,6 +110,10 @@ void MotorController_init(MotorController *controller) {
     controller->mode = MODE_IDLE;
     controller->error = ERROR_NO_ERROR;
   }
+
+  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0); // red
+  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 0); // blue
+  __HAL_TIM_SET_COMPARE(&htim15, TIM_CHANNEL_1, 0); // green
 }
 
 ErrorCode MotorController_getError(MotorController *controller) {
@@ -335,24 +348,39 @@ void MotorController_updateCommutation(MotorController *controller, ADC_HandleTy
 }
 
 void MotorController_triggerPositionUpdate(MotorController *controller) {
-  if (controller->mode == MODE_DISABLED
-      || controller->mode == MODE_IDLE) {
-    PowerStage_disable(&controller->powerstage);
+  // blue LED reflects if mode is operational
+  switch (controller->mode) {
+    case MODE_DISABLED:
+    case MODE_IDLE:
+      __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, __HAL_TIM_GET_AUTORELOAD(&htim3) / 2); // blue
+      PowerStage_disable(&controller->powerstage);
+      break;
+    case MODE_CALIBRATION:
+      __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, __HAL_TIM_GET_AUTORELOAD(&htim3) / 4); // blue
+      PowerStage_enable(&controller->powerstage);
+      break;
+    case MODE_CURRENT:
+    case MODE_TORQUE:
+    case MODE_VELOCITY:
+    case MODE_POSITION:
+    case MODE_VQD_OVERRIDE:
+    case MODE_VALPHABETA_OVERRIDE:
+    case MODE_VABC_OVERRIDE:
+    case MODE_IQD_OVERRIDE:
+      __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, __HAL_TIM_GET_AUTORELOAD(&htim3)); // blue
+      PowerStage_enable(&controller->powerstage);
+      break;
+    default:
+      MotorController_setMode(controller, MODE_DISABLED);
+      controller->error = ERROR_INVALID_MODE;
   }
-  else if (controller->mode == MODE_CALIBRATION
-      || controller->mode == MODE_CURRENT
-      || controller->mode == MODE_TORQUE
-      || controller->mode == MODE_VELOCITY
-      || controller->mode == MODE_POSITION
-      || controller->mode == MODE_VQD_OVERRIDE
-      || controller->mode == MODE_VALPHABETA_OVERRIDE
-      || controller->mode == MODE_VABC_OVERRIDE
-      || controller->mode == MODE_IQD_OVERRIDE) {
-    PowerStage_enable(&controller->powerstage);
+
+  // red LED reflects gate driver fault status and error status
+  if (!HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_8) || controller->error != ERROR_NO_ERROR) {
+    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, __HAL_TIM_GET_AUTORELOAD(&htim3));
   }
   else {
-    MotorController_setMode(controller, MODE_DISABLED);
-    controller->error = ERROR_INVALID_MODE;
+    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0);
   }
 
   Encoder_triggerUpdate(&controller->encoder);
@@ -381,22 +409,6 @@ void MotorController_updateService(MotorController *controller) {
   if (controller->mode == MODE_CALIBRATION) {
     MotorController_runCalibrationSequence(controller);
     return;
-  }
-
-  // blue LED reflects if mode is operational
-  if (controller->mode != MODE_IDLE && controller->mode != MODE_DISABLED) {
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 0);    // blue
-  }
-  else {
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 1);    // blue
-  }
-
-  // red LED reflects gate driver fault status and error status
-  if (!HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_8) || controller->error != ERROR_NO_ERROR) {
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, 0);
-  }
-  else {
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, 1);
   }
 }
 

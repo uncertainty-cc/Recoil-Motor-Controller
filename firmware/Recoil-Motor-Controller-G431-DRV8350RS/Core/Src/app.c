@@ -20,13 +20,10 @@ extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim4;
 extern TIM_HandleTypeDef htim6;
+extern TIM_HandleTypeDef htim15;
 extern UART_HandleTypeDef huart3;
 
 MotorController controller;
-
-float user_input_pot;
-uint8_t user_input_button;
-uint8_t user_output_led;
 
 void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs) {
   CAN_Frame rx_frame;
@@ -112,29 +109,25 @@ void APP_init() {
   APP_initFlashOption();
   #endif
 
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, 1);    // green
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 1);    // blue
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, 1);    // red
-
   MotorController_init(&controller);
 
   MotorController_setMode(&controller, MODE_IDLE);
 //  controller.position_controller.position_target = 0;
 //  HAL_Delay(3000);
-
+////////
 //  MotorController_setMode(&controller, MODE_CALIBRATION);
 //  MotorController_updateService(&controller);
 //  MotorController_setMode(&controller, MODE_POSITION);
 
 //  MotorController_setMode(&controller, MODE_IQD_OVERRIDE);
-//  controller.current_controller.i_q_setpoint = 0.05;
+//  controller.current_controller.i_q_setpoint = 0.01;
 //  controller.current_controller.i_d_setpoint = 0;
 
 //  MotorController_setMode(&controller, MODE_TORQUE);
 //  controller.position_controller.torque_target = 0;
-
+//  HAL_Delay(1000);
 //  MotorController_setMode(&controller, MODE_POSITION);
-//  controller.position_controller.velocity_target = 0;
+//  controller.position_controller.position_target = 0;
 }
 
 
@@ -143,7 +136,7 @@ void APP_main() {
 
 //  controller.position_controller.torque_target = 0.001;
 
-//  controller.position_controller.position_target = 50 * ((HAL_GetTick() / 4000) % 2);
+//  controller.position_controller.position_target = 10 * ((HAL_GetTick() / 4000) % 2);
 
 
   char str[128];
