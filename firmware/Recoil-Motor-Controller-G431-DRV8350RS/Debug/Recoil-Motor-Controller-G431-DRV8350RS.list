@@ -5319,7 +5319,7 @@ void MotorController_init(MotorController *controller) {
  8002a88:	f883 211c 	strb.w	r2, [r3, #284]	; 0x11c
   controller->device_id = DEVICE_CAN_ID;
  8002a8c:	687b      	ldr	r3, [r7, #4]
- 8002a8e:	220d      	movs	r2, #13
+ 8002a8e:	2217      	movs	r2, #23
  8002a90:	f883 2124 	strb.w	r2, [r3, #292]	; 0x124
   controller->firmware_version = FIRMWARE_VERSION;
  8002a94:	687b      	ldr	r3, [r7, #4]

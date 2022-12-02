@@ -10,7 +10,7 @@
 
 #define FIRMWARE_VERSION                0x00200000    // (MAJOR [7:5]) . (MINOR [4:2]) . (PATCH [1:0])
 
-#define DEVICE_CAN_ID                   13
+#define DEVICE_CAN_ID                   23
 
 #define INITIAL_PROG                    0
 #define OVERWRITE_CONFIG                0

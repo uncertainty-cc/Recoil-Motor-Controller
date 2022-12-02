@@ -15,7 +15,6 @@ void FOC_clarkTransform(float *i_alpha, float *i_beta, float i_a, float i_b, flo
 void FOC_parkTransform(float *i_q, float *i_d, float i_alpha, float i_beta, float sin_theta, float cos_theta) {
   *i_q  = -(sin_theta * i_alpha) + (cos_theta * i_beta);
   *i_d  =  (cos_theta * i_alpha) + (sin_theta * i_beta);
-
 }
 
 void FOC_invParkTransform(float *v_alpha, float *v_beta, float v_q, float v_d, float sin_theta, float cos_theta) {
