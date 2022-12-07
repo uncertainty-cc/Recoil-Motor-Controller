@@ -2822,7 +2822,6 @@ void FOC_parkTransform(float *i_q, float *i_d, float i_alpha, float i_beta, floa
  8001bd4:	ee77 7a27 	vadd.f32	s15, s14, s15
  8001bd8:	693b      	ldr	r3, [r7, #16]
  8001bda:	edc3 7a00 	vstr	s15, [r3]
-
 }
  8001bde:	bf00      	nop
  8001be0:	371c      	adds	r7, #28
@@ -5442,11 +5441,11 @@ void MotorController_init(MotorController *controller) {
 
 #if OVERWRITE_CONFIG
   MotorController_storeConfig(controller);
-#else
+#endif
   MotorController_loadConfig(controller);
  8002b6a:	6878      	ldr	r0, [r7, #4]
  8002b6c:	f000 f9fa 	bl	8002f64 <MotorController_loadConfig>
-#endif
+
 
   Encoder_setFilterBandwidth(&controller->encoder, controller->encoder.filter_bandwidth);
  8002b70:	687a      	ldr	r2, [r7, #4]

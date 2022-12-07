@@ -68,9 +68,9 @@ void MotorController_init(MotorController *controller) {
 
 #if OVERWRITE_CONFIG
   MotorController_storeConfig(controller);
-#else
-  MotorController_loadConfig(controller);
 #endif
+  MotorController_loadConfig(controller);
+
 
   Encoder_setFilterBandwidth(&controller->encoder, controller->encoder.filter_bandwidth);
 
