@@ -144,24 +144,27 @@ class MotorController:
     CAN_ID_POSITION_CONTROLLER_VELOCITY_SETPOINT          = 0x58
     CAN_ID_POSITION_CONTROLLER_POSITION_TARGET_MEASURED   = 0x59
     CAN_ID_POSITION_CONTROLLER_POSITION_SETPOINT          = 0x5A
-    
 
-    
-    MODE_DISABLED           = 0x00
-    MODE_IDLE               = 0x01
+    CAN_ID_HEARTBEAT          = 0x7E
+    CAN_ID_PING               = 0x7F
+        
 
-    MODE_CALIBRATION        = 0x05
+    MODE_DISABLED             = 0x00
+    MODE_IDLE                 = 0x01
 
-    MODE_TORQUE             = 0x10
-    MODE_VELOCITY           = 0x11
-    MODE_POSITION           = 0x12
+    MODE_CALIBRATION          = 0x05
 
-    MODE_OPEN_IDQ           = 0x21
-    MODE_OPEN_VDQ           = 0x22
-    MODE_OPEN_VALPHABETA    = 0x23
-    MODE_OPEN_VABC          = 0x24
+    MODE_CURRENT              = 0x10
+    MODE_TORQUE               = 0x11
+    MODE_VELOCITY             = 0x12
+    MODE_POSITION             = 0x13
 
-    MODE_DEBUG              = 0x80
+    MODE_VABC_OVERRIDE        = 0x20
+    MODE_VALPHABETA_OVERRIDE  = 0x21
+    MODE_VQD_OVERRIDE         = 0x22
+    MODE_IQD_OVERRIDE         = 0x23
+
+    MODE_DEBUG                = 0x80
 
 
     def __init__(self, transport, device_id=1):
@@ -169,6 +172,11 @@ class MotorController:
         self.device_id = device_id
         
         self.mode = self.MODE_DISABLED
+    
+    def ping(self, callback=None):
+        frame = CANFrame(self.device_id, self.CAN_ID_PING, 0)
+        callback_wrap = lambda controller, frame: callback(controller, struct.unpack("<B", frame.data)[0])
+        self.transport.transmit(frame, self, callback_wrap)
     
     def getMode(self, callback=None):
         frame = CANFrame(self.device_id, self.CAN_ID_MODE, 0)
@@ -178,10 +186,29 @@ class MotorController:
     def setMode(self, mode):
         frame = CANFrame(self.device_id, self.CAN_ID_MODE, 1, struct.pack("<B", mode), frame_type=CANFrame.CAN_FRAME_DATA)
         self.transport.transmit(frame)
+
+    def getVelocityMeasured(self, callback=None):
+        frame = CANFrame(self.device_id, self.CAN_ID_POSITION_CONTROLLER_VELOCITY_TARGET_MEASURED, 0)
+        callback_wrap = lambda controller, frame: callback(controller, struct.unpack("<ff", frame.data)[1])
+        self.transport.transmit(frame, self, callback_wrap)
     
     def getPositionTarget(self, callback=None):
         frame = CANFrame(self.device_id, self.CAN_ID_POSITION_CONTROLLER_POSITION_TARGET_MEASURED, 0)
         callback_wrap = lambda controller, frame: callback(controller, struct.unpack("<ff", frame.data)[0])
+        self.transport.transmit(frame, self, callback_wrap)
+    
+    def getTorqueLimit(self, callback=None):
+        frame = CANFrame(self.device_id, self.CAN_ID_POSITION_CONTROLLER_TORQUE_VELOCITY_LIMIT, 0)
+        callback_wrap = lambda controller, frame: callback(controller, struct.unpack("<ff", frame.data)[0])
+        self.transport.transmit(frame, self, callback_wrap)
+
+    def setTorqueVelocityLimit(self, torque_limit, velocity_limit):
+        frame = CANFrame(self.device_id, self.CAN_ID_POSITION_CONTROLLER_TORQUE_VELOCITY_LIMIT, 8, struct.pack("<ff", torque_limit, velocity_limit), frame_type=CANFrame.CAN_FRAME_DATA)
+        self.transport.transmit(frame)
+
+    def getVelocityLimit(self, callback=None):
+        frame = CANFrame(self.device_id, self.CAN_ID_POSITION_CONTROLLER_TORQUE_VELOCITY_LIMIT, 0)
+        callback_wrap = lambda controller, frame: callback(controller, struct.unpack("<ff", frame.data)[1])
         self.transport.transmit(frame, self, callback_wrap)
     
     def getPositionMeasured(self, callback=None):
@@ -191,6 +218,15 @@ class MotorController:
     
     def setPositionTarget(self, position_target):
         frame = CANFrame(self.device_id, self.CAN_ID_POSITION_CONTROLLER_POSITION_TARGET_MEASURED, 4, struct.pack("<f", position_target), frame_type=CANFrame.CAN_FRAME_DATA)
+        self.transport.transmit(frame)
+    
+    def getTorqueMeasured(self, callback=None):
+        frame = CANFrame(self.device_id, self.CAN_ID_POSITION_CONTROLLER_TORQUE_TARGET_MEASURED, 0)
+        callback_wrap = lambda controller, frame: callback(controller, struct.unpack("<ff", frame.data)[1])
+        self.transport.transmit(frame, self, callback_wrap)
+    
+    def setTorqueTarget(self, torque_target):
+        frame = CANFrame(self.device_id, self.CAN_ID_POSITION_CONTROLLER_TORQUE_TARGET_MEASURED, 4, struct.pack("<f", torque_target), frame_type=CANFrame.CAN_FRAME_DATA)
         self.transport.transmit(frame)
     
     def feed(self):

@@ -38,10 +38,23 @@ controller1.setMode(recoil.MotorController.MODE_POSITION)
 controller2.setMode(recoil.MotorController.MODE_POSITION)
 controller3.setMode(recoil.MotorController.MODE_POSITION)
 
+controller_stat = {
+    "velocity": 0,
+    "position": 0
+}
+
+def velocityHandler(controller, data):
+    controller_stat["velocity"] = data
+
+def positionHandler(controller, data):
+    controller_stat["velocity"] = data
+
 try:
     while True:
+        print(controller_stat["position"], controller_stat["velocity"])
         # controller.getMode(lambda controller, frame: print("mode:", frame.data))
-        controller1.getPositionMeasured(lambda controller, position: print("position:", position))
+        controller1.getPositionMeasured(positionHandler)
+        controller1.getVelocityMeasured(velocityHandler)
         
         controller1.setPositionTarget(8*math.sin(10*time.time()))
         controller2.setPositionTarget(-2)
