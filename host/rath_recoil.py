@@ -172,6 +172,10 @@ class MotorController:
         self.device_id = device_id
         
         self.mode = self.MODE_DISABLED
+
+        self.position_measured = 0
+        self.velocity_measured = 0
+        self.torque_measured = 0
     
     def ping(self, callback=None):
         frame = CANFrame(self.device_id, self.CAN_ID_PING, 0)
