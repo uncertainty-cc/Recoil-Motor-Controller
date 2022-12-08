@@ -7,7 +7,7 @@ import math
 
 import rath_recoil as recoil
 
-DEVICE_ID = 10
+DEVICE_ID = 11
 
 
 transport = recoil.SocketCANTransport()

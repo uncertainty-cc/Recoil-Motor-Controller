@@ -2,7 +2,7 @@ import time
 
 import rath_recoil as recoil
 
-DEVICE_ID = 11
+DEVICE_ID = 13
 
 transport = recoil.SocketCANTransport()
 controller = recoil.MotorController(transport=transport, device_id=DEVICE_ID)
