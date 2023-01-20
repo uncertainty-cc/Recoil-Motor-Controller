@@ -3,4 +3,4 @@
 ../Core/Src/app.c:53:6:HAL_SPI_TxRxCpltCallback	16	static
 ../Core/Src/app.c:73:6:APP_initFlashOption	8	static
 ../Core/Src/app.c:107:6:APP_init	8	static
-../Core/Src/app.c:134:6:APP_main	152	static
+../Core/Src/app.c:137:6:APP_main	152	static

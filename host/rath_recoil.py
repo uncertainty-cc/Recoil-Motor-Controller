@@ -98,16 +98,16 @@ class MotorController:
     CAN_ID_FLASH              = 0x04
 
     CAN_ID_MODE                                           = 0x06
+    CAN_ID_STATUS                                         = 0x07
 
 
     CAN_ID_ENCODER_CPR                                    = 0x10
-    CAN_ID_ENCODER_POSITION_OFFSET                        = 0x11
-    CAN_ID_ENCODER_VELOCITY_FILTER_ALPHA                  = 0x12
+    CAN_ID_ENCODER_FILTER_BANDWIDTH                       = 0x11
+    CAN_ID_ENCODER_POSITION_OFFSET                        = 0x12
     CAN_ID_ENCODER_N_ROTATIONS                            = 0x13
     CAN_ID_ENCODER_POSITION_RELATIVE                      = 0x14
-    CAN_ID_ENCODER_POSITION_RAW                           = 0x15
-    CAN_ID_ENCODER_POSITION                               = 0x16
-    CAN_ID_ENCODER_VELOCITY                               = 0x17
+    CAN_ID_ENCODER_POSITION                               = 0x15
+    CAN_ID_ENCODER_VELOCITY                               = 0x16
 
     CAN_ID_POWERSTAGE_VOLTAGE_THREASHOLD                  = 0x20
     CAN_ID_POWERSTAGE_ADC_READING_RAW_A_B_C               = 0x21
@@ -121,53 +121,50 @@ class MotorController:
     CAN_ID_CURRENT_CONTROLLER_CURRENT_FILTER_ALPHA        = 0x40
     CAN_ID_CURRENT_CONTROLLER_I_Q_KP_KI                   = 0x41
     CAN_ID_CURRENT_CONTROLLER_I_D_KP_KI                   = 0x42
-    CAN_ID_CURRENT_CONTROLLER_V_A_TARGET_I_A_MEASURED     = 0x43
-    CAN_ID_CURRENT_CONTROLLER_V_B_TARGET_I_B_MEASURED     = 0x44
-    CAN_ID_CURRENT_CONTROLLER_V_C_TARGET_I_C_MEASURED     = 0x45
-    CAN_ID_CURRENT_CONTROLLER_V_A_V_B_SETPOINT            = 0x46
-    CAN_ID_CURRENT_CONTROLLER_V_C_SETPOINT                = 0x47
-    CAN_ID_CURRENT_CONTROLLER_V_ALPHA_TARGET_I_ALPHA_MEASURED = 0x48
-    CAN_ID_CURRENT_CONTROLLER_V_BETA_TARGET_I_BETA_MEASURED   = 0x49
-    CAN_ID_CURRENT_CONTROLLER_V_ALPHA_V_BETA_SETPOINT         = 0x4A
-    CAN_ID_CURRENT_CONTROLLER_V_Q_V_D_TARGET              = 0x4B
-    CAN_ID_CURRENT_CONTROLLER_V_Q_V_D_SETPOINT            = 0x4C
-    CAN_ID_CURRENT_CONTROLLER_I_Q_TARGET_MEASURED         = 0x4D
-    CAN_ID_CURRENT_CONTROLLER_I_D_TARGET_MEASURED         = 0x4E
-    CAN_ID_CURRENT_CONTROLLER_I_Q_I_D_SETPOINT            = 0x4F
-    CAN_ID_CURRENT_CONTROLLER_I_Q_I_D_INTEGRATOR          = 0x50
+    CAN_ID_CURRENT_CONTROLLER_I_A_I_B_MEASURED            = 0x43
+    CAN_ID_CURRENT_CONTROLLER_I_C_MEASURED                = 0x44
+    CAN_ID_CURRENT_CONTROLLER_V_A_V_B_SETPOINT            = 0x45
+    CAN_ID_CURRENT_CONTROLLER_V_C_SETPOINT                = 0x46
+    CAN_ID_CURRENT_CONTROLLER_I_ALPHA_I_BETA_MEASURED     = 0x47
+    CAN_ID_CURRENT_CONTROLLER_V_ALPHA_V_BETA_SETPOINT     = 0x48
+    CAN_ID_CURRENT_CONTROLLER_V_Q_V_D_TARGET              = 0x49
+    CAN_ID_CURRENT_CONTROLLER_V_Q_V_D_SETPOINT            = 0x4A
+    CAN_ID_CURRENT_CONTROLLER_I_Q_I_D_MEASURED            = 0x4B
+    CAN_ID_CURRENT_CONTROLLER_I_Q_I_D_TARGET              = 0x4C
+    CAN_ID_CURRENT_CONTROLLER_I_Q_I_D_SETPOINT            = 0x4D
+    CAN_ID_CURRENT_CONTROLLER_I_Q_I_D_INTEGRATOR          = 0x4E
 
-    CAN_ID_POSITION_CONTROLLER_KP_KI                      = 0x60
-    CAN_ID_POSITION_CONTROLLER_KD                         = 0x61
-    CAN_ID_POSITION_CONTROLLER_TORQUE_LIMIT               = 0x62
-    CAN_ID_POSITION_CONTROLLER_VELOCITY_LIMIT             = 0x63
-    CAN_ID_POSITION_CONTROLLER_POSITION_LIMIT             = 0x64
-    CAN_ID_POSITION_CONTROLLER_TORQUE_TARGET_MEASURED     = 0x65
-    CAN_ID_POSITION_CONTROLLER_TORQUE_SETPOINT            = 0x66
-    CAN_ID_POSITION_CONTROLLER_VELOCITY_TARGET_MEASURED   = 0x67
-    CAN_ID_POSITION_CONTROLLER_VELOCITY_SETPOINT          = 0x68
-    CAN_ID_POSITION_CONTROLLER_POSITION_TARGET_MEASURED   = 0x69
-    CAN_ID_POSITION_CONTROLLER_POSITION_SETPOINT          = 0x6A
+    CAN_ID_POSITION_CONTROLLER_POSITION_KP_KI             = 0x50
+    CAN_ID_POSITION_CONTROLLER_VELOCITY_KP_KI             = 0x51
+    CAN_ID_POSITION_CONTROLLER_TORQUE_VELOCITY_LIMIT      = 0x52
+    CAN_ID_POSITION_CONTROLLER_POSITION_LIMIT             = 0x54
+    CAN_ID_POSITION_CONTROLLER_TORQUE_TARGET_MEASURED     = 0x55
+    CAN_ID_POSITION_CONTROLLER_TORQUE_SETPOINT            = 0x56
+    CAN_ID_POSITION_CONTROLLER_VELOCITY_TARGET_MEASURED   = 0x57
+    CAN_ID_POSITION_CONTROLLER_VELOCITY_SETPOINT          = 0x58
+    CAN_ID_POSITION_CONTROLLER_POSITION_TARGET_MEASURED   = 0x59
+    CAN_ID_POSITION_CONTROLLER_POSITION_SETPOINT          = 0x5A
 
     CAN_ID_HEARTBEAT          = 0x7E
     CAN_ID_PING               = 0x7F
-    
+        
 
-    
-    MODE_DISABLED           = 0x00
-    MODE_IDLE               = 0x01
+    MODE_DISABLED             = 0x00
+    MODE_IDLE                 = 0x01
 
-    MODE_CALIBRATION        = 0x05
+    MODE_CALIBRATION          = 0x05
 
-    MODE_TORQUE             = 0x10
-    MODE_VELOCITY           = 0x11
-    MODE_POSITION           = 0x12
+    MODE_CURRENT              = 0x10
+    MODE_TORQUE               = 0x11
+    MODE_VELOCITY             = 0x12
+    MODE_POSITION             = 0x13
 
-    MODE_OPEN_IDQ           = 0x21
-    MODE_OPEN_VDQ           = 0x22
-    MODE_OPEN_VALPHABETA    = 0x23
-    MODE_OPEN_VABC          = 0x24
+    MODE_VABC_OVERRIDE        = 0x20
+    MODE_VALPHABETA_OVERRIDE  = 0x21
+    MODE_VQD_OVERRIDE         = 0x22
+    MODE_IQD_OVERRIDE         = 0x23
 
-    MODE_DEBUG              = 0x80
+    MODE_DEBUG                = 0x80
 
 
     def __init__(self, transport, device_id=1):
@@ -175,6 +172,15 @@ class MotorController:
         self.device_id = device_id
         
         self.mode = self.MODE_DISABLED
+
+        self.position_measured = 0
+        self.velocity_measured = 0
+        self.torque_measured = 0
+    
+    def ping(self, callback=None):
+        frame = CANFrame(self.device_id, self.CAN_ID_PING, 0)
+        callback_wrap = lambda controller, frame: callback(controller, struct.unpack("<B", frame.data)[0])
+        self.transport.transmit(frame, self, callback_wrap)
     
     def getMode(self, callback=None):
         frame = CANFrame(self.device_id, self.CAN_ID_MODE, 0)
@@ -184,10 +190,29 @@ class MotorController:
     def setMode(self, mode):
         frame = CANFrame(self.device_id, self.CAN_ID_MODE, 1, struct.pack("<B", mode), frame_type=CANFrame.CAN_FRAME_DATA)
         self.transport.transmit(frame)
+
+    def getVelocityMeasured(self, callback=None):
+        frame = CANFrame(self.device_id, self.CAN_ID_POSITION_CONTROLLER_VELOCITY_TARGET_MEASURED, 0)
+        callback_wrap = lambda controller, frame: callback(controller, struct.unpack("<ff", frame.data)[1])
+        self.transport.transmit(frame, self, callback_wrap)
     
     def getPositionTarget(self, callback=None):
         frame = CANFrame(self.device_id, self.CAN_ID_POSITION_CONTROLLER_POSITION_TARGET_MEASURED, 0)
         callback_wrap = lambda controller, frame: callback(controller, struct.unpack("<ff", frame.data)[0])
+        self.transport.transmit(frame, self, callback_wrap)
+    
+    def getTorqueLimit(self, callback=None):
+        frame = CANFrame(self.device_id, self.CAN_ID_POSITION_CONTROLLER_TORQUE_VELOCITY_LIMIT, 0)
+        callback_wrap = lambda controller, frame: callback(controller, struct.unpack("<ff", frame.data)[0])
+        self.transport.transmit(frame, self, callback_wrap)
+
+    def setTorqueVelocityLimit(self, torque_limit, velocity_limit):
+        frame = CANFrame(self.device_id, self.CAN_ID_POSITION_CONTROLLER_TORQUE_VELOCITY_LIMIT, 8, struct.pack("<ff", torque_limit, velocity_limit), frame_type=CANFrame.CAN_FRAME_DATA)
+        self.transport.transmit(frame)
+
+    def getVelocityLimit(self, callback=None):
+        frame = CANFrame(self.device_id, self.CAN_ID_POSITION_CONTROLLER_TORQUE_VELOCITY_LIMIT, 0)
+        callback_wrap = lambda controller, frame: callback(controller, struct.unpack("<ff", frame.data)[1])
         self.transport.transmit(frame, self, callback_wrap)
     
     def getPositionMeasured(self, callback=None):
@@ -197,6 +222,15 @@ class MotorController:
     
     def setPositionTarget(self, position_target):
         frame = CANFrame(self.device_id, self.CAN_ID_POSITION_CONTROLLER_POSITION_TARGET_MEASURED, 4, struct.pack("<f", position_target), frame_type=CANFrame.CAN_FRAME_DATA)
+        self.transport.transmit(frame)
+    
+    def getTorqueMeasured(self, callback=None):
+        frame = CANFrame(self.device_id, self.CAN_ID_POSITION_CONTROLLER_TORQUE_TARGET_MEASURED, 0)
+        callback_wrap = lambda controller, frame: callback(controller, struct.unpack("<ff", frame.data)[1])
+        self.transport.transmit(frame, self, callback_wrap)
+    
+    def setTorqueTarget(self, torque_target):
+        frame = CANFrame(self.device_id, self.CAN_ID_POSITION_CONTROLLER_TORQUE_TARGET_MEASURED, 4, struct.pack("<f", torque_target), frame_type=CANFrame.CAN_FRAME_DATA)
         self.transport.transmit(frame)
     
     def feed(self):

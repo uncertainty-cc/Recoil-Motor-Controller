@@ -112,6 +112,9 @@ void APP_init() {
   MotorController_init(&controller);
 
   MotorController_setMode(&controller, MODE_IDLE);
+
+//  controller.device_id = 13;
+//  MotorController_storeConfig(&controller);
 //  controller.position_controller.position_target = 0;
 //  HAL_Delay(3000);
 ////////
