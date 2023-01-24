@@ -15,13 +15,12 @@
 
 typedef struct {
   // parameters
-  float current_filter_alpha;
+  float i_filter_alpha;
 
-  float i_q_kp;
-  float i_q_ki;
+  float i_kp;
+  float i_ki;
 
-  float i_d_kp;
-  float i_d_ki;
+  float i_limit;
 
   // variables
   float i_a_measured;
@@ -36,6 +35,8 @@ typedef struct {
   float v_alpha_setpoint;
   float v_beta_setpoint;
 
+  float v_q_target;
+  float v_d_target;
   float v_q_setpoint;
   float v_d_setpoint;
 

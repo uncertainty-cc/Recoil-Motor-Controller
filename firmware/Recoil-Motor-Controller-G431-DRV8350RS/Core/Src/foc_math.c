@@ -27,7 +27,7 @@ void FOC_invClarkSVPWM(float *v_a, float *v_b, float *v_c, float v_alpha, float 
   float v_b_phase = (-.5f * v_alpha) + ((sqrtf(3.f)/2.f) * v_beta);
   float v_c_phase = (-.5f * v_alpha) - ((sqrtf(3.f)/2.f) * v_beta);
 
-  float v_neutral = .5f * (fmaxf(fmaxf(v_a_phase, v_b_phase), v_c_phase) + fminf(fminf(v_a_phase, v_b_phase), v_c_phase));
+  float v_neutral = .5f * (fast_fmaxf3(v_a_phase, v_b_phase, v_c_phase) + fast_fminf3(v_a_phase, v_b_phase, v_c_phase));
 
   *v_a = v_a_phase - v_neutral;
   *v_b = v_b_phase - v_neutral;

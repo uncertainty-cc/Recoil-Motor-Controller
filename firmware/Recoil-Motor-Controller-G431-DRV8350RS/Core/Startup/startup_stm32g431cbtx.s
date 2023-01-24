@@ -58,8 +58,7 @@ defined in linker script */
     .section	.text.Reset_Handler
 	.weak	Reset_Handler
 	.type	Reset_Handler, %function
-Reset_Handler:
-  ldr   r0, =_estack
+Reset_Handler:  ldr   r0, =_estack
   mov   sp, r0          /* set stack pointer */
 
 /* Copy the data segment initializers from flash to SRAM */
