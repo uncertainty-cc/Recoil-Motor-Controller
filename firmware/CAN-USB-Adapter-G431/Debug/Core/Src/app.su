@@ -1,0 +1,6 @@
+../Core/Src/app.c:31:19:CAN_putTxFrame	56	static
+../Core/Src/app.c:84:6:HAL_FDCAN_RxFifo0Callback	16	static
+../Core/Src/app.c:89:6:HAL_TIM_PeriodElapsedCallback	16	static
+../Core/Src/app.c:94:6:HAL_UART_RxCpltCallback	24	static
+../Core/Src/app.c:129:6:APP_init	32	static
+../Core/Src/app.c:150:6:APP_main	8	static

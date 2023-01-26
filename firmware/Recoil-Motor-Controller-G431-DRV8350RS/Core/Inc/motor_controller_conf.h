@@ -12,7 +12,7 @@
 
 #define DEVICE_CAN_ID                   23
 
-#define INITIAL_PROG                    0
+#define INITIAL_PROG                    1
 #define OVERWRITE_CONFIG                0
 #define SAFETY_WATCHDOG_ENABLED         1
 
