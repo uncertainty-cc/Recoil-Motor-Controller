@@ -32,15 +32,17 @@ typedef struct {
 
   uint32_t  firmware_version;
   uint8_t   device_id;
+
+  float debug_buffer;
 } MotorController;
 
 typedef struct {
   uint32_t  device_id;
   uint32_t  firmware_version;
 
-  int32_t   encoder_dir_cpr;
+  int32_t   encoder_cpr;
   float     encoder_position_offset;
-  float     encoder_velocity_filter_alpha;
+  float     encoder_filter_alpha;
 
   float     powerstage_undervoltage_threshold;
   float     powerstage_overvoltage_threshold;
@@ -49,11 +51,9 @@ typedef struct {
   uint32_t  motor_kv_rating;
   float     motor_flux_angle_offset;
 
-  float     current_controller_current_filter_alpha;
-  float     current_controller_i_q_kp;
-  float     current_controller_i_q_ki;
-  float     current_controller_i_d_kp;
-  float     current_controller_i_d_ki;
+  float     current_controller_i_filter_alpha;
+  float     current_controller_i_kp;
+  float     current_controller_i_ki;
 
   float     position_controller_position_kp;
   float     position_controller_position_ki;
@@ -87,11 +87,11 @@ float MotorController_getVelocity(MotorController *controller);
 
 float MotorController_getPosition(MotorController *controller);
 
-void MotorController_updateCommutation(MotorController *controller, ADC_HandleTypeDef *hadc);
+void MotorController_updateCommutation(MotorController *controller);
 
-void MotorController_triggerPositionUpdate(MotorController *controller);
+void MotorController_update(MotorController *controller);
 
-void MotorController_updatePositionReading(MotorController *controller);
+void MotorController_updateSafety(MotorController *controller);
 
 void MotorController_updatePositionController(MotorController *controller);
 

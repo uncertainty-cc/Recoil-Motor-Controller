@@ -8,27 +8,30 @@
 #ifndef INC_MOTOR_CONTROLLER_CONF_H_
 #define INC_MOTOR_CONTROLLER_CONF_H_
 
-#define FIRMWARE_VERSION                0x00200000    // (MAJOR [7:5]) . (MINOR [4:2]) . (PATCH [1:0])
+#define FIRMWARE_VERSION                0x00200100    // (MAJOR [7:5]) . (MINOR [4:2]) . (PATCH [1:0])
 
-#define DEVICE_CAN_ID                   23
+#define DEVICE_CAN_ID                   1
 
-#define INITIAL_PROG                    1
-#define OVERWRITE_CONFIG                0
-#define SAFETY_WATCHDOG_ENABLED         1
+#define FIRST_TIME_BOOTUP               0
+#define LOAD_CONFIG_FROM_FLASH          0
+#define LOAD_CALIBRATION_FROM_FLASH     1
+#define SAFETY_WATCHDOG_ENABLED         0
 
 #define CALIBRATION_CURRENT             3
 
 
 #define ADC_RESOLUTION                  4096    // 12-bit ADC
-#define ADC_READING_COEFFICIENT         (3.3 / (float)ADC_RESOLUTION)
-#define ADC_BUS_VOLTAGE_COEFFICIENT     (ADC_READING_COEFFICIENT * ((10. + 220.) / 10.))
+#define ADC_READING_COEFFICIENT         (3.3f / (float)ADC_RESOLUTION)
+#define ADC_BUS_VOLTAGE_COEFFICIENT     (ADC_READING_COEFFICIENT * ((10.f + 220.f) / 10.f))
 // = ((3V3 / ADC_RESOLUTION) / opamp_factor) / R
-#define ADC_OPAMP_CURRENT_COEFFICIENT   ((ADC_READING_COEFFICIENT / 16.) / 0.003) // convert ADC bits to Amps
+#define ADC_OPAMP_CURRENT_COEFFICIENT   ((ADC_READING_COEFFICIENT / 16.f) / 0.003f) // convert ADC bits to Amps
 
 // overwrite setting
-#if INITIAL_PROG
-#undef  OVERWRITE_CONFIG
-#define OVERWRITE_CONFIG                1
+#if FIRST_TIME_BOOTUP
+#undef  OVERWRITE_PARAMETERS
+#undef  OVERWRITE_CALIBRATION
+#define OVERWRITE_PARAMETERS            1
+#define OVERWRITE_CALIBRATION           1
 #endif
 
 typedef enum {
@@ -93,8 +96,9 @@ typedef enum {
 
 
 typedef enum {
+  // these are three safe modes
   MODE_DISABLED             = 0x00U,
-  MODE_IDLE                 = 0x01U,
+  MODE_IDLE                 = 0x02U,
 
   MODE_CALIBRATION          = 0x05U,
 
@@ -114,16 +118,19 @@ typedef enum {
 } Mode;
 
 typedef enum {
-  ERROR_NO_ERROR          = 0x00U,
-  ERROR_GENERAL           = 0x01U,
-  ERROR_INVALID_MODE,
-  ERROR_INVALID_MODE_SWITCH,
-  ERROR_HEARTBEAT_TIMEOUT,
-  ERROR_OVER_VOLTAGE,
-  ERROR_OVER_CURRENT,
-  ERROR_OVER_TEMPERATURE,
-  ERROR_CAN_TX_FAULT,
-  ERROR_I2C_FAULT,
+  ERROR_NO_ERROR                  = 0b0000000000000000U,
+  ERROR_GENERAL                   = 0b0000000000000001U,
+  ERROR_ESTOP                     = 0b0000000000000010U,
+  ERROR_INITIALIZATION_ERROR      = 0b0000000000000100U,
+  ERROR_CALIBRATION_ERROR         = 0b0000000000001000U,
+  ERROR_POWERSTAGE_ERROR          = 0b0000000000010000U,
+  ERROR_INVALID_MODE              = 0b0000000000100000U,
+  ERROR_HEARTBEAT_TIMEOUT         = 0b0000000001000000U,
+  ERROR_OVER_VOLTAGE              = 0b0000000010000000U,
+  ERROR_OVER_CURRENT              = 0b0000000100000000U,
+  ERROR_OVER_TEMPERATURE          = 0b0000001000000000U,
+  ERROR_CAN_TX_FAULT              = 0b0000010000000000U,
+  ERROR_I2C_FAULT                 = 0b0000100000000000U,
 } ErrorCode;
 
 #endif /* INC_MOTOR_CONTROLLER_CONF_H_ */
