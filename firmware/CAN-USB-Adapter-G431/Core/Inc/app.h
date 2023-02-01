@@ -12,6 +12,7 @@
 #include <string.h>
 
 #include "stm32g4xx_hal.h"
+#include "rath_can.h"
 
 void APP_init();
 

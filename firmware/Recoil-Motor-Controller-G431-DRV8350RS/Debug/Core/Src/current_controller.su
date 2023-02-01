@@ -1,0 +1,2 @@
+../Core/Src/current_controller.c:4:6:CurrentController_init	0	static
+../Core/Src/current_controller.c:29:6:CurrentController_update	40	static

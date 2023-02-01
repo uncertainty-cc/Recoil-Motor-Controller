@@ -1,26 +1,36 @@
 import can
 import can.interfaces.serial
 import serial
-
+import time
 
 def send_one():
     """Sends a single message."""
 
-    bus = can.Bus(interface="serial", channel="COM9", baudrate=115200)
-
-
     counter = 0
+    
+    #bus = can.Bus(interface="serial", channel="COM9", baudrate=1000000)
+    bus = can.Bus(interface="serial", channel="COM34", baudrate=1000000)
+
+    
+
     while 1:
-        msg = bus.recv(timeout=0)
-        print(msg)
-        print(counter)
+        try:
+            msg = bus.recv(timeout=0.01)
+        except:
+            pass
+
+        if msg:
+            print(msg)
+        #print(counter)
         msg = can.Message(
-            arbitration_id=0x213,
-            data=[counter%255],
+            arbitration_id=0x0A | (0x7F << 4),
+            data=[],
             is_extended_id=False
         )
         counter += 1
+
         try:
+            bus.send(msg)
             bus.send(msg)
             #print(f"Message sent on {bus.channel_info}")
         except can.CanError:
@@ -33,7 +43,7 @@ def send_one():
                 except serial.serialutil.SerialException:
                     continue
                 break
-
+        #time.sleep(0.001)
 
 if __name__ == "__main__":
     send_one()

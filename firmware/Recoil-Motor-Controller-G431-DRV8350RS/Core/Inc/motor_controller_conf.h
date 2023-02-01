@@ -10,11 +10,11 @@
 
 #define FIRMWARE_VERSION                0x00200100    // (MAJOR [7:5]) . (MINOR [4:2]) . (PATCH [1:0])
 
-#define DEVICE_CAN_ID                   1
+#define DEVICE_CAN_ID                   10
 
 #define FIRST_TIME_BOOTUP               0
 #define LOAD_CONFIG_FROM_FLASH          0
-#define LOAD_CALIBRATION_FROM_FLASH     1
+#define LOAD_CALIBRATION_FROM_FLASH     0
 #define SAFETY_WATCHDOG_ENABLED         0
 
 #define CALIBRATION_CURRENT             3

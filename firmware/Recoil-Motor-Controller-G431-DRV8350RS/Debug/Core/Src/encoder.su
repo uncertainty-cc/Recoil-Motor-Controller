@@ -1,0 +1,3 @@
+../Core/Src/encoder.c:11:6:Encoder_init	4	static
+../Core/Src/encoder.c:26:6:Encoder_setFilterBandwidth	8	static
+../Core/Src/encoder.c:36:6:Encoder_update	24	static
