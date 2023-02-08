@@ -93,7 +93,7 @@ void MotorController_init(MotorController *controller) {
 //  __HAL_TIM_SET_COMPARE(&htim15, TIM_CHANNEL_1, __HAL_TIM_GET_AUTORELOAD(&htim15)); // green
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, GPIO_PIN_SET);
 
-  PowerStage_start(&controller->powerstage);
+//  PowerStage_start(&controller->powerstage);
 
   // wait ADC and opamp to settle.
   HAL_Delay(100);

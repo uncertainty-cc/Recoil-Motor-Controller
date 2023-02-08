@@ -91,6 +91,8 @@ void APP_initFlashOption() {
 void APP_init() {
   #if FIRST_TIME_BOOTUP
   APP_initFlashOption();
+
+  while (1) {}
   #endif
 
   MotorController_init(&controller);
@@ -100,8 +102,38 @@ void APP_init() {
 //  HAL_Delay(3000);
 //  MotorController_setMode(&controller, MODE_CALIBRATION);
 //  MotorController_updateService(&controller);
+  uint16_t tx_buffer[2];
+  uint16_t rx_buffer[2];
+
+
+  PowerStage_enableGateDriver(&controller.powerstage);
+
+  tx_buffer[0] = (1 << 15) | (0x00 << 11);
+
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 0);
+  HAL_SPI_TransmitReceive(&hspi1, (uint8_t *)tx_buffer, (uint8_t *)rx_buffer, 1, 100);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 1);
+
+  tx_buffer[0] = (1 << 15) | (0x03 << 11);
+
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 0);
+  HAL_SPI_TransmitReceive(&hspi1, (uint8_t *)tx_buffer, (uint8_t *)rx_buffer, 1, 100);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 1);
+
+  tx_buffer[0] = (1 << 15) | (0x04 << 11);
+
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 0);
+  HAL_SPI_TransmitReceive(&hspi1, (uint8_t *)tx_buffer, (uint8_t *)rx_buffer, 1, 100);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 1);
+
+
 
   HAL_Delay(1000);
+
+  MotorController_setMode(&controller, MODE_VABC_OVERRIDE);
+  controller.current_controller.v_a_setpoint = 0;
+  controller.current_controller.v_b_setpoint = 0;
+  controller.current_controller.v_c_setpoint = 0;
 
 //  MotorController_setMode(&controller, MODE_VQD_OVERRIDE);
 //    controller.current_controller.v_q_target = 1;
