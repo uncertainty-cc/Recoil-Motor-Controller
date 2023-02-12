@@ -8,10 +8,14 @@
 #include "motor.h"
 
 
-void Motor_init(Motor *motor) {
+HAL_StatusTypeDef Motor_init(Motor *motor) {
   motor->pole_pairs = 14;
   motor->kv_rating = 150;
 
-  motor->flux_angle_offset = 3.5;
+  motor->phase_order = -1;
+  motor->flux_angle_offset = 4.533934;
+
+
+  return HAL_OK;
 }
 

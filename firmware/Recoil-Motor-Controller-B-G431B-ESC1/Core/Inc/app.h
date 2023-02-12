@@ -12,10 +12,12 @@
 #include <stdio.h>
 
 #include "stm32g4xx_hal.h"
-#include "main.h"
 
+#include "motor_controller_conf.h"
+#include "main.h"
 #include "can.h"
 #include "motor_controller.h"
+
 
 uint8_t APP_getUserButton();
 

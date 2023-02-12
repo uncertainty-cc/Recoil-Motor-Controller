@@ -12,20 +12,26 @@
 
 #include "stm32g4xx_hal.h"
 
-#define CAN_ID_STANDARD   0U
-#define CAN_ID_EXTENDED   1U
+typedef enum {
+  CAN_ID_STANDARD   = 0U,
+  CAN_ID_EXTENDED   = 1U,
+} CAN_IDType;
 
-#define CAN_FRAME_REMOTE  0U
-#define CAN_FRAME_DATA    1U
-
+typedef enum {
+  CAN_FRAME_REMOTE  = 0U,
+  CAN_FRAME_DATA    = 1U,
+} CAN_FrameType;
 
 typedef struct {
   uint32_t id;
-  uint8_t id_type;
-  uint8_t frame_type;
+  CAN_IDType id_type;
+  CAN_FrameType frame_type;
   uint16_t size;
   uint8_t data[8];
 } CAN_Frame;
+
+
+HAL_StatusTypeDef CAN_init(FDCAN_HandleTypeDef *hfdcan, uint32_t id_filter, uint32_t id_mask);
 
 void CAN_getRxFrame(FDCAN_HandleTypeDef *hfdcan, CAN_Frame *rx_frame);
 

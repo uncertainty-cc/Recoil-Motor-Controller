@@ -1,1 +1,1 @@
-../Core/Src/motor.c:11:6:Motor_init	16	static
+../Core/Src/motor.c:11:19:Motor_init	4	static

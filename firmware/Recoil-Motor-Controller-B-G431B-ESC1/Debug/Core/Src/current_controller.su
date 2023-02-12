@@ -1,3 +1,2 @@
-../Core/Inc/foc_math.h:18:21:clampf	24	static
-../Core/Src/current_controller.c:4:6:CurrentController_init	16	static
-../Core/Src/current_controller.c:14:6:CurrentController_update	72	static
+../Core/Src/current_controller.c:4:19:CurrentController_init	0	static
+../Core/Src/current_controller.c:18:6:CurrentController_update	40	static

@@ -63,8 +63,6 @@ void Error_Handler(void);
 #define GPIO_CAN_TERM_GPIO_Port GPIOC
 #define ADC_POT_Pin GPIO_PIN_12
 #define ADC_POT_GPIO_Port GPIOB
-#define GPIO_STATUS_Pin GPIO_PIN_6
-#define GPIO_STATUS_GPIO_Port GPIOC
 #define GPIO_BUTTON_Pin GPIO_PIN_10
 #define GPIO_BUTTON_GPIO_Port GPIOC
 /* USER CODE BEGIN Private defines */
