@@ -29,7 +29,7 @@ class CANFrame:
     def isRemoteFrame(self):
         return self.frame_type == CANFrame.CAN_FRAME_REMOTE
 
-class SocketCANTransport:
+class SPICANTransport:
     def __init__(self, port="can0", baudrate=1000000):
         self.port = port
         self.baudrate = baudrate
@@ -87,6 +87,67 @@ class SocketCANTransport:
                 if (rx_frame.device_id == tx_frame.device_id) and (rx_frame.func_id == tx_frame.func_id):
                     callback(controller, rx_frame)
                     self.handlers.remove(handler)
+
+
+class SerialCANTransport:
+    def __init__(self, port="can0", baudrate=1000000):
+        self.port = port
+        self.baudrate = baudrate
+        self.interface = None
+        self.handlers = []
+        self.killed = False
+
+    def disable(self):
+        self.killed = True
+        os.system("sudo ifconfig {port} down".format(port=self.port))
+
+    def enable(self):
+        os.system("sudo ip link set {port} type can bitrate {baudrate}".format(port=self.port, baudrate=self.baudrate))
+        os.system("sudo ifconfig {port} up".format(port=self.port))
+        self.interface = can.interface.Bus(channel=self.port, bustype="socketcan")
+        self.killed = False
+        self.rx_handler_thread = threading.Thread(target=self.handleRX)
+        self.rx_handler_thread.start()
+
+    def transmit(self, frame, controller=None, callback=None):
+        can_id = (frame.func_id << 4) | frame.device_id
+
+        msg = can.Message(
+            arbitration_id=can_id,
+            is_extended_id=False,
+            is_remote_frame=frame.isRemoteFrame(),
+            data=frame.data)
+
+        if callback:
+            self.handlers.append((frame, controller, callback))
+
+        self.interface.send(msg)
+    
+    def receive(self):
+        try:
+            msg = self.interface.recv(timeout=None) # blocking
+        except can.exceptions.CanOperationError:
+            return None
+        frame = CANFrame(
+            device_id = msg.arbitration_id & 0x0F,
+            func_id = msg.arbitration_id >> 4,
+            size = msg.dlc,
+            data = msg.data,
+            frame_type = CANFrame.CAN_FRAME_DATA
+        )
+        return frame
+    
+    def handleRX(self):
+        while not self.killed:
+            rx_frame = self.receive()
+            if not rx_frame:
+                continue
+            for handler in self.handlers:
+                tx_frame, controller, callback = handler
+                if (rx_frame.device_id == tx_frame.device_id) and (rx_frame.func_id == tx_frame.func_id):
+                    callback(controller, rx_frame)
+                    self.handlers.remove(handler)
+
 
 
 
