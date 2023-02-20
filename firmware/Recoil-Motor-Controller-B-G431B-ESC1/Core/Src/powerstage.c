@@ -8,8 +8,6 @@
 #include "powerstage.h"
 
 
-
-
 HAL_StatusTypeDef PowerStage_init(PowerStage *powerstage, TIM_HandleTypeDef *htim, ADC_HandleTypeDef *hadc1, ADC_HandleTypeDef *hadc2) {
   powerstage->htim = htim;
   powerstage->hadc1 = hadc1;

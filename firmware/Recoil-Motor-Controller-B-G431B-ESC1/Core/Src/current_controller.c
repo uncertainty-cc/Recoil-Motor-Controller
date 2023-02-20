@@ -2,10 +2,22 @@
 #include "current_controller.h"
 
 HAL_StatusTypeDef CurrentController_init(CurrentController *controller) {
-//  controller->i_kp = 0.0348f;
-//  controller->i_ki = 33.f;
+
+
+#ifdef MOTORPROFILE_MAD_M6C12_150KV
+  //  controller->i_kp = 0.0348f;
+  //  controller->i_ki = 33.f;
+  controller->i_kp = 0.00015f;
+  controller->i_ki = 200.f;
+#endif
+#ifdef MOTORPROFILE_MAD_5010_310KV
+  controller->i_kp = 0.0001f;
+  controller->i_ki = 200.f;
+#endif
+#ifdef MOTORPROFILE_MAD_5010_110KV
   controller->i_kp = 0.0002f;
   controller->i_ki = 330.f;
+#endif
 
   controller->i_limit = 10.f;
 

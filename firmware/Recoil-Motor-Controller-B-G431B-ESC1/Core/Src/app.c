@@ -43,9 +43,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
   }
   else if (htim == &htim2) {
     #if SAFETY_WATCHDOG_ENABLED
+    // watchdog time: 1000ms
     if (controller.mode != MODE_IDLE && controller.mode != MODE_CALIBRATION) {
       MotorController_setMode(&controller, MODE_IDLE);
-      SET_BTS(controller.error, ERROR_HEARTBEAT_TIMEOUT);
+      SET_BITS(controller.error, ERROR_WATCHDOG_TIMEOUT);
     }
     #endif
   }
@@ -89,6 +90,10 @@ void APP_init() {
 
   MotorController_init(&controller);
 
+
+
+
+
 //  HAL_Delay(1000);
 
 //  MotorController_setMode(&controller, MODE_DAMPING);
@@ -97,6 +102,7 @@ void APP_init() {
 //  MotorController_updateService(&controller);
 
 //  controller.current_controller.v_q_target = 0.75;
+////  controller.current_controller.v_q_target = 1.2;
 //  controller.current_controller.v_d_target = 0;
 //  MotorController_setMode(&controller, MODE_VQD_OVERRIDE);
 
@@ -105,6 +111,8 @@ void APP_init() {
 //  MotorController_setMode(&controller, MODE_IQD_OVERRIDE);
 
 //  controller.current_controller.i_q_target = 0.1;
+//  controller.current_controller.i_q_target = 4.f;
+
 //  controller.current_controller.i_q_target = 4.f;
 //  controller.current_controller.i_d_target = 0.;
 //  MotorController_setMode(&controller, MODE_CURRENT);
@@ -116,7 +124,6 @@ void APP_init() {
 void APP_main() {
   MotorController_updateService(&controller);
 
-//
 //  counter += 1;
 //
 //  if (counter > 1000) {
@@ -158,18 +165,18 @@ void APP_main() {
 //        controller.current_controller.i_q_measured * 100,
 //        controller.current_controller.i_d_measured * 100);
 
-//  sprintf(str, "iq_mea:%f\tid_mea:%f\tiq_tar:%f\tiq_set:%f\tvq_tar:%f\r\n",
-//      controller.current_controller.i_q_measured * 100,
-//      controller.current_controller.i_d_measured * 100,
-//      controller.current_controller.i_q_target * 100,
-//      controller.current_controller.i_q_setpoint * 100,
-//      controller.current_controller.v_q_target);
+  sprintf(str, "iq_mea:%f\tid_mea:%f\tiq_tar:%f\tiq_set:%f\tvq_tar:%f\r\n",
+      controller.current_controller.i_q_measured * 100,
+      controller.current_controller.i_d_measured * 100,
+      controller.current_controller.i_q_target * 100,
+      controller.current_controller.i_q_setpoint * 100,
+      controller.current_controller.v_q_target);
 
-  sprintf(str, "mea:%f\ttar:%f\tset:%f\tiq:%f\r\n",
-      controller.position_controller.position_measured,
-      controller.position_controller.position_target,
-      controller.position_controller.position_setpoint,
-      controller.current_controller.i_q_target * 100);
+//  sprintf(str, "mea:%f\ttar:%f\tset:%f\tiq:%f\r\n",
+//      controller.position_controller.position_measured,
+//      controller.position_controller.position_target,
+//      controller.position_controller.position_setpoint,
+//      controller.current_controller.i_q_target * 100);
 
 
 //  sprintf(str, "valpha:%f\tvbeta:%f\tvq:%f\tvd:%f\r\n",

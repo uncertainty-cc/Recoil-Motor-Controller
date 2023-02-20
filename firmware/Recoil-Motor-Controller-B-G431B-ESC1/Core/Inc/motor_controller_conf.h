@@ -10,31 +10,54 @@
 
 #define FIRMWARE_VERSION                0x00300100    // (MAJOR [7:5]) . (MINOR [4:2]) . (PATCH [1:0])
 
-#define DEVICE_CAN_ID                   2
+#define DEVICE_CAN_ID                   3
 
 
 #define FIRST_TIME_BOOTUP               0             // first time bootup: change Flash option byte, store config to Flash
-#define LOAD_CONFIG_FROM_FLASH          0             // load config settings from Flash (everything except motor flux offset)
-#define LOAD_CALIBRATION_FROM_FLASH     0             // load motor flux offset settings from Flash
 
-#define SAFETY_WATCHDOG_ENABLED         0             // timeout
+#define LOAD_ID_FROM_FLASH              1             // load ID config from Flash
+#define LOAD_CONFIG_FROM_FLASH          1             // load config settings from Flash (everything except motor flux offset)
+#define LOAD_CALIBRATION_FROM_FLASH     1             // load motor flux offset settings from Flash
+#define SAFETY_WATCHDOG_ENABLED         1             // timeout
 
-#define CALIBRATION_CURRENT             3             // calibration phase current
-#define I2C_THROTTLE_COUNTER            2             // I2C packet rate = 20kHz / throttle_counter
+
+//#define MOTORPROFILE_MAD_M6C12_150KV
+#define MOTORPROFILE_MAD_5010_310KV
+//#define MOTORPROFILE_MAD_5010_110KV
+
+
+
 
 
 #define ADC_RESOLUTION                  4096          // 12-bit ADC
 #define ADC_READING_COEFFICIENT         (3.3f / (float)ADC_RESOLUTION)
-#define ADC_BUS_VOLTAGE_COEFFICIENT     (ADC_READING_COEFFICIENT * ((10.f + 220.f) / 10.f))   // convert ADC bits to Volts
+
+#define ADC_BUS_VOLTAGE_COEFFICIENT     (ADC_READING_COEFFICIENT * ((18.f + 169.f) / 18.f))   // convert ADC bits to Volts
 // = ((3V3 / ADC_RESOLUTION) / opamp_factor) / R
 #define ADC_OPAMP_CURRENT_COEFFICIENT   ((ADC_READING_COEFFICIENT / 16.f) / 0.003f)     // convert ADC bits to Amps
+
+#define I2C_THROTTLE_COUNTER            2             // I2C packet rate = 20kHz / throttle_counter
+
+// calibration phase current
+#ifdef MOTORPROFILE_MAD_M6C12_150KV
+#define CALIBRATION_CURRENT             4
+#endif
+#ifdef MOTORPROFILE_MAD_5010_310KV
+#define CALIBRATION_CURRENT             6
+#endif
+#ifdef MOTORPROFILE_MAD_5010_110KV
+#define CALIBRATION_CURRENT             4
+#endif
+
+
+
 
 
 typedef enum {
   CAN_ID_ESTOP              = 0x00U,
   CAN_ID_ID                 = 0x01U,
   CAN_ID_VERSION            = 0x02U,
-  CAN_ID_HEARTBEAT          = 0x04U,
+  CAN_ID_SAFETY_WATCHDOG    = 0x04U,
   CAN_ID_MODE_ERROR         = 0x06U,
   CAN_ID_FLASH              = 0x0FU,
 
@@ -114,7 +137,7 @@ typedef enum {
   ERROR_CALIBRATION_ERROR         = 0b0000000000001000U,
   ERROR_POWERSTAGE_ERROR          = 0b0000000000010000U,
   ERROR_INVALID_MODE              = 0b0000000000100000U,
-  ERROR_HEARTBEAT_TIMEOUT         = 0b0000000001000000U,
+  ERROR_WATCHDOG_TIMEOUT         = 0b0000000001000000U,
   ERROR_OVER_VOLTAGE              = 0b0000000010000000U,
   ERROR_OVER_CURRENT              = 0b0000000100000000U,
   ERROR_OVER_TEMPERATURE          = 0b0000001000000000U,

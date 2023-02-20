@@ -11,6 +11,7 @@
 #include <stdint.h>
 
 #include "stm32g4xx_hal.h"
+#include "motor_controller_conf.h"
 
 typedef struct {
   uint32_t pole_pairs;

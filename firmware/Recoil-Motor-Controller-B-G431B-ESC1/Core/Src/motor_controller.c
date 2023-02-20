@@ -43,7 +43,7 @@ void MotorController_init(MotorController *controller) {
   status |= PositionController_init(&controller->position_controller);
 
   MotorController_loadConfig(controller);
-  #if !LOAD_CONFIG_FROM_FLASH || !LOAD_CALIBRATION_FROM_FLASH
+  #if !LOAD_ID_FROM_FLASH || !LOAD_CONFIG_FROM_FLASH || !LOAD_CALIBRATION_FROM_FLASH
     MotorController_storeConfig(controller);
   #endif
 
@@ -120,17 +120,20 @@ void MotorController_setMode(MotorController *controller, Mode mode) {
     case MODE_DISABLED:
       __HAL_TIM_SET_AUTORELOAD(&htim3, 9999);
       __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, __HAL_TIM_GET_AUTORELOAD(&htim3) / 8);
+      __HAL_TIM_SET_COUNTER(&htim3, 0);
       // sleep
       break;
 
     case MODE_IDLE:
       __HAL_TIM_SET_AUTORELOAD(&htim3, 9999);
       __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, __HAL_TIM_GET_AUTORELOAD(&htim3) / 2);
+      __HAL_TIM_SET_COUNTER(&htim3, 0);
       break;
 
     case MODE_CALIBRATION:
       __HAL_TIM_SET_AUTORELOAD(&htim3, 1999);
       __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, __HAL_TIM_GET_AUTORELOAD(&htim3) / 4);
+      __HAL_TIM_SET_COUNTER(&htim3, 0);
       MotorController_reset(controller);
       PowerStage_enablePWM(&controller->powerstage);
       break;
@@ -146,6 +149,7 @@ void MotorController_setMode(MotorController *controller, Mode mode) {
     case MODE_VABC_OVERRIDE:
       __HAL_TIM_SET_AUTORELOAD(&htim3, 1999);
       __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, __HAL_TIM_GET_AUTORELOAD(&htim3) / 2);
+      __HAL_TIM_SET_COUNTER(&htim3, 0);
       if (controller->mode != MODE_IDLE) {
 //        PowerStage_disable(&controller->powerstage);
         controller->mode = MODE_IDLE;
@@ -184,8 +188,10 @@ HAL_StatusTypeDef MotorController_loadConfig(MotorController *controller) {
   #if LOAD_CALIBRATION_FROM_FLASH
     controller->motor.flux_angle_offset                   = config->motor_flux_angle_offset;
   #endif
-  #if LOAD_CONFIG_FROM_FLASH
+  #if LOAD_ID_FROM_FLASH
     controller->device_id                                 = (uint8_t)config->device_id;
+  #endif
+  #if LOAD_CONFIG_FROM_FLASH
     controller->firmware_version                          = config->firmware_version;
     controller->encoder.cpr                               = config->encoder_cpr;
     controller->encoder.position_offset                   = config->encoder_position_offset;
@@ -506,7 +512,7 @@ void MotorController_handleCANMessage(MotorController *controller, CAN_Frame *rx
       *((uint32_t *)tx_frame.data) = controller->firmware_version;
       break;
 
-    case CAN_ID_HEARTBEAT:  // 0x04 []
+    case CAN_ID_SAFETY_WATCHDOG:  // 0x04 []
       __HAL_TIM_SET_COUNTER(&htim2, 0);
       break;
 

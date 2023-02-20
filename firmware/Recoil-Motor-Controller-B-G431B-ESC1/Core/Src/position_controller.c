@@ -8,16 +8,15 @@
 #include "position_controller.h"
 
 HAL_StatusTypeDef PositionController_init(PositionController *controller) {
-  //  controller->position_kp = 0.f;
+
   controller->position_kp = 0.1f;
-//  controller->position_kp = 0.01f;
   controller->position_ki = 0.0f;
 
   controller->velocity_kp = 0.005f;
-//  controller->velocity_kp = 0.f;
   controller->velocity_ki = 0.f;
 
-//  controller->torque_limit = 1.f;
+
+  //  controller->torque_limit = 1.f;
   controller->torque_limit = 0.05f;
 
   controller->velocity_limit = 20;
