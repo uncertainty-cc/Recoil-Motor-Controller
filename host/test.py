@@ -14,16 +14,16 @@ def send_one():
     
 
     while 1:
-        try:
-            msg = bus.recv(timeout=0.01)
-        except:
-            pass
-
-        if msg:
-            print(msg)
+        #        try:
+        #            msg = bus.recv(timeout=0.01)
+        #        except:
+        #            pass
+        #
+        #        if msg:
+        #            print(msg)
         #print(counter)
         msg = can.Message(
-            arbitration_id=0x0A | (0x7F << 4),
+            arbitration_id=0x02 | (0x7F << 4),
             data=[],
             is_extended_id=False
         )
@@ -31,8 +31,7 @@ def send_one():
 
         try:
             bus.send(msg)
-            bus.send(msg)
-            #print(f"Message sent on {bus.channel_info}")
+            print(f"Message sent on {bus.channel_info}")
         except can.CanError:
             print("Message NOT sent")
         except serial.serialutil.SerialException:
@@ -43,7 +42,7 @@ def send_one():
                 except serial.serialutil.SerialException:
                     continue
                 break
-        #time.sleep(0.001)
+        time.sleep(0.1)
 
 if __name__ == "__main__":
     send_one()
