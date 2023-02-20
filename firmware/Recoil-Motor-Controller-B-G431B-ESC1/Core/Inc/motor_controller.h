@@ -29,67 +29,79 @@ typedef struct {
   Mode mode;
   ErrorCode error;
 
-  uint32_t firmware_version;
   uint8_t device_id;
+  uint32_t firmware_version;
 } MotorController;
 
 typedef struct {
-  uint32_t  firmware_version;
   uint32_t  device_id;
-  uint8_t   encoder_direction;
-  uint32_t  encoder_cpr;
+  uint32_t  firmware_version;
+
+  int32_t   encoder_cpr;
   float     encoder_position_offset;
-  float     encoder_velocity_filter_alpha;
+  float     encoder_filter_alpha;
+
   float     powerstage_undervoltage_threshold;
   float     powerstage_overvoltage_threshold;
+  float     powerstage_bus_voltage_filter_alpha;
+
   uint32_t  motor_pole_pairs;
   uint32_t  motor_kv_rating;
+  int32_t   motor_phase_order;
   float     motor_flux_angle_offset;
-  float     current_controller_current_filter_alpha;
-  float     current_controller_i_q_kp;
-  float     current_controller_i_q_ki;
-  float     current_controller_i_d_kp;
-  float     current_controller_i_d_ki;
+
+  float     current_controller_i_kp;
+  float     current_controller_i_ki;
+  float     current_controller_i_limit;
+
   float     position_controller_position_kp;
   float     position_controller_position_ki;
-  float     position_controller_position_kd;
-
-  float     position_controller_torque_limit_upper;
-  float     position_controller_torque_limit_lower;
-  float     position_controller_velocity_limit_upper;
-  float     position_controller_velocity_limit_lower;
+  float     position_controller_velocity_kp;
+  float     position_controller_velocity_ki;
+  float     position_controller_torque_limit;
+  float     position_controller_velocity_limit;
   float     position_controller_position_limit_upper;
   float     position_controller_position_limit_lower;
 } EEPROMConfig;
 
 
+static inline float MotorController_getTorque(MotorController *controller) {
+  return controller->position_controller.torque_measured;
+}
+
+static inline float MotorController_getVelocity(MotorController *controller) {
+  return controller->position_controller.velocity_measured;
+}
+
+static inline float MotorController_getPosition(MotorController *controller) {
+  return controller->position_controller.position_measured;
+}
+
+static inline ErrorCode MotorController_getError(MotorController *controller) {
+  return controller->error;
+}
+
+static inline void MotorController_clearError(MotorController *controller) {
+  controller->error = ERROR_NO_ERROR;
+}
+
+static inline Mode MotorController_getMode(MotorController *controller) {
+  return controller->mode;
+}
+
 void MotorController_init(MotorController *controller);
 
-ErrorCode MotorController_getError(MotorController *controller);
-
-Mode MotorController_getMode(MotorController *controller);
+void MotorController_reset(MotorController *controller);
 
 void MotorController_setMode(MotorController *controller, Mode mode);
 
 void MotorController_setFluxAngle(MotorController *controller, float angle_setpoint, float voltage_setpoint);
 
-uint32_t MotorController_storeConfig(MotorController *controller);
+HAL_StatusTypeDef MotorController_loadConfig(MotorController *controller);
 
-void MotorController_loadConfig(MotorController *controller);
+HAL_StatusTypeDef MotorController_storeConfig(MotorController *controller);
 
-float MotorController_getTorque(MotorController *controller);
-
-float MotorController_getVelocity(MotorController *controller);
-
-float MotorController_getPosition(MotorController *controller);
-
-void MotorController_updateCommutation(MotorController *controller, ADC_HandleTypeDef *hadc);
-
-void MotorController_triggerPositionUpdate(MotorController *controller);
-
-void MotorController_updatePositionReading(MotorController *controller);
-
-void MotorController_updatePositionController(MotorController *controller);
+void MotorController_update(MotorController *controller);
 
 void MotorController_updateService(MotorController *controller);
 

@@ -26,28 +26,33 @@ typedef struct {
 
   float undervoltage_threshold;
   float overvoltage_threshold;
+  float bus_voltage_filter_alpha;
 
   uint8_t enabled;
   float bus_voltage_measured;
-  float phase_current_measured[3];
 } PowerStage;
 
-void PowerStage_init(PowerStage *powerstage, TIM_HandleTypeDef *htim, ADC_HandleTypeDef *hadc1, ADC_HandleTypeDef *hadc2);
 
-uint8_t PowerStage_isEnabled(PowerStage *powerstage);
+static inline void PowerStage_disablePWM(PowerStage *powerstage) {
+  __HAL_TIM_MOE_DISABLE_UNCONDITIONALLY(powerstage->htim);
+}
 
-void PowerStage_disable(PowerStage *powerstage);
+static inline void PowerStage_enablePWM(PowerStage *powerstage) {
+  __HAL_TIM_MOE_ENABLE(powerstage->htim);
+}
 
-void PowerStage_enable(PowerStage *powerstage);
+HAL_StatusTypeDef PowerStage_init(PowerStage *powerstage, TIM_HandleTypeDef *htim, ADC_HandleTypeDef *hadc1, ADC_HandleTypeDef *hadc2);
 
-void PowerStage_setBridgeOutput(PowerStage *powerstage, float v_a, float v_b, float v_c);
+void PowerStage_start(PowerStage *powerstage);
+
+void PowerStage_setOutputPWM(PowerStage *powerstage, uint16_t ccr_a, uint16_t ccr_b, uint16_t ccr_c, int8_t phase_order);
+
+void PowerStage_setOutputVoltage(PowerStage *powerstage, float v_a, float v_b, float v_c, int8_t phase_order);
 
 void PowerStage_calibratePhaseCurrentOffset(PowerStage *powerstage);
 
-void PowerStage_getPhaseCurrentRawReading(PowerStage *powerstage);
+void PowerStage_updateBusVoltage(PowerStage *powerstage);
 
-void PowerStage_getBusVoltage(PowerStage *powerstage);
-
-void PowerStage_getPhaseCurrent(PowerStage *powerstage, float *i_a, float *i_b, float *i_c);
+void PowerStage_updatePhaseCurrent(PowerStage *powerstage, float *i_a, float *i_b, float *i_c, int8_t phase_order);
 
 #endif /* INC_POWERSTAGE_H_ */
