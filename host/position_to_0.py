@@ -31,98 +31,124 @@ time.sleep(0.1)
 
 print("set position")
 for m in ms:
+    m.setTorqueVelocityLimit(0.01, 20)
     m.setPositionTarget(0)
+    time.sleep(0.01)
+
 
 for m in ms:
-    # m.setMode(recoil.Mode.POSITION)
-    m.setMode(recoil.Mode.DAMPING)
+    m.setMode(recoil.Mode.POSITION)
+    # m.setMode(recoil.Mode.DAMPING)
+    pass
 
-target_position = 0
 t = time.time()
 
 
+def generateZeroTragectory(t):
+    target_positions = [0] * 12
+    return target_positions
 
-def generateSinCosTrajectory():
-    return [
-        math.sin(time.time() * 4) * 5,
-        math.cos(time.time() * 4) * 5,
-        math.sin(time.time() * 4) * 5
-    ]
+def generateTaiTuiTragectory(t):
+    target_positions = [0] * 12
+    
+    target_positions[0] = 10 * t
+    target_positions[1] = -10 * t
+
+    target_positions[6] = -20 * t
+    target_positions[7] = 20 * t
+
+    target_positions[10] = 10 * t
+    target_positions[11] = -10 * t
+
+    # target_positions[0] = 5 * t
+    # target_positions[1] = -5 * t
+
+    # target_positions[6] = -10 * t
+    # target_positions[7] = 10 * t
+
+    # target_positions[10] = 5 * t
+    # target_positions[11] = -5 * t
+
+    return target_positions
 
 
+def timetag():
+    return 0.5 * (math.sin(time.time() * 1.5) + 1)
 
+stop = 0
 
 try:
-    max_torque_limit = 1
+    max_torque_limit = 1.
+
+    target_positions = [0] * 12
+
+    print("Ramping up...")
+
     for i in range(100):
-        torque_limit = i / 100. * max_torque_limit
-        m2.setTorqueVelocityLimit(torque_limit, 20)
-        target_positions = [
-            math.sin(time.time() * 2) * 14 - 12, #0,
-            0, 
-            0, #math.sin(time.time()) * 3, 
-            -math.sin(time.time() * 2) * 10 + 11, 
-            0]
-        
-        # m2.setPositionTarget(target_positions[0])
-        # m4.setPositionTarget(target_positions[1])
-        # m6.setPositionTarget(target_positions[2])
-        # m8.setPositionTarget(target_positions[3])
-        # m10.setPositionTarget(target_positions[4])
+        if stop:
+            break
+        try:
+            # target_positions = generateZeroTragectory(timetag())
+            target_positions = generateTaiTuiTragectory(timetag())
 
-        for m in ms:
-            m.feed()
+            torque_limit = i / 100. * max_torque_limit
+            
+            for i, m in enumerate(ms):
+                m.setPositionTarget(target_positions[i])
 
-        time.sleep(0.02)
-    
-    while True:
-        # if time.time() - t > 1:
-        #     target_position = 0
-        # if time.time() - t > 2:
-        #     target_position = 5
-        #     t = time.time()
+            time.sleep(0.01)
+            for m in ms:
+                m.setTorqueVelocityLimit(torque_limit, 20)
+                    
+            print("{:.3f} / {:.3f}".format(torque_limit, max_torque_limit))
 
-        # target_positions = generateSinCosTrajectory()
-        # target_positions = [
-        #     math.sin(time.time() * 2) * 10 - 12,
-        #     0,
-        #     0]
-
-        target_positions = [
-            math.sin(time.time() * 2) * 14 - 12, #0,
-            0, 
-            0, #math.sin(time.time()) * 3, 
-            -math.sin(time.time() * 2) * 10 + 11, 
-            0]
-
-        # m2.setPositionTarget(target_positions[0])
-        # m4.setPositionTarget(target_positions[1])
-        # m6.setPositionTarget(target_positions[2])
-        # m8.setPositionTarget(target_positions[3])
-        # m10.setPositionTarget(target_positions[4])
-        
-        print(m2.getPositionMeasured(), m4.getPositionMeasured(),  m6.getPositionMeasured())
-
-        for m in ms:
-            m.feed()
-
-        time.sleep(0.02)
-
-except KeyboardInterrupt:
-    for m in ms:
-        m.setMode(recoil.Mode.DAMPING)
-    print("waiting to stop...")
-    print("Press Ctrl+C again to stop")
-    try:
-        while True:
             for m in ms:
                 m.feed()
-            time.sleep(0.02)
-    except KeyboardInterrupt:
+
+            time.sleep(0.01)
+        except KeyboardInterrupt:
+            stop = 1
+    
+    print("Finish ramping up")
+    while not stop:
+        try:
+            # target_positions = generateZeroTragectory(timetag())
+            target_positions = generateTaiTuiTragectory(timetag())
+
+            for i, m in enumerate(ms):
+                m.setPositionTarget(target_positions[i])
+            
+            # for m in ms:
+            #     print(m.getPositionMeasured(), end="\t")
+            # print()
+            time.sleep(0.01)
+
+            for m in ms:
+                m.feed()
+
+            time.sleep(0.01)
+        except KeyboardInterrupt:
+            stop = 1
+
+except KeyboardInterrupt:
+    pass
+
+time.sleep(0.01)
+for m in ms:
+    m.setMode(recoil.Mode.DAMPING)
+print("waiting to stop...")
+print("Press Ctrl+C again to stop")
+time.sleep(0.01)
+try:
+    while True:
         for m in ms:
-            m.setMode(recoil.Mode.IDLE)
-        print("stopped.")
-        pass
+            m.feed()
+        time.sleep(0.05)
+except KeyboardInterrupt:
+    for m in ms:
+        m.setMode(recoil.Mode.IDLE)
+    print("stopped.")
+    pass
 
 
 transport.stop()

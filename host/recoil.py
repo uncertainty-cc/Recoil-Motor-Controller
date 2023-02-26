@@ -316,6 +316,66 @@ class MotorController:
             callback(rx_data)
         return rx_data
 
+    def getPositionLimit(self, callback=None):
+        tx_frame = CANFrame(self.device_id, CAN_ID.POSITION_LIMIT, size=0)
+        self.transport.transmit(self, tx_frame)
+        rx_frame = self.transport.receive(self)
+        if not rx_frame:
+            return 0, 0
+        lower_limit = MotorController.unpack("<ff", rx_frame.data, 0)
+        upper_limit = MotorController.unpack("<ff", rx_frame.data, 1)
+        if callback:
+            callback(lower_limit, upper_limit)
+        return lower_limit, upper_limit
+
+
+    def setPositionOffset(self, offset, callback=None):
+        tx_frame = CANFrame(self.device_id, CAN_ID.ENCODER_CPR_OFFSET, size=8, 
+                            data=struct.pack("<if", 4096, offset))
+        self.transport.transmit(self, tx_frame)
+        rx_frame = self.transport.receive(self)
+        if not rx_frame:
+            return 0
+        rx_data = MotorController.unpack("<if", rx_frame.data, 1)
+        if callback:
+            callback(rx_data)
+        return rx_data
+
+    def getCPR(self, callback=None):
+        tx_frame = CANFrame(self.device_id, CAN_ID.ENCODER_CPR_OFFSET, size=0)
+        self.transport.transmit(self, tx_frame)
+        rx_frame = self.transport.receive(self)
+        if not rx_frame:
+            return 0
+        rx_data = MotorController.unpack("<if", rx_frame.data, 0)
+        if callback:
+            callback(rx_data)
+        return rx_data
+
+    def getPositionOffset(self, callback=None):
+        tx_frame = CANFrame(self.device_id, CAN_ID.ENCODER_CPR_OFFSET, size=0)
+        self.transport.transmit(self, tx_frame)
+        rx_frame = self.transport.receive(self)
+        if not rx_frame:
+            return 0
+        rx_data = MotorController.unpack("<if", rx_frame.data, 1)
+        if callback:
+            callback(rx_data)
+        return rx_data
+
+    def setPositionLimit(self, lower_limit, upper_limit, callback=None):
+        tx_frame = CANFrame(self.device_id, CAN_ID.POSITION_LIMIT, size=8, 
+                            data=struct.pack("<ff", lower_limit, upper_limit))
+        self.transport.transmit(self, tx_frame)
+        rx_frame = self.transport.receive(self)
+        if not rx_frame:
+            return 0
+        lower_limit = MotorController.unpack("<ff", rx_frame.data, 0)
+        upper_limit = MotorController.unpack("<ff", rx_frame.data, 1)
+        if callback:
+            callback(lower_limit, upper_limit)
+        return lower_limit, upper_limit
+
     def getTorqueLimit(self, callback=None):
         tx_frame = CANFrame(self.device_id, CAN_ID.TORQUE_VELOCITY_LIMIT, size=0)
         self.transport.transmit(self, tx_frame)
