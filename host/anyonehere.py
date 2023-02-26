@@ -8,16 +8,16 @@ import recoil
 
 transport = recoil.SerialCANTransport(port="COM34", baudrate=1000000)
 
-controller2 = recoil.MotorController(transport, device_id=2)
-controller3 = recoil.MotorController(transport, device_id=3)
+motor = recoil.MotorController(transport, device_id=11)
+# controller3 = recoil.MotorController(transport, device_id=3)
 
 transport.start()
 
 try:
     while True:
-        print("ping:", controller2.ping())
-        print("ping:", controller3.ping())
+        print("ping:", motor.ping())
+        # print("ping:", controller3.ping())
 
-        time.sleep(0.1)
+        time.sleep(0.02)
 except KeyboardInterrupt:
     transport.stop()
