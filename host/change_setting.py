@@ -1,30 +1,41 @@
 import time
 
-import rath_recoil as recoil
+import recoil
 
 
-DEVICE_ID = 11
-transport = recoil.SocketCANTransport()
-controller = recoil.MotorController(transport=transport, device_id=DEVICE_ID)
 
-transport.enable()
+DEVICE_ID = 2
 
-def responseHandler(controller, data):
-    print(data)
+transport = recoil.SPICANTransport(port="can0", baudrate=1000000)
 
-print("torque limit:")
-controller.getTorqueLimit(responseHandler)
-time.sleep(1)
+controller = recoil.MotorController(transport, device_id=DEVICE_ID)
 
-# print("velocity limit:")
-# controller.getVelocityLimit(responseHandler)
-# time.sleep(1)
+transport.start()
 
-# print("setting new limit")
-# controller.setTorqueVelocityLimit(0.06, 20)
-# time.sleep(1)
+try:
+    print("Change setting on device #{id}".format(id=DEVICE_ID))
 
-# controller.setTorqueVelocityLimit(0.06, 20)
+    print("torque limit:", controller.getTorqueLimit())
+    time.sleep(1)
 
-transport.disable()
-time.sleep(10)
+    torque_limit = 0.8
+
+    print("setting torque limit to {torque_limit}".format(torque_limit=torque_limit))
+
+    controller.setTorqueVelocityLimit(torque_limit, 20)
+
+    time.sleep(1)
+
+    print("saving config...")
+    controller.storeSettingToFlash()
+
+    time.sleep(1)
+
+    print("new torque limit:", controller.getTorqueLimit())
+    print("new torque limit:", controller.getTorqueLimit())
+
+except KeyboardInterrupt:
+    controller.setMode(recoil.Mode.IDLE)
+    pass
+
+transport.stop()

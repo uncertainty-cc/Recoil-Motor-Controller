@@ -2,7 +2,7 @@ import time
 
 import recoil
 
-transport = recoil.SPICANTransport(port="can0", baudrate=500000)
+transport = recoil.SPICANTransport(port="can0", baudrate=1000000)
 
 controller1 = recoil.MotorController(transport, device_id=1)
 controller3 = recoil.MotorController(transport, device_id=3)
@@ -36,8 +36,6 @@ try:
         print("10:", controller10.ping(), end="\t")
         print("12:", controller12.ping())
 
-        # print("11:", controller11.ping())
-
-        time.sleep(0.01)
+        time.sleep(1)
 except KeyboardInterrupt:
     transport.stop()

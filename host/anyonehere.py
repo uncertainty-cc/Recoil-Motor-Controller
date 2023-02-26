@@ -9,7 +9,7 @@ import recoil
 transport = recoil.SerialCANTransport(port="COM34", baudrate=1000000)
 
 controller2 = recoil.MotorController(transport, device_id=2)
-controller3 = recoil.MotorController(transport, device_id=3)
+controller3 = recoil.MotorController(transport, device_id=4)
 
 transport.start()
 

@@ -92,6 +92,68 @@ class CANFrame:
         self.id_type = id_type
 
 
+class SPICANTransport:
+    def __init__(self, port="can0", baudrate=1000000):
+        self.port = port
+        self.baudrate = baudrate
+        self._interface = None
+        self._handlers = []
+        self._killed = threading.Event()
+
+    def stop(self):
+        self._killed.set()
+        os.system("sudo ifconfig {port} down".format(port=self.port))
+
+    def start(self):
+        os.system("sudo ip link set {port} type can bitrate {baudrate}".format(port=self.port, baudrate=self.baudrate))
+        os.system("sudo ifconfig {port} up".format(port=self.port))
+
+        self._killed.clear()
+        self.connect()
+
+        print("started")
+
+    def connect(self):
+        while not self._interface:
+            try:
+                self._interface = can.Bus(interface="socketcan", channel=self.port, bustype="socketcan", baudrate=self.baudrate)
+            except serial.serialutil.SerialException as e:
+                print(e)
+        print("connected")
+
+    def transmit(self, controller, frame, callback=None):
+        can_id = (frame.func_id << 4) | frame.device_id
+
+        msg = can.Message(
+            arbitration_id=can_id,
+            is_extended_id=False,
+            data=frame.data)
+        self._interface.send(msg)
+            
+    def receive(self, controller, timeout=0.1):
+        try:
+            msg = self._interface.recv(timeout=timeout) # blocking
+        except can.exceptions.CanOperationError as e:
+            print(e)
+            return None
+        while msg and msg.is_error_frame:
+            try:
+                msg = self._interface.recv(timeout=timeout) # blocking
+            except can.exceptions.CanOperationError as e:
+                print(e)
+                return None
+        # print(msg)
+        if not msg:
+            return None
+        frame = CANFrame(
+            device_id = msg.arbitration_id & 0x0F,
+            func_id = msg.arbitration_id >> 4,
+            size = msg.dlc,
+            data = msg.data
+        )
+        return frame
+
+
 class SerialCANTransport:
     def __init__(self, port="COM1", baudrate=1000000):
         self.port = port
@@ -117,7 +179,7 @@ class SerialCANTransport:
                 print(e)
         print("connected")
 
-    def transmit(self, frame, controller, callback=None):
+    def transmit(self, controller, frame):
         can_id = (frame.func_id << 4) | frame.device_id
 
         msg = can.Message(
@@ -126,19 +188,9 @@ class SerialCANTransport:
             data=frame.data)
         self._interface.send(msg)
         
-        rx_frame = None
-        rx_data = None
-        if callback:
-            rx_frame = self.receive()
-            if not rx_frame:
-                return None
-            rx_data = callback(rx_frame)
-            
-        return rx_data
-            
-    def receive(self):
+    def receive(self, controller, timeout=0.1):
         try:
-            msg = self._interface.recv(timeout=0.1) # blocking
+            msg = self._interface.recv(timeout=timeout) # blocking
         except can.exceptions.CanOperationError:
             return None
         if not msg:
@@ -165,71 +217,125 @@ class MotorController:
         try:
             return struct.unpack(format, data)[index]
         except struct.error as e:
-            print("warning:", e)
+            print("warning:", e, data)
             return 0
-    
-    @staticmethod
-    def onPing(self, id):
-        return id
 
     def ping(self, callback=None):
-        frame = CANFrame(self.device_id, CAN_ID.PING, 0)
-        if not callback:
-            callback = MotorController.onPing
-        callback_wrap = lambda frame: callback(self, MotorController.unpack("<B", frame.data, 0))
-        return self.transport.transmit(frame, self, callback_wrap)
+        tx_frame = CANFrame(self.device_id, CAN_ID.PING, size=0)
+        self.transport.transmit(self, tx_frame)
+        rx_frame = self.transport.receive(self)
+        if not rx_frame:
+            return 0
+        rx_data = MotorController.unpack("<B", rx_frame.data, 0)
+        if callback:
+            callback(self, rx_data)
+        return rx_data
 
-    @staticmethod
-    def onGetMode(self, mode):
-        return mode
+    def feed(self, callback=None):
+        tx_frame = CANFrame(self.device_id, CAN_ID.SAFETY_WATCHDOG, size=0)
+        self.transport.transmit(self, tx_frame)
 
     def getMode(self, callback=None):
-        frame = CANFrame(self.device_id, CAN_ID.MODE_ERROR, 0)
-        if not callback:
-            callback = MotorController.onGetMode
-        callback_wrap = lambda frame: callback(self, MotorController.unpack("<HH", frame.data, 0))
-        return self.transport.transmit(frame, self, callback_wrap)
+        tx_frame = CANFrame(self.device_id, CAN_ID.MODE_ERROR, size=0)
+        self.transport.transmit(self, tx_frame)
+        rx_frame = self.transport.receive(self)
+        if not rx_frame:
+            return 0
+        rx_data = MotorController.unpack("<HH", rx_frame.data, 0)
+        if callback:
+            callback(self, rx_data)
+        return rx_data
 
     def setMode(self, mode, callback=None, clear_error=False):
-        frame = CANFrame(self.device_id, CAN_ID.MODE_ERROR, 4, struct.pack("<HH", mode, 1 if clear_error else 0))
-        if not callback:
-            callback = MotorController.onGetMode
-        callback_wrap = lambda frame: callback(self, MotorController.unpack("<HH", frame.data, 0))
-        return self.transport.transmit(frame, self, callback_wrap)
-    
-    @staticmethod
-    def onGetPositionMeasured(self, data):
-        return data
+        tx_frame = CANFrame(self.device_id, CAN_ID.MODE_ERROR, size=4, 
+                            data=struct.pack("<HH", mode, 1 if clear_error else 0))
+        self.transport.transmit(self, tx_frame)
+        rx_frame = self.transport.receive(self)
+        if not rx_frame:
+            return 0
+        rx_data = MotorController.unpack("<HH", rx_frame.data, 0)
+        if callback:
+            callback(self, rx_data)
+        return rx_data
+
+    def loadSettingFromFlash(self, callback=None):
+        tx_frame = CANFrame(self.device_id, CAN_ID.FLASH, size=1, 
+                            data=struct.pack("<B", 0))
+        self.transport.transmit(self, tx_frame)
+        rx_frame = self.transport.receive(self)
+        if not rx_frame:
+            return 0
+        rx_data = MotorController.unpack("<B", rx_frame.data, 0)
+        if callback:
+            callback(rx_data)
+        return rx_data
+        
+    def storeSettingToFlash(self, callback=None):
+        tx_frame = CANFrame(self.device_id, CAN_ID.FLASH, size=1, 
+                            data=struct.pack("<B", 1))
+        self.transport.transmit(self, tx_frame)
+        rx_frame = self.transport.receive(self)
+        if not rx_frame:
+            return 0
+        rx_data = MotorController.unpack("<B", rx_frame.data, 0)
+        if callback:
+            callback(rx_data)
+        return rx_data
 
     def getPositionMeasured(self, callback=None):
-        frame = CANFrame(self.device_id, CAN_ID.POSITION_MEASURED_SETPOINT, 0)
-        if not callback:
-            callback = MotorController.onGetPositionMeasured
-        callback_wrap = lambda frame: callback(self, MotorController.unpack("<ff", frame.data, 0))
-        return self.transport.transmit(frame, self, callback_wrap)
-        
-    @staticmethod
-    def onGetPositionSetpoint(self, data):
-        return data
+        tx_frame = CANFrame(self.device_id, CAN_ID.POSITION_MEASURED_SETPOINT, size=0)
+        self.transport.transmit(self, tx_frame)
+        rx_frame = self.transport.receive(self)
+        if not rx_frame:
+            return 0
+        rx_data = MotorController.unpack("<ff", rx_frame.data, 0)
+        if callback:
+            callback(rx_data)
+        return rx_data
 
     def getPositionSetpoint(self, callback=None):
-        frame = CANFrame(self.device_id, CAN_ID.POSITION_MEASURED_SETPOINT, 0)
-        if not callback:
-            callback = MotorController.onGetPositionMeasured
-        callback_wrap = lambda frame: callback(self, MotorController.unpack("<ff", frame.data, 1))
-        self.transport.transmit(frame, self, callback_wrap)
-    
-    @staticmethod
-    def onGetPositionTarget(self, data):
-        return data
+        tx_frame = CANFrame(self.device_id, CAN_ID.POSITION_MEASURED_SETPOINT, size=0)
+        self.transport.transmit(self, tx_frame)
+        rx_frame = self.transport.receive(self)
+        if not rx_frame:
+            return 0
+        rx_data = MotorController.unpack("<ff", rx_frame.data, 1)
+        if callback:
+            callback(rx_data)
+        return rx_data
 
-    def setPositionTarget(self, data, callback=None):
-        frame = CANFrame(self.device_id, CAN_ID.POSITION_TARGET, 4, struct.pack("<f", data))
-        if not callback:
-            callback = MotorController.onGetPositionTarget
-        callback_wrap = lambda frame: callback(self, MotorController.unpack("<f", frame.data, 0))
-        self.transport.transmit(frame, self, callback_wrap)
-    
-    def feed(self, callback=None):
-        frame = CANFrame(self.device_id, CAN_ID.SAFETY_WATCHDOG, 0)
-        self.transport.transmit(frame, self)
+    def setPositionTarget(self, position_target, callback=None):
+        tx_frame = CANFrame(self.device_id, CAN_ID.POSITION_TARGET, size=4, 
+                            data=struct.pack("<f", position_target))
+        self.transport.transmit(self, tx_frame)
+        rx_frame = self.transport.receive(self)
+        if not rx_frame:
+            return 0
+        rx_data = MotorController.unpack("<f", rx_frame.data, 0)
+        if callback:
+            callback(rx_data)
+        return rx_data
+
+    def getTorqueLimit(self, callback=None):
+        tx_frame = CANFrame(self.device_id, CAN_ID.TORQUE_VELOCITY_LIMIT, size=0)
+        self.transport.transmit(self, tx_frame)
+        rx_frame = self.transport.receive(self)
+        if not rx_frame:
+            return 0
+        rx_data = MotorController.unpack("<ff", rx_frame.data, 0)
+        if callback:
+            callback(rx_data)
+        return rx_data
+
+    def setTorqueVelocityLimit(self, torque_limit, velocity_limit, callback=None):
+        tx_frame = CANFrame(self.device_id, CAN_ID.TORQUE_VELOCITY_LIMIT, size=8,
+                            data=struct.pack("<ff", torque_limit, velocity_limit))
+        self.transport.transmit(self, tx_frame)
+        rx_frame = self.transport.receive(self)
+        if not rx_frame:
+            return 0
+        rx_data = MotorController.unpack("<ff", rx_frame.data, 0)
+        if callback:
+            callback(rx_data)
+        return rx_data
+        
