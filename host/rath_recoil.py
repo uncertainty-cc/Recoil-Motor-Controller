@@ -29,6 +29,7 @@ class CANFrame:
     def isRemoteFrame(self):
         return self.frame_type == CANFrame.CAN_FRAME_REMOTE
 
+
 class SocketCANTransport:
     def __init__(self, port="can0", baudrate=1000000):
         self.port = port
@@ -87,6 +88,7 @@ class SocketCANTransport:
                 if (rx_frame.device_id == tx_frame.device_id) and (rx_frame.func_id == tx_frame.func_id):
                     callback(controller, rx_frame)
                     self.handlers.remove(handler)
+
 
 
 
