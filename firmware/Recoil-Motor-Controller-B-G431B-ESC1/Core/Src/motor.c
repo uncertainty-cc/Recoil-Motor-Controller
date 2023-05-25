@@ -24,8 +24,16 @@ HAL_StatusTypeDef Motor_init(Motor *motor) {
   motor->phase_order = -1;
   motor->flux_angle_offset = 0;
 
-  // ID2: 4.533934;
-  // ID3: 4.365709  4.327361
+  // ID test2: 4.533934;
+  // ID test3: 4.365709  4.327361
+
+  // ID 2: 6.113920
+
+  // ID 6: 5.206272
+  // ID 8: 4.34   4.17
+  // ID 10: 3.08
+
+
 
   return HAL_OK;
 }

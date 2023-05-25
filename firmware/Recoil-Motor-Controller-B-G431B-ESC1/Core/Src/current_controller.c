@@ -15,8 +15,8 @@ HAL_StatusTypeDef CurrentController_init(CurrentController *controller) {
   controller->i_ki = 200.f;
 #endif
 #ifdef MOTORPROFILE_MAD_5010_110KV
-  controller->i_kp = 0.0002f;
-  controller->i_ki = 330.f;
+  controller->i_kp = 0.0004f;
+  controller->i_ki = 400.f;
 #endif
 
   controller->i_limit = 10.f;

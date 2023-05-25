@@ -150,14 +150,27 @@ void MotorController_setMode(MotorController *controller, Mode mode) {
       __HAL_TIM_SET_AUTORELOAD(&htim3, 1999);
       __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, __HAL_TIM_GET_AUTORELOAD(&htim3) / 2);
       __HAL_TIM_SET_COUNTER(&htim3, 0);
-      if (controller->mode != MODE_IDLE) {
+      if (controller->mode == MODE_IDLE
+        || controller->mode == MODE_DAMPING
+        || controller->mode == MODE_POSITION
+        || controller->mode == MODE_VELOCITY
+        || controller->mode == MODE_TORQUE
+        || controller->mode == MODE_CURRENT
+        || controller->mode == MODE_IQD_OVERRIDE
+        || controller->mode == MODE_VQD_OVERRIDE
+        || controller->mode == MODE_VALPHABETA_OVERRIDE
+        || controller->mode == MODE_VABC_OVERRIDE) {
+        // these are the only allowed state transition
+        MotorController_reset(controller);
+        PowerStage_enablePWM(&controller->powerstage);
+      }
+      else {
+        // otherwise we set the fault status
 //        PowerStage_disable(&controller->powerstage);
         controller->mode = MODE_IDLE;
         SET_BITS(controller->error, ERROR_INVALID_MODE);
         return;  // return directly, do not update mode
       }
-      MotorController_reset(controller);
-      PowerStage_enablePWM(&controller->powerstage);
       break;
 
     case MODE_DEBUG:
@@ -478,12 +491,12 @@ void MotorController_runCalibrationSequence(MotorController *controller) {
 }
 
 void MotorController_handleCANMessage(MotorController *controller, CAN_Frame *rx_frame) {
-  uint16_t device_id = (rx_frame->id) & 0b1111;
+  uint16_t device_id = (rx_frame->id) & 0b111111;
   if (device_id && device_id != controller->device_id) {
     return;
   }
 
-  uint16_t func_id = (rx_frame->id) >> 4;
+  uint16_t func_id = (rx_frame->id) >> 6;
 
   CAN_Frame tx_frame;
   tx_frame.id = rx_frame->id;
@@ -498,25 +511,21 @@ void MotorController_handleCANMessage(MotorController *controller, CAN_Frame *rx
       *((uint16_t *)tx_frame.data) = 0xDEAD;
       break;
 
-    case CAN_ID_ID:         // 0x01
+    case CAN_ID_INFO:         // 0x01
       if (rx_frame->size) {
         // controller->device_id = *((uint8_t *)rx_frame->data);
         // TODO: restart logic
       }
-      tx_frame.size = 1;
+      tx_frame.size = 8;
       *((uint8_t *)tx_frame.data) = controller->device_id;
-      break;
-
-    case CAN_ID_VERSION: // 0x02 [firmware_version]
-      tx_frame.size = 4;
-      *((uint32_t *)tx_frame.data) = controller->firmware_version;
+      *((uint32_t *)tx_frame.data + 1) = controller->firmware_version;
       break;
 
     case CAN_ID_SAFETY_WATCHDOG:  // 0x04 []
       __HAL_TIM_SET_COUNTER(&htim2, 0);
       break;
 
-    case CAN_ID_MODE_ERROR:  // 0x06 [mode, error] -> [mode, clear_error?]
+    case CAN_ID_MODE:  // 0x06 [mode, error] -> [mode, clear_error?]
       if (rx_frame->size) {
         MotorController_setMode(controller, *((uint16_t *)rx_frame->data));
         if (*((uint16_t *)rx_frame->data + 1)) {
@@ -540,278 +549,24 @@ void MotorController_handleCANMessage(MotorController *controller, CAN_Frame *rx
       }
       break;
 
-    case CAN_ID_FAST_FRAME_0:   // 0x10 [position_target, torque_limit] -> [position_measured, torque_measured]
+    case CAN_ID_USR_SETTING_READ:
+      MotorController_handleCANRead(controller, *((uint8_t *)rx_frame->data), &tx_frame);
+      break;
+
+    case CAN_ID_USR_SETTING_WRITE:
+      MotorController_handleCANWrite(controller, *((uint8_t *)rx_frame->data), (uint8_t *)rx_frame->data + 4);
+      break;
+
+    case CAN_ID_USR_FAST_FRAME_0:   // 0x11 [position_kp, position_ki]
       controller->position_controller.position_target = *((float *)rx_frame->data);
-      controller->position_controller.torque_limit = *((float *)rx_frame->data + 1);
-      tx_frame.size = 8;
+      controller->position_controller.torque_target = *((float *)rx_frame->data + 1);
       *((float *)tx_frame.data) = controller->position_controller.position_measured;
       *((float *)tx_frame.data + 1) = controller->position_controller.torque_measured;
       break;
 
-    case CAN_ID_FAST_FRAME_1:   // 0x11 [position_kp, position_ki]
+    case CAN_ID_USR_FAST_FRAME_1:   // 0x11 [position_kp, position_ki]
       controller->position_controller.position_kp = *((float *)rx_frame->data);
       controller->position_controller.position_ki = *((float *)rx_frame->data + 1);
-      break;
-
-    case CAN_ID_ENCODER_CPR_OFFSET:  // 0x20 [cpr, position_offset]
-      if (rx_frame->size) {
-        controller->encoder.cpr = *((int32_t *)rx_frame->data);
-        controller->encoder.position_offset = *((float *)rx_frame->data + 1);
-      }
-      tx_frame.size = 8;
-      *((int32_t *)tx_frame.data) = controller->encoder.cpr;
-      *((float *)tx_frame.data + 1) = controller->encoder.position_offset;
-      break;
-
-    case CAN_ID_ENCODER_FILTER:  // 0x21 [filter_alpha]
-      if (rx_frame->size) {
-        controller->encoder.filter_alpha = *((float *)rx_frame->data);
-      }
-      tx_frame.size = 4;
-      *((float *)tx_frame.data) = controller->encoder.filter_alpha;
-      break;
-
-    case CAN_ID_ENCODER_POSITION_RAW_N_ROTATIONS:  // 0x22 [position_raw, n_rotations]
-      tx_frame.size = 8;
-      *((int32_t *)tx_frame.data) = (int32_t)controller->encoder.position_raw;
-      *((float *)tx_frame.data + 1) = controller->encoder.n_rotations;
-      break;
-
-    case CAN_ID_POWERSTAGE_VOLTAGE_THRESHOLD:  // 0x23 [undervoltage_threshold, overvoltage_threshold]
-      if (rx_frame->size) {
-        controller->powerstage.undervoltage_threshold = *((float *)rx_frame->data);
-        controller->powerstage.overvoltage_threshold = *((float *)rx_frame->data + 1);
-      }
-      tx_frame.size = 8;
-      *((float *)tx_frame.data) = controller->powerstage.undervoltage_threshold;
-      *((float *)tx_frame.data + 1) = controller->powerstage.overvoltage_threshold;
-      break;
-
-    case CAN_ID_POWERSTAGE_FILTER:  // 0x24 [bus_voltage_filter_alpha]
-      if (rx_frame->size) {
-        controller->powerstage.bus_voltage_filter_alpha = *((float *)rx_frame->data);
-      }
-      tx_frame.size = 4;
-      *((float *)tx_frame.data) = controller->powerstage.bus_voltage_filter_alpha;
-      break;
-
-    case CAN_ID_POWERSTAGE_BUS_VOLTAGE_MEASURED:  // 0x25 [bus_voltage_measured]
-      tx_frame.size = 4;
-      *((float *)tx_frame.data) = controller->powerstage.bus_voltage_measured;
-      break;
-
-    case CAN_ID_MOTOR_POLE_PAIR_KV:  // 0x26 [pole_pairs, kv_rating]
-      if (rx_frame->size) {
-        controller->motor.pole_pairs = *((uint32_t *)rx_frame->data);
-        controller->motor.kv_rating = *((uint32_t *)rx_frame->data + 1);
-      }
-      tx_frame.size = 8;
-      *((uint32_t *)tx_frame.data) = controller->motor.pole_pairs;
-      *((uint32_t *)tx_frame.data + 1) = controller->motor.kv_rating;
-      break;
-
-    case CAN_ID_MOTOR_PHASE_ORDER_FLUX_OFFSET:  // 0x27 [phase_order, flux_angle_offset]
-      if (rx_frame->size) {
-        controller->motor.phase_order = *((int8_t *)rx_frame->data);
-        controller->motor.flux_angle_offset = *((float *)rx_frame->data + 1);
-      }
-      tx_frame.size = 8;
-      *((int32_t *)tx_frame.data) = (int32_t)controller->motor.phase_order;
-      *((float *)tx_frame.data + 1) = controller->motor.flux_angle_offset;
-      break;
-
-    case CAN_ID_CURRENT_KP_KI:  // 0x30 [i_kp, i_ki]
-      if (rx_frame->size) {
-        controller->current_controller.i_kp = *((float *)rx_frame->data);
-        controller->current_controller.i_ki = *((float *)rx_frame->data + 1);
-      }
-      tx_frame.size = 8;
-      *((float *)tx_frame.data) = controller->current_controller.i_kp;
-      *((float *)tx_frame.data + 1) = controller->current_controller.i_ki;
-      break;
-
-    case CAN_ID_CURRENT_LIMIT:  // 0x31 [i_limit]
-      if (rx_frame->size) {
-        controller->current_controller.i_limit = *((float *)rx_frame->data);
-      }
-      tx_frame.size = 4;
-      *((float *)tx_frame.data) = controller->current_controller.i_limit;
-      break;
-
-    case CAN_ID_CURRENT_IA_IB_MEASURED:  // 0x32 [i_a_measured, i_b_measured]
-      tx_frame.size = 8;
-      *((float *)tx_frame.data) = controller->current_controller.i_a_measured;
-      *((float *)tx_frame.data + 1) = controller->current_controller.i_b_measured;
-      break;
-
-    case CAN_ID_CURRENT_IC_MEASURED:  // 0x33 [i_c_measured]
-      tx_frame.size = 4;
-      *((float *)tx_frame.data) = controller->current_controller.i_c_measured;
-
-    case CAN_ID_CURRENT_VA_VB_SETPOINT:  // 0x34 [v_a_setpoint, v_b_setpoint]
-      if (rx_frame->size) {
-        controller->current_controller.v_a_setpoint = *((float *)rx_frame->data);
-        controller->current_controller.v_b_setpoint = *((float *)rx_frame->data + 1);
-      }
-      tx_frame.size = 8;
-      *((float *)tx_frame.data) = controller->current_controller.v_a_setpoint;
-      *((float *)tx_frame.data + 1) = controller->current_controller.v_b_setpoint;
-      break;
-
-    case CAN_ID_CURRENT_VC_SETPOINT:  // 0x35 [v_c_setpoint]
-      if (rx_frame->size) {
-        controller->current_controller.v_c_setpoint = *((float *)rx_frame->data);
-      }
-      tx_frame.size = 4;
-      *((float *)tx_frame.data) = controller->current_controller.v_c_setpoint;
-      break;
-
-    case CAN_ID_CURRENT_IALPHA_IBETA_MEASURED:  // 0x36 [i_alpha_measured, i_beta_measured]
-      tx_frame.size = 8;
-      *((float *)tx_frame.data) = controller->current_controller.i_alpha_measured;
-      *((float *)tx_frame.data + 1) = controller->current_controller.i_beta_measured;
-      break;
-
-    case CAN_ID_CURRENT_VALPHA_VBETA_SETPOINT:  // 0x37 [v_alpha_setpoint, v_beta_setpoint]
-      if (rx_frame->size) {
-        controller->current_controller.v_alpha_setpoint = *((float *)rx_frame->data);
-        controller->current_controller.v_beta_setpoint = *((float *)rx_frame->data + 1);
-      }
-      tx_frame.size = 8;
-      *((float *)tx_frame.data) = controller->current_controller.v_alpha_setpoint;
-      *((float *)tx_frame.data + 1) = controller->current_controller.v_beta_setpoint;
-      break;
-
-    case CAN_ID_CURRENT_VQ_VD_TARGET:  // 0x38 [v_q_target, v_d_target]
-      if (rx_frame->size) {
-        controller->current_controller.v_q_target = *((float *)rx_frame->data);
-        controller->current_controller.v_d_target = *((float *)rx_frame->data + 1);
-      }
-      tx_frame.size = 8;
-      *((float *)tx_frame.data) = controller->current_controller.v_q_target;
-      *((float *)tx_frame.data + 1) = controller->current_controller.v_d_target;
-      break;
-
-    case CAN_ID_CURRENT_VQ_VD_SETPOINT:  // 0x39 [v_q_setpoint,  v_d_setpoint]
-      tx_frame.size = 8;
-      *((float *)tx_frame.data) = controller->current_controller.v_q_setpoint;
-      *((float *)tx_frame.data + 1) = controller->current_controller.v_d_setpoint;
-      break;
-
-    case CAN_ID_CURRENT_IQ_ID_TARGET:  // 0x3A [i_q_target, i_d_target]
-      if (rx_frame->size) {
-        controller->current_controller.i_q_target = *((float *)rx_frame->data);
-        controller->current_controller.i_d_target = *((float *)rx_frame->data + 1);
-      }
-      tx_frame.size = 8;
-      *((float *)tx_frame.data) = controller->current_controller.i_q_target;
-      *((float *)tx_frame.data + 1) = controller->current_controller.i_d_target;
-      break;
-
-    case CAN_ID_CURRENT_IQ_ID_MEASURED:  // 0x3B [i_q_measured, i_d_measured]
-      tx_frame.size = 8;
-      *((float *)tx_frame.data) = controller->current_controller.i_q_measured;
-      *((float *)tx_frame.data + 1) = controller->current_controller.i_d_measured;
-      break;
-
-    case CAN_ID_CURRENT_IQ_ID_SETPOINT:  // 0x3C [i_q_setpoint, i_d_setpoint]
-      tx_frame.size = 8;
-      *((float *)tx_frame.data) = controller->current_controller.i_q_setpoint;
-      *((float *)tx_frame.data + 1) = controller->current_controller.i_d_setpoint;
-      break;
-
-    case CAN_ID_CURRENT_IQ_ID_INTEGRATOR:  // 0x3D [i_q_integrator, i_d_integrator]
-      tx_frame.size = 8;
-      *((float *)tx_frame.data) = controller->current_controller.i_q_integrator;
-      *((float *)tx_frame.data + 1) = controller->current_controller.i_d_integrator;
-      break;
-
-    case CAN_ID_POSITION_KP_KI:  // 0x40 [position_kp, position_ki]
-      if (rx_frame->size) {
-        controller->position_controller.position_kp = *((float *)rx_frame->data);
-        controller->position_controller.position_ki = *((float *)rx_frame->data + 1);
-      }
-      tx_frame.size = 8;
-      *((float *)tx_frame.data) = controller->position_controller.position_kp;
-      *((float *)tx_frame.data + 1) = controller->position_controller.position_ki;
-      break;
-
-    case CAN_ID_VELOCITY_KP_KI:  // 0x41 [velocity_kp, velocity_ki]
-      if (rx_frame->size) {
-        controller->position_controller.velocity_kp = *((float *)rx_frame->data);
-        controller->position_controller.velocity_ki = *((float *)rx_frame->data + 1);
-      }
-      tx_frame.size = 8;
-      *((float *)tx_frame.data) = controller->position_controller.velocity_kp;
-      *((float *)tx_frame.data + 1) = controller->position_controller.velocity_ki;
-      break;
-
-    case CAN_ID_TORQUE_VELOCITY_LIMIT:  // 0x42 [torque_limit, velocity_limit]
-      if (rx_frame->size) {
-        controller->position_controller.torque_limit = *((float *)rx_frame->data);
-        controller->position_controller.velocity_limit = *((float *)rx_frame->data + 1);
-      }
-      tx_frame.size = 8;
-      *((float *)tx_frame.data) = controller->position_controller.torque_limit;
-      *((float *)tx_frame.data + 1) = controller->position_controller.velocity_limit;
-      break;
-
-    case CAN_ID_POSITION_LIMIT:  // 0x43 [position_limit_lower, position_limit_upper]
-      if (rx_frame->size) {
-        controller->position_controller.position_limit_lower = *((float *)rx_frame->data);
-        controller->position_controller.position_limit_upper = *((float *)rx_frame->data + 1);
-      }
-      tx_frame.size = 8;
-      *((float *)tx_frame.data) = controller->position_controller.position_limit_lower;
-      *((float *)tx_frame.data + 1) = controller->position_controller.position_limit_upper;
-      break;
-
-    case CAN_ID_TORQUE_TARGET:  // 0x44 [torque_target]
-      if (rx_frame->size) {
-        controller->position_controller.torque_target = *((float *)rx_frame->data);
-      }
-      tx_frame.size = 4;
-      *((float *)tx_frame.data) = controller->position_controller.torque_target;
-      break;
-
-    case CAN_ID_TORQUE_MEASURED_SETPOINT:  // 0x45 [torque_measured, torque_setpoint]
-      tx_frame.size = 8;
-      *((float *)tx_frame.data) = controller->position_controller.torque_measured;
-      *((float *)tx_frame.data + 1) = controller->position_controller.torque_setpoint;
-      break;
-
-    case CAN_ID_VELOCITY_TARGET:  // 0x46 [velocity_target]
-      if (rx_frame->size) {
-        controller->position_controller.velocity_target = *((float *)rx_frame->data);
-      }
-      tx_frame.size = 4;
-      *((float *)tx_frame.data) = controller->position_controller.velocity_target;
-      break;
-
-    case CAN_ID_VELOCITY_MEASURED_SETPOINT:  // 0x47 [velocity_measured, velocity_setpoint]
-      tx_frame.size = 8;
-      *((float *)tx_frame.data) = controller->position_controller.velocity_measured;
-      *((float *)tx_frame.data + 1) = controller->position_controller.velocity_setpoint;
-      break;
-
-    case CAN_ID_POSITION_TARGET:  // 0x48 [position_target]
-      if (rx_frame->size) {
-        controller->position_controller.position_target = *((float *)rx_frame->data);
-      }
-      tx_frame.size = 4;
-      *((float *)tx_frame.data) = controller->position_controller.position_target;
-      break;
-
-    case CAN_ID_POSITION_MEASURED_SETPOINT:  // 0x49 [position_measured, position_setpoint]
-      tx_frame.size = 8;
-      *((float *)tx_frame.data) = controller->position_controller.position_measured;
-      *((float *)tx_frame.data + 1) = controller->position_controller.position_setpoint;
-      break;
-
-    case CAN_ID_POSITION_VELOCITY_INTEGRATOR:  // 0x49 [position_integrator, velocity_integrator]
-      tx_frame.size = 8;
-      *((float *)tx_frame.data) = controller->position_controller.position_integrator;
-      *((float *)tx_frame.data + 1) = controller->position_controller.velocity_integrator;
       break;
 
     case CAN_ID_PING:  // 0x7F
@@ -822,6 +577,365 @@ void MotorController_handleCANMessage(MotorController *controller, CAN_Frame *rx
 
   if (tx_frame.size) {
     CAN_putTxFrame(&hfdcan1, &tx_frame);
+  }
+}
+
+
+void MotorController_handleCANRead(MotorController *controller, Command command, CAN_Frame *tx_frame) {
+  tx_frame->size = 8;
+  *((uint8_t *)tx_frame->data) = command;
+  switch (command) {
+    case CMD_ENCODER_CPR:
+      *((int32_t *)tx_frame->data + 4) = controller->encoder.cpr;
+      break;
+    case CMD_ENCODER_OFFSET:
+      *((float *)tx_frame->data + 4) = controller->encoder.position_offset;
+      break;
+    case CMD_ENCODER_FILTER:
+      *((float *)tx_frame->data + 4) = controller->encoder.filter_alpha;
+      break;
+    case CMD_ENCODER_POSITION_RAW:
+      *((int16_t *)tx_frame->data + 4) = controller->encoder.position_raw;
+      break;
+    case CMD_ENCODER_N_ROTATIONS:
+      *((int32_t *)tx_frame->data + 4) = controller->encoder.n_rotations;
+      break;
+    case CMD_POWERSTAGE_VOLTAGE_THRESHOLD_LOW:
+      *((float *)tx_frame->data + 4) = controller->powerstage.undervoltage_threshold;
+      break;
+    case CMD_POWERSTAGE_VOLTAGE_THRESHOLD_HIGH:
+      *((float *)tx_frame->data + 4) = controller->powerstage.overvoltage_threshold;
+      break;
+    case CMD_POWERSTAGE_FILTER:
+      *((float *)tx_frame->data + 4) = controller->powerstage.bus_voltage_filter_alpha;
+      break;
+    case CMD_POWERSTAGE_BUS_VOLTAGE_MEASURED:
+      *((float *)tx_frame->data + 4) = controller->powerstage.bus_voltage_measured;
+      break;
+    case CMD_MOTOR_POLE_PAIR:
+      *((uint32_t *)tx_frame->data + 4) = controller->motor.pole_pairs;
+      break;
+    case CMD_MOTOR_KV:
+      *((uint32_t *)tx_frame->data + 4) = controller->motor.kv_rating;
+      break;
+    case CMD_MOTOR_PHASE_ORDER:
+      *((int8_t *)tx_frame->data + 4) = controller->motor.phase_order;
+      break;
+    case CMD_MOTOR_FLUX_OFFSET:
+      *((float *)tx_frame->data + 4) = controller->motor.flux_angle_offset;
+      break;
+    case CMD_CURRENT_KP:
+      *((float *)tx_frame->data + 4) = controller->current_controller.i_kp;
+      break;
+    case CMD_CURRENT_KI:
+      *((float *)tx_frame->data + 4) = controller->current_controller.i_ki;
+      break;
+    case CMD_CURRENT_LIMIT:
+      *((float *)tx_frame->data + 4) = controller->current_controller.i_limit;
+      break;
+    case CMD_CURRENT_IA_MEASURED:
+      *((float *)tx_frame->data + 4) = controller->current_controller.i_a_measured;
+      break;
+    case CMD_CURRENT_IB_MEASURED:
+      *((float *)tx_frame->data + 4) = controller->current_controller.i_b_measured;
+      break;
+    case CMD_CURRENT_IC_MEASURED:
+      *((float *)tx_frame->data + 4) = controller->current_controller.i_c_measured;
+      break;
+    case CMD_CURRENT_VA_SETPOINT:
+      *((float *)tx_frame->data + 4) = controller->current_controller.v_a_setpoint;
+      break;
+    case CMD_CURRENT_VB_SETPOINT:
+      *((float *)tx_frame->data + 4) = controller->current_controller.v_b_setpoint;
+      break;
+    case CMD_CURRENT_VC_SETPOINT:
+      *((float *)tx_frame->data + 4) = controller->current_controller.v_c_setpoint;
+      break;
+    case CMD_CURRENT_IALPHA_MEASURED:
+      *((float *)tx_frame->data + 4) = controller->current_controller.i_alpha_measured;
+      break;
+    case CMD_CURRENT_IBETA_MEASURED:
+      *((float *)tx_frame->data + 4) = controller->current_controller.i_beta_measured;
+      break;
+    case CMD_CURRENT_VALPHA_SETPOINT:
+      *((float *)tx_frame->data + 4) = controller->current_controller.v_alpha_setpoint;
+      break;
+    case CMD_CURRENT_VBETA_SETPOINT:
+      *((float *)tx_frame->data + 4) = controller->current_controller.v_beta_setpoint;
+      break;
+    case CMD_CURRENT_VQ_TARGET:
+      *((float *)tx_frame->data + 4) = controller->current_controller.v_q_target;
+      break;
+    case CMD_CURRENT_VD_TARGET:
+      *((float *)tx_frame->data + 4) = controller->current_controller.v_d_target;
+      break;
+    case CMD_CURRENT_VQ_SETPOINT:
+      *((float *)tx_frame->data + 4) = controller->current_controller.v_q_setpoint;
+      break;
+    case CMD_CURRENT_VD_SETPOINT:
+      *((float *)tx_frame->data + 4) = controller->current_controller.v_d_setpoint;
+      break;
+    case CMD_CURRENT_IQ_TARGET:
+      *((float *)tx_frame->data + 4) = controller->current_controller.i_q_target;
+      break;
+    case CMD_CURRENT_ID_TARGET:
+      *((float *)tx_frame->data + 4) = controller->current_controller.i_d_target;
+      break;
+    case CMD_CURRENT_IQ_MEASURED:
+      *((float *)tx_frame->data + 4) = controller->current_controller.i_q_measured;
+      break;
+    case CMD_CURRENT_ID_MEASURED:
+      *((float *)tx_frame->data + 4) = controller->current_controller.i_d_measured;
+      break;
+    case CMD_CURRENT_IQ_SETPOINT:
+      *((float *)tx_frame->data + 4) = controller->current_controller.i_q_setpoint;
+      break;
+    case CMD_CURRENT_ID_SETPOINT:
+      *((float *)tx_frame->data + 4) = controller->current_controller.i_d_setpoint;
+      break;
+    case CMD_CURRENT_IQ_INTEGRATOR:
+      *((float *)tx_frame->data + 4) = controller->current_controller.i_q_integrator;
+      break;
+    case CMD_CURRENT_ID_INTEGRATOR:
+      *((float *)tx_frame->data + 4) = controller->current_controller.i_d_integrator;
+      break;
+    case CMD_POSITION_KP:
+      *((float *)tx_frame->data + 4) = controller->position_controller.position_kp;
+      break;
+    case CMD_POSITION_KI:
+      *((float *)tx_frame->data + 4) = controller->position_controller.position_ki;
+      break;
+    case CMD_VELOCITY_KP:
+      *((float *)tx_frame->data + 4) = controller->position_controller.velocity_kp;
+      break;
+    case CMD_VELOCITY_KI:
+      *((float *)tx_frame->data + 4) = controller->position_controller.velocity_ki;
+      break;
+    case CMD_TORQUE_LIMIT:
+      *((float *)tx_frame->data + 4) = controller->position_controller.torque_limit;
+      break;
+    case CMD_VELOCITY_LIMIT:
+      *((float *)tx_frame->data + 4) = controller->position_controller.velocity_limit;
+      break;
+    case CMD_POSITION_LIMIT_LOW:
+      *((float *)tx_frame->data + 4) = controller->position_controller.position_limit_lower;
+      break;
+    case CMD_POSITION_LIMIT_HIGH:
+      *((float *)tx_frame->data + 4) = controller->position_controller.position_limit_upper;
+      break;
+    case CMD_TORQUE_TARGET:
+      *((float *)tx_frame->data + 4) = controller->position_controller.torque_target;
+      break;
+    case CMD_TORQUE_MEASURED:
+      *((float *)tx_frame->data + 4) = controller->position_controller.torque_measured;
+      break;
+    case CMD_TORQUE_SETPOINT:
+      *((float *)tx_frame->data + 4) = controller->position_controller.torque_setpoint;
+      break;
+    case CMD_VELOCITY_TARGET:
+      *((float *)tx_frame->data + 4) = controller->position_controller.velocity_target;
+      break;
+    case CMD_VELOCITY_MEASURED:
+      *((float *)tx_frame->data + 4) = controller->position_controller.velocity_measured;
+      break;
+    case CMD_VELOCITY_SETPOINT:
+      *((float *)tx_frame->data + 4) = controller->position_controller.velocity_setpoint;
+      break;
+    case CMD_POSITION_TARGET:
+      *((float *)tx_frame->data + 4) = controller->position_controller.position_target;
+      break;
+    case CMD_POSITION_MEASURED:
+      *((float *)tx_frame->data + 4) = controller->position_controller.position_measured;
+      break;
+    case CMD_POSITION_SETPOINT:
+      *((float *)tx_frame->data + 4) = controller->position_controller.position_setpoint;
+      break;
+    case CMD_VELOCITY_INTEGRATOR:
+      *((float *)tx_frame->data + 4) = controller->position_controller.velocity_integrator;
+      break;
+    case CMD_POSITION_INTEGRATOR:
+      *((float *)tx_frame->data + 4) = controller->position_controller.position_integrator;
+      break;
+    default:
+      break;
+  }
+}
+
+void MotorController_handleCANWrite(MotorController *controller, Command command, uint8_t *rx_data) {
+  switch (command) {
+    case CMD_ENCODER_CPR:
+      controller->encoder.cpr = *((int32_t *)rx_data);
+      break;
+    case CMD_ENCODER_OFFSET:
+      controller->encoder.position_offset = *((float *)rx_data);
+      break;
+    case CMD_ENCODER_FILTER:
+      controller->encoder.filter_alpha = *((float *)rx_data);
+      break;
+    case CMD_ENCODER_POSITION_RAW:
+//      controller->encoder.position_raw = *((int16_t *)rx_data);
+      break;
+    case CMD_ENCODER_N_ROTATIONS:
+      controller->encoder.n_rotations = *((int32_t *)rx_data);
+      break;
+    case CMD_POWERSTAGE_VOLTAGE_THRESHOLD_LOW:
+      controller->powerstage.undervoltage_threshold = *((float *)rx_data);
+      break;
+    case CMD_POWERSTAGE_VOLTAGE_THRESHOLD_HIGH:
+      controller->powerstage.overvoltage_threshold = *((float *)rx_data);
+      break;
+    case CMD_POWERSTAGE_FILTER:
+      controller->powerstage.bus_voltage_filter_alpha = *((float *)rx_data);
+      break;
+    case CMD_POWERSTAGE_BUS_VOLTAGE_MEASURED:
+//      controller->powerstage.bus_voltage_measured = *((float *)rx_data);
+      break;
+    case CMD_MOTOR_POLE_PAIR:
+      controller->motor.pole_pairs = *((uint32_t *)rx_data);
+      break;
+    case CMD_MOTOR_KV:
+      controller->motor.kv_rating = *((uint32_t *)rx_data);
+      break;
+    case CMD_MOTOR_PHASE_ORDER:
+      controller->motor.phase_order = *((int8_t *)rx_data);
+      break;
+    case CMD_MOTOR_FLUX_OFFSET:
+      controller->motor.flux_angle_offset = *((float *)rx_data);
+      break;
+    case CMD_CURRENT_KP:
+      controller->current_controller.i_kp = *((float *)rx_data);
+      break;
+    case CMD_CURRENT_KI:
+      controller->current_controller.i_ki = *((float *)rx_data);
+      break;
+    case CMD_CURRENT_LIMIT:
+      controller->current_controller.i_limit = *((float *)rx_data);
+      break;
+    case CMD_CURRENT_IA_MEASURED:
+//      controller->current_controller.i_a_measured = *((float *)rx_data);
+      break;
+    case CMD_CURRENT_IB_MEASURED:
+//      controller->current_controller.i_b_measured = *((float *)rx_data);
+      break;
+    case CMD_CURRENT_IC_MEASURED:
+//      controller->current_controller.i_c_measured = *((float *)rx_data);
+      break;
+    case CMD_CURRENT_VA_SETPOINT:
+      controller->current_controller.v_a_setpoint = *((float *)rx_data);
+      break;
+    case CMD_CURRENT_VB_SETPOINT:
+      controller->current_controller.v_b_setpoint = *((float *)rx_data);
+      break;
+    case CMD_CURRENT_VC_SETPOINT:
+      controller->current_controller.v_c_setpoint = *((float *)rx_data);
+      break;
+    case CMD_CURRENT_IALPHA_MEASURED:
+//      controller->current_controller.i_alpha_measured = *((float *)rx_data);
+      break;
+    case CMD_CURRENT_IBETA_MEASURED:
+//      controller->current_controller.i_beta_measured = *((float *)rx_data);
+      break;
+    case CMD_CURRENT_VALPHA_SETPOINT:
+      controller->current_controller.v_alpha_setpoint = *((float *)rx_data);
+      break;
+    case CMD_CURRENT_VBETA_SETPOINT:
+      controller->current_controller.v_beta_setpoint = *((float *)rx_data);
+      break;
+    case CMD_CURRENT_VQ_TARGET:
+      controller->current_controller.v_q_target = *((float *)rx_data);
+      break;
+    case CMD_CURRENT_VD_TARGET:
+      controller->current_controller.v_d_target = *((float *)rx_data);
+      break;
+    case CMD_CURRENT_VQ_SETPOINT:
+      controller->current_controller.v_q_setpoint = *((float *)rx_data);
+      break;
+    case CMD_CURRENT_VD_SETPOINT:
+      controller->current_controller.v_d_setpoint = *((float *)rx_data);
+      break;
+    case CMD_CURRENT_IQ_TARGET:
+      controller->current_controller.i_q_target = *((float *)rx_data);
+      break;
+    case CMD_CURRENT_ID_TARGET:
+      controller->current_controller.i_d_target = *((float *)rx_data);
+      break;
+    case CMD_CURRENT_IQ_MEASURED:
+//      controller->current_controller.i_q_measured = *((float *)rx_data);
+      break;
+    case CMD_CURRENT_ID_MEASURED:
+//      controller->current_controller.i_d_measured = *((float *)rx_data);
+      break;
+    case CMD_CURRENT_IQ_SETPOINT:
+      controller->current_controller.i_q_setpoint = *((float *)rx_data);
+      break;
+    case CMD_CURRENT_ID_SETPOINT:
+      controller->current_controller.i_d_setpoint = *((float *)rx_data);
+      break;
+    case CMD_CURRENT_IQ_INTEGRATOR:
+      controller->current_controller.i_q_integrator = *((float *)rx_data);
+      break;
+    case CMD_CURRENT_ID_INTEGRATOR:
+      controller->current_controller.i_d_integrator = *((float *)rx_data);
+      break;
+    case CMD_POSITION_KP:
+      controller->position_controller.position_kp = *((float *)rx_data);
+      break;
+    case CMD_POSITION_KI:
+      controller->position_controller.position_ki = *((float *)rx_data);
+      break;
+    case CMD_VELOCITY_KP:
+      controller->position_controller.velocity_kp = *((float *)rx_data);
+      break;
+    case CMD_VELOCITY_KI:
+      controller->position_controller.velocity_ki = *((float *)rx_data);
+      break;
+    case CMD_TORQUE_LIMIT:
+      controller->position_controller.torque_limit = *((float *)rx_data);
+      break;
+    case CMD_VELOCITY_LIMIT:
+      controller->position_controller.velocity_limit = *((float *)rx_data);
+      break;
+    case CMD_POSITION_LIMIT_LOW:
+      controller->position_controller.position_limit_lower = *((float *)rx_data);
+      break;
+    case CMD_POSITION_LIMIT_HIGH:
+      controller->position_controller.position_limit_upper = *((float *)rx_data);
+      break;
+    case CMD_TORQUE_TARGET:
+      controller->position_controller.torque_target = *((float *)rx_data);
+      break;
+    case CMD_TORQUE_MEASURED:
+//      controller->position_controller.torque_measured = *((float *)rx_data);
+      break;
+    case CMD_TORQUE_SETPOINT:
+      controller->position_controller.torque_setpoint = *((float *)rx_data);
+      break;
+    case CMD_VELOCITY_TARGET:
+      controller->position_controller.velocity_target = *((float *)rx_data);
+      break;
+    case CMD_VELOCITY_MEASURED:
+//      controller->position_controller.velocity_measured = *((float *)rx_data);
+      break;
+    case CMD_VELOCITY_SETPOINT:
+      controller->position_controller.velocity_setpoint = *((float *)rx_data);
+      break;
+    case CMD_POSITION_TARGET:
+      controller->position_controller.position_target = *((float *)rx_data);
+      break;
+    case CMD_POSITION_MEASURED:
+//      controller->position_controller.position_measured = *((float *)rx_data);
+      break;
+    case CMD_POSITION_SETPOINT:
+      controller->position_controller.position_setpoint = *((float *)rx_data);
+      break;
+    case CMD_VELOCITY_INTEGRATOR:
+      controller->position_controller.velocity_integrator = *((float *)rx_data);
+      break;
+    case CMD_POSITION_INTEGRATOR:
+      controller->position_controller.position_integrator = *((float *)rx_data);
+      break;
+    default:
+      break;
   }
 }
 

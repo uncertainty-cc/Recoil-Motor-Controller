@@ -109,4 +109,8 @@ void MotorController_runCalibrationSequence(MotorController *controller);
 
 void MotorController_handleCANMessage(MotorController *controller, CAN_Frame *rx_frame);
 
+void MotorController_handleCANRead(MotorController *controller, Command command, CAN_Frame *tx_frame);
+
+void MotorController_handleCANWrite(MotorController *controller, Command command, uint8_t *rx_data);
+
 #endif /* INC_MOTOR_CONTROLLER_H_ */

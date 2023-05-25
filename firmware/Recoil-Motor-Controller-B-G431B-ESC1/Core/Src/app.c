@@ -22,7 +22,6 @@ extern UART_HandleTypeDef huart2;
 
 MotorController controller;
 
-
 uint32_t counter;
 
 void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs) {
@@ -39,13 +38,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
   //  controller.position_controller.position_target = APP_getUserPot() * M_PI;
 
     /* ====== End user APP code ====== */
-
   }
   else if (htim == &htim2) {
     #if SAFETY_WATCHDOG_ENABLED
     // watchdog time: 1000ms
     if (controller.mode != MODE_IDLE && controller.mode != MODE_CALIBRATION) {
-      MotorController_setMode(&controller, MODE_IDLE);
+      MotorController_setMode(&controller, MODE_DAMPING);
       SET_BITS(controller.error, ERROR_WATCHDOG_TIMEOUT);
     }
     #endif
@@ -102,7 +100,7 @@ void APP_init() {
 //  MotorController_updateService(&controller);
 
 //  controller.current_controller.v_q_target = 0.75;
-////  controller.current_controller.v_q_target = 1.2;
+//  controller.current_controller.v_q_target = 1.2;
 //  controller.current_controller.v_d_target = 0;
 //  MotorController_setMode(&controller, MODE_VQD_OVERRIDE);
 
@@ -112,8 +110,9 @@ void APP_init() {
 
 //  controller.current_controller.i_q_target = 0.1;
 //  controller.current_controller.i_q_target = 4.f;
-
-//  controller.current_controller.i_q_target = 4.f;
+//
+//  controller.current_controller.i_q_target = 2.f;    // M6C12
+//  controller.current_controller.i_q_target = 1.5f;      // 5010 110KV
 //  controller.current_controller.i_d_target = 0.;
 //  MotorController_setMode(&controller, MODE_CURRENT);
 
@@ -125,7 +124,7 @@ void APP_main() {
   MotorController_updateService(&controller);
 
 //  counter += 1;
-//
+////
 //  if (counter > 1000) {
 ////    controller.current_controller.i_q_target = 4.f;
 //    controller.position_controller.position_target = 0.0f;
@@ -143,11 +142,20 @@ void APP_main() {
     MotorController_setMode(&controller, MODE_CALIBRATION);
   }
 
-//  sprintf(str, "p:%f\tv:%f\tvoltage:%f\tpot:%f\r\n",
-//      controller.position_controller.position_measured,
-//      controller.position_controller.velocity_measured,
-//      controller.powerstage.bus_voltage_measured,
-//      APP_getUserPot());
+  sprintf(str, "p:%f\tv:%f\tvoltage:%f\tpot:%f\r\n",
+      controller.position_controller.position_measured,
+      controller.position_controller.velocity_measured,
+      controller.powerstage.bus_voltage_measured,
+      APP_getUserPot());
+
+//  sprintf(str, "iq_mea:%f\tid_mea:%f\tiq_tar:%f\tiq_set:%f\tvq_tar:%f\r\n",
+//      controller.current_controller.i_q_measured * 100,
+//      controller.current_controller.i_d_measured * 100,
+//      controller.current_controller.i_q_target * 100,
+//      controller.current_controller.i_q_setpoint * 100,
+//      controller.current_controller.v_q_target);
+//
+
 
 //  sprintf(str, "pwma:%d\tpwmb:%d\tpwmc:%d\r\n",
 //      __HAL_TIM_GET_COMPARE(controller.powerstage.htim, TIM_CHANNEL_1),
@@ -165,12 +173,6 @@ void APP_main() {
 //        controller.current_controller.i_q_measured * 100,
 //        controller.current_controller.i_d_measured * 100);
 
-  sprintf(str, "iq_mea:%f\tid_mea:%f\tiq_tar:%f\tiq_set:%f\tvq_tar:%f\r\n",
-      controller.current_controller.i_q_measured * 100,
-      controller.current_controller.i_d_measured * 100,
-      controller.current_controller.i_q_target * 100,
-      controller.current_controller.i_q_setpoint * 100,
-      controller.current_controller.v_q_target);
 
 //  sprintf(str, "mea:%f\ttar:%f\tset:%f\tiq:%f\r\n",
 //      controller.position_controller.position_measured,

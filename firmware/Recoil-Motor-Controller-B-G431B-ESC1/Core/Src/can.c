@@ -1,8 +1,9 @@
-/*
- * can.c
- *
- *  Created on: Sep 9, 2022
- *      Author: TK
+/**
+ * @file can.c
+ * @author -T.K.-
+ * @brief Generic CAN driver library.
+ * @version 1.0.0
+ * @date 2023-05-25
  */
 
 #include "can.h"
