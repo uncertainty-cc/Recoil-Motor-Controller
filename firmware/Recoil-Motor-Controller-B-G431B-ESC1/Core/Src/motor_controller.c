@@ -143,7 +143,6 @@ void MotorController_setMode(MotorController *controller, Mode mode) {
     case MODE_VELOCITY:
     case MODE_TORQUE:
     case MODE_CURRENT:
-    case MODE_IQD_OVERRIDE:
     case MODE_VQD_OVERRIDE:
     case MODE_VALPHABETA_OVERRIDE:
     case MODE_VABC_OVERRIDE:
@@ -156,7 +155,6 @@ void MotorController_setMode(MotorController *controller, Mode mode) {
         || controller->mode == MODE_VELOCITY
         || controller->mode == MODE_TORQUE
         || controller->mode == MODE_CURRENT
-        || controller->mode == MODE_IQD_OVERRIDE
         || controller->mode == MODE_VQD_OVERRIDE
         || controller->mode == MODE_VALPHABETA_OVERRIDE
         || controller->mode == MODE_VABC_OVERRIDE) {
@@ -239,13 +237,13 @@ HAL_StatusTypeDef MotorController_storeConfig(MotorController *controller) {
   config.encoder_cpr                                    = controller->encoder.cpr;
   config.encoder_position_offset                        = controller->encoder.position_offset;
   config.encoder_filter_alpha                           = controller->encoder.filter_alpha;
+  config.encoder_flux_offset                            = controller->encoder.flux_offset;
   config.powerstage_undervoltage_threshold              = controller->powerstage.undervoltage_threshold;
   config.powerstage_overvoltage_threshold               = controller->powerstage.overvoltage_threshold;
   config.powerstage_bus_voltage_filter_alpha            = controller->powerstage.bus_voltage_filter_alpha;
   config.motor_pole_pairs                               = controller->motor.pole_pairs;
   config.motor_kv_rating                                = controller->motor.kv_rating;
   config.motor_phase_order                              = (int32_t)controller->motor.phase_order;
-  config.motor_flux_angle_offset                        = controller->motor.flux_angle_offset;
   config.current_controller_i_kp                        = controller->current_controller.i_kp;
   config.current_controller_i_ki                        = controller->current_controller.i_ki;
   config.current_controller_i_limit                     = controller->current_controller.i_limit;
@@ -327,13 +325,22 @@ void MotorController_update(MotorController *controller) {
     controller->current_controller.i_q_target = (controller->position_controller.torque_setpoint * (float)controller->motor.kv_rating) / 8.3f;
     controller->current_controller.i_d_target = 0.f;
   }
+  else {
+    // MODE_CURRENT
+    /*
+     * user sets `controller->i_q_target` and `controller->i_d_target`
+     */
+  }
 
 
 //  MotorController_updateSafety(controller);
 
   PowerStage_updateBusVoltage(&controller->powerstage);
 
-  float theta = wrapTo2Pi((Encoder_getPositionMeasured(&controller->encoder) * (float)controller->motor.pole_pairs) - controller->motor.flux_angle_offset);
+  float theta = wrapTo2Pi(
+      (Encoder_getPositionMeasured(&controller->encoder) * (float)controller->motor.pole_pairs)
+      - controller->encoder.flux_offset
+      );
   float sin_theta = sinf(theta);
   float cos_theta = cosf(theta);
 
@@ -351,7 +358,6 @@ void MotorController_update(MotorController *controller) {
       || controller->mode == MODE_VELOCITY
       || controller->mode == MODE_TORQUE
       || controller->mode == MODE_CURRENT
-      || controller->mode == MODE_IQD_OVERRIDE
       || controller->mode == MODE_VQD_OVERRIDE
       || controller->mode == MODE_VALPHABETA_OVERRIDE
       || controller->mode == MODE_VABC_OVERRIDE) {
@@ -384,6 +390,8 @@ void MotorController_runCalibrationSequence(MotorController *controller) {
       HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 10);
     }
   }
+
+  float error_table[128 * 14];
 
   // open loop calibration
   float prev_v_alpha_target = controller->current_controller.v_alpha_setpoint;
@@ -419,7 +427,94 @@ void MotorController_runCalibrationSequence(MotorController *controller) {
 
   HAL_Delay(1000);
 
+
+  // move one mechanical revolution forward
+  for (uint32_t i=0; i<512 * 14; i+=1) {
+    flux_angle_setpoint = ((float)i / (512.f*14.f)) * (2*M_PI) * controller->motor.pole_pairs;
+
+    MotorController_setFluxAngle(controller, flux_angle_setpoint, voltage_setpoint);
+    HAL_Delay(1);
+
+    error_table[i>>2] = Encoder_getPositionMeasured(&controller->encoder) * controller->motor.pole_pairs - flux_angle_setpoint;
+  }
+
+  HAL_Delay(500);
+
+  // move one mechanical revolution backward
+  for (uint32_t i=512 * 14; i>0; i-=1) {
+    flux_angle_setpoint = ((float)i / (512.f*14.f)) * (2*M_PI) * controller->motor.pole_pairs;
+
+    MotorController_setFluxAngle(controller, flux_angle_setpoint, voltage_setpoint);
+    HAL_Delay(1);
+
+    error_table[(i-1)>>2] += Encoder_getPositionMeasured(&controller->encoder) * controller->motor.pole_pairs - flux_angle_setpoint;
+  }
+
+  // Calculate average offset
+  float flux_offset_sum = 0;
+  for (uint32_t i=0; i<128 * 14; i+=1) {
+    flux_offset_sum += error_table[i];
+  }
+  float flux_offset = wrapTo2Pi(flux_offset_sum / (128.f * controller->motor.pole_pairs) / 2.f);
+//  controller->encoder.flux_offset = flux_offset_sum / (128.f * 14.f) / 2.f;
+
+  {
+    char str[128];
+    sprintf(str, "offset angle: %f\r\n", flux_offset);
+    HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 10);
+  }
+
+//
+//  int16_t window = 14;
+//  int lut_offset = (ENC_CPR-cal->error_arr[0])*N_LUT/ENC_CPR;
+//
+//  for (uint16_t i=0; i<128; i+=1) {
+//    float moving_avg = 0;
+//    for (int16_t j=-window/2; j<(window/2); j+=1) {
+//      uint32_t index = i * 14 * 128 / 128 + j;
+//      if (index > 0) {
+//        index += 128 * 14;
+//      }
+//      else if (index > 128 * 14 - 1) {
+//        index -= 128 * 14;
+//      }
+//      moving_avg += error_table[index];
+//    }
+//    moving_avg = moving_avg / window;
+//    uint32_t lut_index = lut_offset + i;
+//
+//  }
+    // Moving average to filter out cogging ripple
+
+//    int window = SAMPLES_PER_PPAIR;
+//    int lut_offset = (ENC_CPR-cal->error_arr[0])*N_LUT/ENC_CPR;
+//    for(int i = 0; i<N_LUT; i++){
+//        int moving_avg = 0;
+//        for(int j = (-window)/2; j<(window)/2; j++){
+//          int index = i*PPAIRS*SAMPLES_PER_PPAIR/N_LUT + j;
+//          if(index<0){index += (SAMPLES_PER_PPAIR*PPAIRS);}
+//          else if(index>(SAMPLES_PER_PPAIR*PPAIRS-1)){index -= (SAMPLES_PER_PPAIR*PPAIRS);}
+//          moving_avg += cal->error_arr[index];
+//        }
+//        moving_avg = moving_avg/window;
+//        int lut_index = lut_offset + i;
+//        if(lut_index>(N_LUT-1)){lut_index -= N_LUT;}
+//        cal->lut_arr[lut_index] = moving_avg - cal->ezero;
+//        printf("%d  %d\r\n", lut_index, moving_avg - cal->ezero);
+//
+//      }
+
+
+
+
+  flux_angle_setpoint = 0.f;
+  MotorController_setFluxAngle(controller, flux_angle_setpoint, voltage_setpoint);
+
+  HAL_Delay(500);
+
+
   float start_position = Encoder_getPositionMeasured(&controller->encoder);
+
 
   // move one electrical revolution forward
   for (int16_t i=0; i<=500; i+=1) {
@@ -448,6 +543,7 @@ void MotorController_runCalibrationSequence(MotorController *controller) {
   // release motor
   PowerStage_disablePWM(&controller->powerstage);
 
+
   controller->current_controller.v_alpha_setpoint = prev_v_alpha_target;
   controller->current_controller.v_beta_setpoint = prev_v_beta_target;
 
@@ -475,11 +571,11 @@ void MotorController_runCalibrationSequence(MotorController *controller) {
 
 
   // set electrical angle
-  controller->motor.flux_angle_offset = wrapTo2Pi(start_position * controller->motor.pole_pairs);
+  controller->encoder.flux_offset = wrapTo2Pi(start_position * controller->motor.pole_pairs);
 
   {
     char str[128];
-    sprintf(str, "offset angle: %f\r\n", controller->motor.flux_angle_offset);
+    sprintf(str, "offset angle: %f\r\n", controller->encoder.flux_offset);
     HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 10);
   }
 
@@ -622,7 +718,7 @@ void MotorController_handleCANRead(MotorController *controller, Command command,
       *((int8_t *)tx_frame->data + 4) = controller->motor.phase_order;
       break;
     case CMD_MOTOR_FLUX_OFFSET:
-      *((float *)tx_frame->data + 4) = controller->motor.flux_angle_offset;
+      *((float *)tx_frame->data + 4) = controller->encoder.flux_offset;
       break;
     case CMD_CURRENT_KP:
       *((float *)tx_frame->data + 4) = controller->current_controller.i_kp;
@@ -800,7 +896,7 @@ void MotorController_handleCANWrite(MotorController *controller, Command command
       controller->motor.phase_order = *((int8_t *)rx_data);
       break;
     case CMD_MOTOR_FLUX_OFFSET:
-      controller->motor.flux_angle_offset = *((float *)rx_data);
+      controller->encoder.flux_offset = *((float *)rx_data);
       break;
     case CMD_CURRENT_KP:
       controller->current_controller.i_kp = *((float *)rx_data);

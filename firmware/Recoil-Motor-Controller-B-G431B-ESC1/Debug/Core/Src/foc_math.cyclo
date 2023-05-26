@@ -1,0 +1,4 @@
+foc_math.c:10:6:FOC_clarkTransform	1
+foc_math.c:15:6:FOC_parkTransform	1
+foc_math.c:21:6:FOC_invParkTransform	1
+foc_math.c:26:6:FOC_invClarkSVPWM	1

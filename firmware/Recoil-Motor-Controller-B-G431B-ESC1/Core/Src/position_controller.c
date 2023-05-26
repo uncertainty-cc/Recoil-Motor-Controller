@@ -56,36 +56,25 @@ void PositionController_update(PositionController *controller, Mode mode) {
     float position_error = controller->position_setpoint - controller->position_measured;
     float velocity_error = 0.f - controller->velocity_measured;
 
-    controller->torque_target =
-        controller->position_kp * position_error +
-        controller->velocity_kp * velocity_error +
-        controller->position_integrator;
-
     controller->position_integrator = clampf(
         controller->position_integrator + controller->position_ki * position_error,
         -controller->torque_limit,
         controller->torque_limit);
+
+    controller->torque_target =
+        controller->position_kp * position_error +
+        controller->velocity_kp * velocity_error +
+        controller->position_integrator;
   }
   else if (mode == MODE_VELOCITY) {
-//    float velocity_setpoint = controller->velocity_setpoint;
-//
-//    velocity_setpoint = clampf(
-//        velocity_setpoint,
-//        -controller->velocity_limit,
-//        controller->velocity_limit);
-//    controller->velocity_setpoint = velocity_setpoint;
-//
-//    float velocity_error = controller->velocity_setpoint - controller->velocity_measured;
-//
-//    controller->velocity_integrator += controller->velocity_ki * velocity_error;
-//    controller->velocity_integrator = clampf(
-//        controller->velocity_integrator,
-//        -2.f * controller->velocity_limit,
-//        2.f * controller->velocity_limit);
+    // TODO: implement velocity controlled loop
+  }
+  else {
+    // MODE_TORQUE
+    /*
+     * user sets `controller->torque_target`
+     */
   }
 
-  controller->torque_setpoint = clampf(
-      controller->torque_target,
-      -controller->torque_limit,
-      controller->torque_limit);
+  controller->torque_setpoint = clampf(controller->torque_target, -controller->torque_limit, controller->torque_limit);
 }

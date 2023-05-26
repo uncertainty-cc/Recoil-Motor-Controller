@@ -48,7 +48,7 @@ typedef struct {
   uint32_t  motor_pole_pairs;
   uint32_t  motor_kv_rating;
   int32_t   motor_phase_order;
-  float     motor_flux_angle_offset;
+  float     encoder_flux_offset;
 
   float     current_controller_i_kp;
   float     current_controller_i_ki;

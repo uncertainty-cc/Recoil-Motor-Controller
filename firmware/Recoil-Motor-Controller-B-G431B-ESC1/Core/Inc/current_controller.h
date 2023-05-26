@@ -10,11 +10,9 @@
 
 #include <stdint.h>
 
-#include "stm32g4xx_hal.h"
-
-#include "motor_controller_conf.h"
 #include "foc_math.h"
-
+#include "motor_controller_conf.h"
+#include "stm32g4xx_hal.h"
 
 typedef struct {
   // parameters
@@ -54,6 +52,7 @@ typedef struct {
 
 HAL_StatusTypeDef CurrentController_init(CurrentController *controller);
 
-void CurrentController_update(CurrentController *controller, Mode mode, float sin_theta, float cos_theta, float v_bus);
+void CurrentController_update(CurrentController *controller, Mode mode,
+                              float sin_theta, float cos_theta, float v_bus);
 
 #endif /* INC_COMMUTATION_CONTROLLER_H_ */

@@ -14,10 +14,9 @@
 #define DEVICE_CAN_ID                   1
 
 
-#define MOTORPROFILE_MAD_M6C12_150KV
+//#define MOTORPROFILE_MAD_M6C12_150KV
 //#define MOTORPROFILE_MAD_5010_310KV
-//#define MOTORPROFILE_MAD_5010_110KV
-
+#define MOTORPROFILE_MAD_5010_110KV
 
 
 #define FIRST_TIME_BOOTUP               0             // first time bootup: change Flash option byte, store config to Flash
@@ -30,13 +29,12 @@
 
 
 
-
-
 #define ADC_RESOLUTION                  4096          // 12-bit ADC
 #define ADC_READING_COEFFICIENT         (3.3f / (float)ADC_RESOLUTION)
 
 #define ADC_BUS_VOLTAGE_COEFFICIENT     (ADC_READING_COEFFICIENT * ((18.f + 169.f) / 18.f))   // convert ADC bits to Volts
-// = ((3V3 / ADC_RESOLUTION) / opamp_factor) / R
+
+                                        // = ((3V3 / ADC_RESOLUTION) / opamp_factor) / R
 #define ADC_OPAMP_CURRENT_COEFFICIENT   ((ADC_READING_COEFFICIENT / 16.f) / 0.003f)     // convert ADC bits to Amps
 
 #define I2C_THROTTLE_COUNTER            2             // I2C packet rate = 20kHz / throttle_counter
@@ -49,7 +47,8 @@
 #define CALIBRATION_CURRENT             6
 #endif
 #ifdef MOTORPROFILE_MAD_5010_110KV
-#define CALIBRATION_CURRENT             3
+#define CALIBRATION_CURRENT             2
+//#define CALIBRATION_CURRENT             3
 #endif
 
 
@@ -155,7 +154,6 @@ typedef enum {
   MODE_VABC_OVERRIDE        = 0x20U,
   MODE_VALPHABETA_OVERRIDE  = 0x21U,
   MODE_VQD_OVERRIDE         = 0x22U,
-  MODE_IQD_OVERRIDE         = 0x23U,
 
   MODE_DEBUG                = 0x80U,
 } Mode;
@@ -168,7 +166,7 @@ typedef enum {
   ERROR_CALIBRATION_ERROR         = 0b0000000000001000U,
   ERROR_POWERSTAGE_ERROR          = 0b0000000000010000U,
   ERROR_INVALID_MODE              = 0b0000000000100000U,
-  ERROR_WATCHDOG_TIMEOUT         = 0b0000000001000000U,
+  ERROR_WATCHDOG_TIMEOUT          = 0b0000000001000000U,
   ERROR_OVER_VOLTAGE              = 0b0000000010000000U,
   ERROR_OVER_CURRENT              = 0b0000000100000000U,
   ERROR_OVER_TEMPERATURE          = 0b0000001000000000U,

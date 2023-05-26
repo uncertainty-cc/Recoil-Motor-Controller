@@ -92,7 +92,7 @@ void APP_init() {
 
 
 
-//  HAL_Delay(1000);
+  HAL_Delay(1000);
 
 //  MotorController_setMode(&controller, MODE_DAMPING);
 
@@ -100,20 +100,16 @@ void APP_init() {
 //  MotorController_updateService(&controller);
 
 //  controller.current_controller.v_q_target = 0.75;
-//  controller.current_controller.v_q_target = 1.2;
+////  controller.current_controller.v_q_target = 1.2;
 //  controller.current_controller.v_d_target = 0;
 //  MotorController_setMode(&controller, MODE_VQD_OVERRIDE);
-
-//  controller.current_controller.i_q_target = 0.0001;
-//  controller.current_controller.i_d_target = 0;
-//  MotorController_setMode(&controller, MODE_IQD_OVERRIDE);
 
 //  controller.current_controller.i_q_target = 0.1;
 //  controller.current_controller.i_q_target = 4.f;
 //
 //  controller.current_controller.i_q_target = 2.f;    // M6C12
-//  controller.current_controller.i_q_target = 1.5f;      // 5010 110KV
-//  controller.current_controller.i_d_target = 0.;
+  controller.current_controller.i_q_target = 0.5f;      // 5010 110KV
+  controller.current_controller.i_d_target = 0.;
 //  MotorController_setMode(&controller, MODE_CURRENT);
 
 //  controller.position_controller.position_target = 0.0f;
