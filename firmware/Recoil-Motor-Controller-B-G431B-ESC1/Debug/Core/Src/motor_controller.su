@@ -7,6 +7,6 @@
 ../Core/Src/motor_controller.c:297:6:MotorController_update	32	static
 ../Core/Src/motor_controller.c:383:6:MotorController_runCalibrationSequence	7376	static
 ../Core/Src/motor_controller.c:376:6:MotorController_updateService	0	static
-../Core/Src/motor_controller.c:680:6:MotorController_handleCANRead	0	static
-../Core/Src/motor_controller.c:860:6:MotorController_handleCANWrite	0	static
-../Core/Src/motor_controller.c:589:6:MotorController_handleCANMessage	32	static
+../Core/Src/motor_controller.c:693:6:MotorController_handleCANRead	0	static
+../Core/Src/motor_controller.c:873:6:MotorController_handleCANWrite	0	static
+../Core/Src/motor_controller.c:602:6:MotorController_handleCANMessage	32	static

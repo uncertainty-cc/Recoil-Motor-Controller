@@ -5,8 +5,8 @@ motor_controller.c:197:19:MotorController_loadConfig	1
 motor_controller.c:232:19:MotorController_storeConfig	4
 motor_controller.c:28:6:MotorController_init	2
 motor_controller.c:297:6:MotorController_update	6
-motor_controller.c:383:6:MotorController_runCalibrationSequence	14
+motor_controller.c:383:6:MotorController_runCalibrationSequence	10
 motor_controller.c:376:6:MotorController_updateService	2
-motor_controller.c:680:6:MotorController_handleCANRead	60
-motor_controller.c:860:6:MotorController_handleCANWrite	48
-motor_controller.c:589:6:MotorController_handleCANMessage	18
+motor_controller.c:693:6:MotorController_handleCANRead	60
+motor_controller.c:873:6:MotorController_handleCANWrite	48
+motor_controller.c:602:6:MotorController_handleCANMessage	18

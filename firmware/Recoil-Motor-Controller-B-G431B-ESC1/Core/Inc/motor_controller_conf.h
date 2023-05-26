@@ -28,6 +28,7 @@
 
 
 
+#define COMMUTATION_FREQ                20000.f
 
 #define ADC_RESOLUTION                  4096          // 12-bit ADC
 #define ADC_READING_COEFFICIENT         (3.3f / (float)ADC_RESOLUTION)

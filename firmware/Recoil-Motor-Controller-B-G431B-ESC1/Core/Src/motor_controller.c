@@ -429,25 +429,38 @@ void MotorController_runCalibrationSequence(MotorController *controller) {
 
 
   // move one mechanical revolution forward
-  for (uint32_t i=0; i<512 * 14; i+=1) {
-    flux_angle_setpoint = ((float)i / (512.f*14.f)) * (2*M_PI) * controller->motor.pole_pairs;
+  for (uint32_t i=0; i<128 * 14; i+=1) {
+    flux_angle_setpoint = ((float)i / (128.f*14.f)) * (2*M_PI) * controller->motor.pole_pairs;
 
     MotorController_setFluxAngle(controller, flux_angle_setpoint, voltage_setpoint);
-    HAL_Delay(1);
+    HAL_Delay(2);
 
-    error_table[i>>2] = Encoder_getPositionMeasured(&controller->encoder) * controller->motor.pole_pairs - flux_angle_setpoint;
+    error_table[i] = Encoder_getPositionMeasured(&controller->encoder) * controller->motor.pole_pairs - flux_angle_setpoint;
+
+    {
+      char str[128];
+      sprintf(str, "error: %f\r\n", error_table[i]);
+      HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 10);
+    }
   }
 
   HAL_Delay(500);
 
   // move one mechanical revolution backward
-  for (uint32_t i=512 * 14; i>0; i-=1) {
-    flux_angle_setpoint = ((float)i / (512.f*14.f)) * (2*M_PI) * controller->motor.pole_pairs;
+  for (uint32_t i=128 * 14; i>0; i-=1) {
+    flux_angle_setpoint = ((float)i / (128.f*14.f)) * (2*M_PI) * controller->motor.pole_pairs;
 
     MotorController_setFluxAngle(controller, flux_angle_setpoint, voltage_setpoint);
-    HAL_Delay(1);
+    HAL_Delay(2);
 
-    error_table[(i-1)>>2] += Encoder_getPositionMeasured(&controller->encoder) * controller->motor.pole_pairs - flux_angle_setpoint;
+    error_table[i-1] += Encoder_getPositionMeasured(&controller->encoder) * controller->motor.pole_pairs - flux_angle_setpoint;
+
+
+    {
+      char str[128];
+      sprintf(str, "error: %f\r\n", error_table[i-1]);
+      HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 10);
+    }
   }
 
   // Calculate average offset
@@ -456,7 +469,7 @@ void MotorController_runCalibrationSequence(MotorController *controller) {
     flux_offset_sum += error_table[i];
   }
   float flux_offset = wrapTo2Pi(flux_offset_sum / (128.f * controller->motor.pole_pairs) / 2.f);
-//  controller->encoder.flux_offset = flux_offset_sum / (128.f * 14.f) / 2.f;
+  controller->encoder.flux_offset = wrapTo2Pi(flux_offset_sum / (128.f * controller->motor.pole_pairs) / 2.f);
 
   {
     char str[128];
@@ -505,40 +518,40 @@ void MotorController_runCalibrationSequence(MotorController *controller) {
 //      }
 
 
-
-
-  flux_angle_setpoint = 0.f;
-  MotorController_setFluxAngle(controller, flux_angle_setpoint, voltage_setpoint);
-
-  HAL_Delay(500);
-
-
-  float start_position = Encoder_getPositionMeasured(&controller->encoder);
-
-
-  // move one electrical revolution forward
-  for (int16_t i=0; i<=500; i+=1) {
-    flux_angle_setpoint = (i / 500.0f) * (2*M_PI);
-
-    MotorController_setFluxAngle(controller, flux_angle_setpoint, voltage_setpoint);
-    HAL_Delay(2);
-  }
-  HAL_Delay(500);
-
-  float end_position = Encoder_getPositionMeasured(&controller->encoder);
-
-  for (int16_t i=500; i>=0; i-=1) {
-    flux_angle_setpoint = (i / 500.0f) * (2*M_PI);
-    MotorController_setFluxAngle(controller, flux_angle_setpoint, voltage_setpoint);
-    HAL_Delay(2);
-  }
-
-  flux_angle_setpoint = 0;
-  MotorController_setFluxAngle(controller, flux_angle_setpoint, voltage_setpoint);
-  HAL_Delay(500);
-
-  start_position = 0.5 * Encoder_getPositionMeasured(&controller->encoder) + 0.5 * start_position;
-  HAL_Delay(500);
+//
+//
+//  flux_angle_setpoint = 0.f;
+//  MotorController_setFluxAngle(controller, flux_angle_setpoint, voltage_setpoint);
+//
+//  HAL_Delay(500);
+//
+//
+//  float start_position = Encoder_getPositionMeasured(&controller->encoder);
+//
+//
+//  // move one electrical revolution forward
+//  for (int16_t i=0; i<=500; i+=1) {
+//    flux_angle_setpoint = (i / 500.0f) * (2*M_PI);
+//
+//    MotorController_setFluxAngle(controller, flux_angle_setpoint, voltage_setpoint);
+//    HAL_Delay(2);
+//  }
+//  HAL_Delay(500);
+//
+//  float end_position = Encoder_getPositionMeasured(&controller->encoder);
+//
+//  for (int16_t i=500; i>=0; i-=1) {
+//    flux_angle_setpoint = (i / 500.0f) * (2*M_PI);
+//    MotorController_setFluxAngle(controller, flux_angle_setpoint, voltage_setpoint);
+//    HAL_Delay(2);
+//  }
+//
+//  flux_angle_setpoint = 0;
+//  MotorController_setFluxAngle(controller, flux_angle_setpoint, voltage_setpoint);
+//  HAL_Delay(500);
+//
+//  start_position = 0.5 * Encoder_getPositionMeasured(&controller->encoder) + 0.5 * start_position;
+//  HAL_Delay(500);
 
   // release motor
   PowerStage_disablePWM(&controller->powerstage);
@@ -547,37 +560,37 @@ void MotorController_runCalibrationSequence(MotorController *controller) {
   controller->current_controller.v_alpha_setpoint = prev_v_alpha_target;
   controller->current_controller.v_beta_setpoint = prev_v_beta_target;
 
-  float delta_position = end_position - start_position;
+//  float delta_position = end_position - start_position;
+//
+//  {
+//    char str[128];
+//    sprintf(str, "initial encoder angle: %f\r\n", start_position);
+//    HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 10);
+//    sprintf(str, "end encoder angle: %f\r\n", end_position);
+//    HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 10);
+//    sprintf(str, "delta angle: %f\r\n", delta_position);
+//    HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 10);
+//  }
+//
+//
+//  if (fabsf(delta_position) < 0.1) {
+//    // motor did not rotate
+//    HAL_UART_Transmit(&huart2, (uint8_t *)"ERROR: motor not rotating\r\n", strlen("ERROR: motor not rotating\r\n"), 10);
+//  }
+//
+//  if (fabsf(fabsf(delta_position)*controller->motor.pole_pairs-(2*M_PI)) > 0.5f) {
+//    HAL_UART_Transmit(&huart2, (uint8_t *)"ERROR: motor pole pair mismatch\r\n", strlen("ERROR: motor pole pair mismatch\r\n"), 10);
+//  }
 
-  {
-    char str[128];
-    sprintf(str, "initial encoder angle: %f\r\n", start_position);
-    HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 10);
-    sprintf(str, "end encoder angle: %f\r\n", end_position);
-    HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 10);
-    sprintf(str, "delta angle: %f\r\n", delta_position);
-    HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 10);
-  }
 
-
-  if (fabsf(delta_position) < 0.1) {
-    // motor did not rotate
-    HAL_UART_Transmit(&huart2, (uint8_t *)"ERROR: motor not rotating\r\n", strlen("ERROR: motor not rotating\r\n"), 10);
-  }
-
-  if (fabsf(fabsf(delta_position)*controller->motor.pole_pairs-(2*M_PI)) > 0.5f) {
-    HAL_UART_Transmit(&huart2, (uint8_t *)"ERROR: motor pole pair mismatch\r\n", strlen("ERROR: motor pole pair mismatch\r\n"), 10);
-  }
-
-
-  // set electrical angle
-  controller->encoder.flux_offset = wrapTo2Pi(start_position * controller->motor.pole_pairs);
-
-  {
-    char str[128];
-    sprintf(str, "offset angle: %f\r\n", controller->encoder.flux_offset);
-    HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 10);
-  }
+//  // set electrical angle
+//  controller->encoder.flux_offset = wrapTo2Pi(start_position * controller->motor.pole_pairs);
+//
+//  {
+//    char str[128];
+//    sprintf(str, "offset angle: %f\r\n", controller->encoder.flux_offset);
+//    HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 10);
+//  }
 
   MotorController_storeConfig(controller);
 

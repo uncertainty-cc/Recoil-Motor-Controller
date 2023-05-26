@@ -15,11 +15,24 @@ HAL_StatusTypeDef CurrentController_init(CurrentController *controller) {
   controller->i_ki = 200.f;
 #endif
 #ifdef MOTORPROFILE_MAD_5010_110KV
-  controller->i_kp = 0.0004f;
-  controller->i_ki = 100.f;
+
+  // 0.07438987889987386
+  // 1692.4673041730082
+  //
+
+  float R = 0.21210899547699139f;
+  float L = 0.0001253253134958695f;
+
+  float f_bandwidth = 2e3f;
+  controller->i_kp = f_bandwidth * 2*M_PI * L;
+  controller->i_ki = R / L;
+
+
+//  controller->i_kp = 0.0004f;
+//  controller->i_ki = 100.f;
 #endif
 
-  controller->i_limit = 10.f;
+  controller->i_limit = 2.f;
 
   controller->i_q_measured = 0.f;
   controller->i_d_measured = 0.f;
@@ -50,9 +63,9 @@ void CurrentController_update(CurrentController *controller, Mode mode, float si
     float i_d_error = controller->i_d_setpoint - controller->i_d_measured;
 
     controller->i_q_integrator = clampf(
-        controller->i_q_integrator + controller->i_kp * controller->i_ki * i_q_error, -v_bus, v_bus);
+        controller->i_q_integrator + controller->i_kp * controller->i_ki * i_q_error / COMMUTATION_FREQ, -v_bus, v_bus);
     controller->i_d_integrator = clampf(
-        controller->i_d_integrator + controller->i_kp * controller->i_ki * i_d_error, -v_bus, v_bus);
+        controller->i_d_integrator + controller->i_kp * controller->i_ki * i_d_error / COMMUTATION_FREQ, -v_bus, v_bus);
 
     controller->v_q_target = controller->i_kp * i_q_error + controller->i_q_integrator;
     controller->v_d_target = controller->i_kp * i_d_error + controller->i_d_integrator;

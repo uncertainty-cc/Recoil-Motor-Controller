@@ -16,7 +16,7 @@ HAL_StatusTypeDef Encoder_init(Encoder *encoder, I2C_HandleTypeDef *hi2c) {
 
   encoder->position_offset = 0.f;
   Encoder_setFilterBandwidth(encoder, 2e5f / 10e6f);
-  encoder->flux_offset = 0.f;
+  encoder->flux_offset = 6.175755f;
 
   encoder->position_raw = 0;
   encoder->n_rotations = 0;
@@ -42,8 +42,16 @@ void Encoder_update(Encoder *encoder, float dt) {
   }
   dt *= I2C_THROTTLE_COUNTER;
 
+
   // reading is center aligned with range [-cpr/2, cpr/2)
-  int16_t reading = ((int16_t)((encoder->i2c_buffer[0]) << 8) | encoder->i2c_buffer[1]) - abs(encoder->cpr / 2);
+//  int16_t reading = ((int16_t)((encoder->i2c_buffer[0]) << 8) | encoder->i2c_buffer[1]) - abs(encoder->cpr / 2);
+  int16_t reading = ((int16_t)((encoder->i2c_buffer[0]) << 8) | encoder->i2c_buffer[1]);
+
+//  /* Linearization */
+//  int off_1 = encoder->offset_lut[(encoder->raw)>>9];       // lookup table lower entry
+//  int off_2 = encoder->offset_lut[((encoder->raw>>9)+1)%128];   // lookup table higher entry
+//  int off_interp = off_1 + ((off_2 - off_1)*(encoder->raw - ((encoder->raw>>9)<<9))>>9);     // Interpolate between lookup table entries
+//  encoder->count = encoder->raw + off_interp;
 
   // handle multi-rotation crossing
   int16_t reading_delta = encoder->position_raw - reading;
