@@ -23,7 +23,7 @@ HAL_StatusTypeDef CurrentController_init(CurrentController *controller) {
   float R = 0.21210899547699139f;
   float L = 0.0001253253134958695f;
 
-  float f_bandwidth = 2e3f;
+  float f_bandwidth = 2e2f;
   controller->i_kp = f_bandwidth * 2*M_PI * L;
   controller->i_ki = R / L;
 

@@ -16,7 +16,7 @@ HAL_StatusTypeDef Encoder_init(Encoder *encoder, I2C_HandleTypeDef *hi2c) {
 
   encoder->position_offset = 0.f;
   Encoder_setFilterBandwidth(encoder, 2e5f / 10e6f);
-  encoder->flux_offset = 6.175755f;
+  encoder->flux_offset = 716.180176f;
 
   encoder->position_raw = 0;
   encoder->n_rotations = 0;

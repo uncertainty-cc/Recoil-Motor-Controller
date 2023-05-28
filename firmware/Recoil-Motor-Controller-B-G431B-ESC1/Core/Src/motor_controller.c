@@ -12,6 +12,11 @@
 #define FLASH_CONFIG_PAGE       63
 #define FLASH_CONFIG_SIZE       32
 
+#define N_LUT 128
+#define N_CAL N_LUT * 14
+
+
+
 extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc2;
 extern FDCAN_HandleTypeDef hfdcan1;
@@ -435,13 +440,14 @@ void MotorController_runCalibrationSequence(MotorController *controller) {
     MotorController_setFluxAngle(controller, flux_angle_setpoint, voltage_setpoint);
     HAL_Delay(2);
 
-    error_table[i] = Encoder_getPositionMeasured(&controller->encoder) * controller->motor.pole_pairs - flux_angle_setpoint;
+    float error = Encoder_getPositionMeasured(&controller->encoder) * controller->motor.pole_pairs - flux_angle_setpoint;
+    error_table[i] = error;
 
-    {
-      char str[128];
-      sprintf(str, "error: %f\r\n", error_table[i]);
-      HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 10);
-    }
+//    {
+//      char str[128];
+//      sprintf(str, "%d: %f\r\n", i, error_table[i]);
+//      HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 10);
+//    }
   }
 
   HAL_Delay(500);
@@ -453,70 +459,80 @@ void MotorController_runCalibrationSequence(MotorController *controller) {
     MotorController_setFluxAngle(controller, flux_angle_setpoint, voltage_setpoint);
     HAL_Delay(2);
 
-    error_table[i-1] += Encoder_getPositionMeasured(&controller->encoder) * controller->motor.pole_pairs - flux_angle_setpoint;
+    float error = Encoder_getPositionMeasured(&controller->encoder) * controller->motor.pole_pairs - flux_angle_setpoint;
+    error_table[i-1] = 0.5f * (error_table[i-1] + error);
 
 
-    {
-      char str[128];
-      sprintf(str, "error: %f\r\n", error_table[i-1]);
-      HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 10);
-    }
+//    {
+//      char str[128];
+//      sprintf(str, "%d: %f\r\n", i-1, error_table[i-1]);
+//      HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 10);
+//    }
   }
+
+  // release motor
+  PowerStage_disablePWM(&controller->powerstage);
+
 
   // Calculate average offset
   float flux_offset_sum = 0;
   for (uint32_t i=0; i<128 * 14; i+=1) {
     flux_offset_sum += error_table[i];
   }
-  float flux_offset = wrapTo2Pi(flux_offset_sum / (128.f * controller->motor.pole_pairs) / 2.f);
-  controller->encoder.flux_offset = wrapTo2Pi(flux_offset_sum / (128.f * controller->motor.pole_pairs) / 2.f);
+  controller->encoder.flux_offset = wrapTo2Pi(flux_offset_sum / (float)(N_LUT * controller->motor.pole_pairs));
+//  controller->encoder.flux_offset = flux_offset_sum / (float)(N_LUT * controller->motor.pole_pairs);
+
+  // should be 6.178778
 
   {
     char str[128];
-    sprintf(str, "offset angle: %f\r\n", flux_offset);
+    sprintf(str, "offset angle: %f %f\r\n", flux_offset_sum / (float)(N_LUT * controller->motor.pole_pairs), controller->encoder.flux_offset);
     HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 10);
   }
 
-//
-//  int16_t window = 14;
-//  int lut_offset = (ENC_CPR-cal->error_arr[0])*N_LUT/ENC_CPR;
-//
-//  for (uint16_t i=0; i<128; i+=1) {
-//    float moving_avg = 0;
-//    for (int16_t j=-window/2; j<(window/2); j+=1) {
-//      uint32_t index = i * 14 * 128 / 128 + j;
-//      if (index > 0) {
-//        index += 128 * 14;
-//      }
-//      else if (index > 128 * 14 - 1) {
-//        index -= 128 * 14;
-//      }
-//      moving_avg += error_table[index];
-//    }
-//    moving_avg = moving_avg / window;
-//    uint32_t lut_index = lut_offset + i;
-//
-//  }
-    // Moving average to filter out cogging ripple
+// Moving average to filter out cogging ripple
+  int16_t window = N_LUT;
+  int lut_offset = ((controller->motor.pole_pairs*M_2PI_F)-error_table[0])*N_LUT / (controller->motor.pole_pairs*M_2PI_F);
 
-//    int window = SAMPLES_PER_PPAIR;
-//    int lut_offset = (ENC_CPR-cal->error_arr[0])*N_LUT/ENC_CPR;
-//    for(int i = 0; i<N_LUT; i++){
-//        int moving_avg = 0;
-//        for(int j = (-window)/2; j<(window)/2; j++){
-//          int index = i*PPAIRS*SAMPLES_PER_PPAIR/N_LUT + j;
-//          if(index<0){index += (SAMPLES_PER_PPAIR*PPAIRS);}
-//          else if(index>(SAMPLES_PER_PPAIR*PPAIRS-1)){index -= (SAMPLES_PER_PPAIR*PPAIRS);}
-//          moving_avg += cal->error_arr[index];
-//        }
-//        moving_avg = moving_avg/window;
-//        int lut_index = lut_offset + i;
-//        if(lut_index>(N_LUT-1)){lut_index -= N_LUT;}
-//        cal->lut_arr[lut_index] = moving_avg - cal->ezero;
-//        printf("%d  %d\r\n", lut_index, moving_avg - cal->ezero);
-//
-//      }
+  {
+    char str[128];
+    sprintf(str, "lut_offset: %d\r\n", lut_offset);
+    HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 10);
+  }
 
+  for (int16_t i=0; i<N_LUT; i+=1) {
+    float moving_avg = 0;
+
+    for (int16_t j=-window/2; j<window/2; j+=1) {
+      int32_t index = i * controller->motor.pole_pairs * N_LUT / N_LUT + j;
+      if (index < 0) {
+        index += controller->motor.pole_pairs * N_LUT;
+      }
+      else if (index > controller->motor.pole_pairs * N_LUT - 1) {
+        index -= controller->motor.pole_pairs * N_LUT;
+      }
+      moving_avg += error_table[index];
+    }
+
+    moving_avg = moving_avg / window;
+    int32_t lut_index = lut_offset + i;
+    if (lut_index > (N_LUT-1)) {
+      lut_index -= N_LUT;
+    }
+    controller->encoder.flux_offset_table[lut_index] = moving_avg - controller->encoder.flux_offset;
+
+    {
+      char str[128];
+      sprintf(str, "%d %f\r\n", lut_index, moving_avg - controller->encoder.flux_offset);
+      HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 10);
+    }
+  }
+
+  {
+    char str[128];
+    sprintf(str, "done calibration!\r\n");
+    HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 10);
+  }
 
 //
 //
@@ -552,9 +568,6 @@ void MotorController_runCalibrationSequence(MotorController *controller) {
 //
 //  start_position = 0.5 * Encoder_getPositionMeasured(&controller->encoder) + 0.5 * start_position;
 //  HAL_Delay(500);
-
-  // release motor
-  PowerStage_disablePWM(&controller->powerstage);
 
 
   controller->current_controller.v_alpha_setpoint = prev_v_alpha_target;

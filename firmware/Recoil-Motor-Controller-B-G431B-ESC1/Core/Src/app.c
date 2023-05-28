@@ -99,7 +99,7 @@ void APP_init() {
 //  MotorController_setMode(&controller, MODE_CALIBRATION);
 //  MotorController_updateService(&controller);
 
-//  controller.current_controller.v_q_target = 0.5;
+//  controller.current_controller.v_q_target = 0.6;
 ////  controller.current_controller.v_q_target = 1.2;
 //  controller.current_controller.v_d_target = 0;
 //  MotorController_setMode(&controller, MODE_VQD_OVERRIDE);
@@ -108,9 +108,9 @@ void APP_init() {
 //  controller.current_controller.i_q_target = 4.f;
 //
 //  controller.current_controller.i_q_target = 2.f;    // M6C12
-  controller.current_controller.i_q_target = 0.5f;      // 5010 110KV
-  controller.current_controller.i_d_target = 0.;
-  MotorController_setMode(&controller, MODE_CURRENT);
+//  controller.current_controller.i_q_target = 0.4f;      // 5010 110KV
+//  controller.current_controller.i_d_target = 0.;
+//  MotorController_setMode(&controller, MODE_CURRENT);
 
 //  controller.position_controller.position_target = 0.0f;
 //  MotorController_setMode(&controller, MODE_POSITION);
@@ -120,16 +120,17 @@ void APP_main() {
   MotorController_updateService(&controller);
 
   counter += 1;
-//
-  if (counter > 1000) {
-    controller.current_controller.i_q_target = 0.5f;
-//    controller.position_controller.position_target = 0.0f;
-  }
-  if (counter > 2000) {
-    controller.current_controller.i_q_target = 0.f;
-//    controller.position_controller.position_target = 3.0f * 14;
-    counter = 0;
-  }
+
+
+//  if (counter > 1000) {
+//    controller.current_controller.i_q_target = 0.5f;
+////    controller.position_controller.position_target = 0.0f;
+//  }
+//  if (counter > 2000) {
+//    controller.current_controller.i_q_target = 0.f;
+////    controller.position_controller.position_target = 3.0f * 14;
+//    counter = 0;
+//  }
 
 
   char str[128];
@@ -138,18 +139,26 @@ void APP_main() {
     MotorController_setMode(&controller, MODE_CALIBRATION);
   }
 
+    sprintf(str, "p:%f\tpp:%f\tv:%f\r\n",
+        controller.position_controller.position_measured,
+        controller.position_controller.position_measured + controller.encoder.flux_offset_table[controller.encoder.position_raw >> 5],
+        controller.position_controller.velocity_measured,
+        controller.powerstage.bus_voltage_measured,
+        APP_getUserPot());
+
+
 //  sprintf(str, "p:%f\tv:%f\tvoltage:%f\tpot:%f\r\n",
 //      controller.position_controller.position_measured,
 //      controller.position_controller.velocity_measured,
 //      controller.powerstage.bus_voltage_measured,
 //      APP_getUserPot());
 
-  sprintf(str, "iq_mea:%f\tid_mea:%f\tiq_tar:%f\tiq_set:%f\tvq_tar:%f\r\n",
-      controller.current_controller.i_q_measured * 100,
-      controller.current_controller.i_d_measured * 100,
-      controller.current_controller.i_q_target * 100,
-      controller.current_controller.i_q_setpoint * 100,
-      controller.current_controller.v_q_target);
+//  sprintf(str, "iq_mea:%f\tid_mea:%f\tiq_tar:%f\tiq_set:%f\tvq_tar:%f\r\n",
+//      controller.current_controller.i_q_measured * 100,
+//      controller.current_controller.i_d_measured * 100,
+//      controller.current_controller.i_q_target * 100,
+//      controller.current_controller.i_q_setpoint * 100,
+//      controller.current_controller.v_q_target);
 
 
 
