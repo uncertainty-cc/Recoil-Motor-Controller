@@ -8,33 +8,39 @@
 #include "position_controller.h"
 
 HAL_StatusTypeDef PositionController_init(PositionController *controller) {
+  controller->update_counter = 0;
 
-  controller->position_kp = 0.1f;
+  controller->position_kp = 1.f;
   controller->position_ki = 0.0f;
 
-  controller->velocity_kp = 0.005f;
+  controller->velocity_kp = 1.f;
   controller->velocity_ki = 0.f;
 
 
-  //  controller->torque_limit = 1.f;
-  controller->torque_limit = 0.1f;
+  controller->torque_limit = 2.f;
 
-  controller->velocity_limit = 20;
+  controller->velocity_limit = 20.f;
 
   controller->position_limit_lower = -INFINITY;
   controller->position_limit_upper = INFINITY;
 
-  controller->velocity_setpoint = 0;
-  controller->position_setpoint = 0;
+  controller->velocity_setpoint = 0.f;
+  controller->position_setpoint = 0.f;
 
-  controller->position_integrator = 0;
-  controller->velocity_integrator = 0;
+  controller->position_integrator = 0.f;
+  controller->velocity_integrator = 0.f;
 
   return HAL_OK;
 }
 
 void PositionController_update(PositionController *controller, Mode mode) {
-
+  controller->update_counter += 1;
+  if (controller->update_counter == (COMMUTATION_FREQ / POSITION_UPDATE_FREQ)) {
+    controller->update_counter = 0;
+  }
+  else {
+    return;
+  }
   //  acceleration = trajectory_follower(command_position, command_velocity)
   //  control_velocity = command_velocity OR control_velocity + acceleration * dt OR 0.0
   //  control_position = command_position OR control_position + control_velocity * dt

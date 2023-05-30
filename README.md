@@ -14,6 +14,11 @@ A brushless DC motor controller with DRV8350RS gate driver, three-phase current 
 - PID position and velocity loop frequency: 4 kHz
 - communication: CAN 2.0
 
+> **Warning**
+> These files are still under development and undergoing testing. While we do
+> aspire to produce a design that others can easily fabricate, we do not yet
+> recommend making them for yourself! 
+
 ### Function ID Mapping
 
 #### `0x00` ESTOP
@@ -28,13 +33,13 @@ device_id = data[7:0]
 
 firmware_version = data[63:32]
 
-#### `0x03` SAFETY_WATCHDOG
+#### `0x02` SAFETY_WATCHDOG
 
 safety watchdog heartbeat message
 
-#### `0x06` MODE
+#### `0x05` MODE
 
-#### `0x0F` FLASH
+#### `0x0E` FLASH
 
 #### `0x10` USR_SETTING_READ
 

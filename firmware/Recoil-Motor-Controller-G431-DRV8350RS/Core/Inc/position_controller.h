@@ -9,6 +9,8 @@
 #define INC_POSITION_CONTROLLER_H_
 
 #include <stdint.h>
+#include "stm32g4xx_hal.h"
+
 #include "motor_controller_conf.h"
 #include "foc_math.h"
 

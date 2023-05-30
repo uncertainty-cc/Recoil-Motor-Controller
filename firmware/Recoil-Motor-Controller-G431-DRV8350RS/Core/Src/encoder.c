@@ -24,7 +24,7 @@ void Encoder_init(Encoder *encoder, SPI_HandleTypeDef *hspi) {
 }
 
 void Encoder_setFilterBandwidth(Encoder *encoder, float bandwidth) {
-  encoder->filter_alpha = clampf(1 - pow(M_E, -2 * M_PI * bandwidth), 0, 1);
+  encoder->filter_alpha = clampf(1.f - pow(M_E, -2.f * M_PI * bandwidth), 0.f, 1.f);
 
 ////  encoder->filter_bandwidth = bandwidth;
 //  encoder->filter_bandwidth = 50;
@@ -47,7 +47,7 @@ void Encoder_update(Encoder *encoder, float dt) {
   // handle multi-rotation crossing
   int16_t reading_delta = encoder->position_raw - reading;
   if (abs(reading_delta) > abs(encoder->cpr / 2)) {
-    encoder->n_rotations += (reading_delta > 0) ? -1 : 1;
+    encoder->n_rotations += ((encoder->cpr * reading_delta) > 0) ? 1 : -1;
   }
   encoder->position_raw = reading;
 

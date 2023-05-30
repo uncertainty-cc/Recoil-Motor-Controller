@@ -12,10 +12,6 @@
 #define FLASH_CONFIG_PAGE       63
 #define FLASH_CONFIG_SIZE       32
 
-#define N_LUT 128
-#define N_CAL N_LUT * 14
-
-
 
 extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc2;
@@ -202,7 +198,7 @@ void MotorController_setFluxAngle(MotorController *controller, float angle_setpo
 HAL_StatusTypeDef MotorController_loadConfig(MotorController *controller) {
   EEPROMConfig *config = (EEPROMConfig *)FLASH_CONFIG_ADDRESS;
   #if LOAD_CALIBRATION_FROM_FLASH
-    controller->motor.flux_angle_offset                   = config->motor_flux_angle_offset;
+    controller->encoder.flux_offset                       = config->encoder_flux_offset;
   #endif
   #if LOAD_ID_FROM_FLASH
     controller->device_id                                 = (uint8_t)config->device_id;
@@ -218,8 +214,9 @@ HAL_StatusTypeDef MotorController_loadConfig(MotorController *controller) {
     controller->motor.pole_pairs                          = config->motor_pole_pairs;
     controller->motor.kv_rating                           = config->motor_kv_rating;
     controller->motor.phase_order                         = (int8_t)config->motor_phase_order;
-    controller->current_controller.i_kp                   = config->current_controller_i_kp;
-    controller->current_controller.i_ki                   = config->current_controller_i_ki;
+    controller->motor.phase_resistance                    = config->motor_phase_resistance;
+    controller->motor.phase_inductance                    = config->motor_phase_inductance;
+    controller->current_controller.i_bandwidth            = config->current_controller_i_bandwidth;
     controller->current_controller.i_limit                = config->current_controller_i_limit;
     controller->position_controller.position_kp           = config->position_controller_position_kp;
     controller->position_controller.position_ki           = config->position_controller_position_ki;
@@ -230,6 +227,10 @@ HAL_StatusTypeDef MotorController_loadConfig(MotorController *controller) {
     controller->position_controller.position_limit_upper  = config->position_controller_position_limit_upper;
     controller->position_controller.position_limit_lower  = config->position_controller_position_limit_lower;
   #endif
+
+  CurrentController_setPIGain(&controller->current_controller,
+      controller->motor.phase_resistance,
+      controller->motor.phase_inductance);
 
   return HAL_OK;
 }
@@ -249,8 +250,9 @@ HAL_StatusTypeDef MotorController_storeConfig(MotorController *controller) {
   config.motor_pole_pairs                               = controller->motor.pole_pairs;
   config.motor_kv_rating                                = controller->motor.kv_rating;
   config.motor_phase_order                              = (int32_t)controller->motor.phase_order;
-  config.current_controller_i_kp                        = controller->current_controller.i_kp;
-  config.current_controller_i_ki                        = controller->current_controller.i_ki;
+  config.motor_phase_resistance                         = controller->motor.phase_resistance;
+  config.motor_phase_inductance                         = controller->motor.phase_inductance;
+  config.current_controller_i_bandwidth                 = controller->current_controller.i_bandwidth;
   config.current_controller_i_limit                     = controller->current_controller.i_limit;
   config.position_controller_position_kp                = controller->position_controller.position_kp;
   config.position_controller_position_ki                = controller->position_controller.position_ki;
@@ -388,6 +390,11 @@ void MotorController_updateService(MotorController *controller) {
 void MotorController_runCalibrationSequence(MotorController *controller) {
   MotorController_setMode(controller, MODE_CALIBRATION);
 
+  // set all calibration data to 0
+  // we also reset n_rotation to 0 so Encoder_getPositionMeasured will return value in (-2pi, 2pi)
+  Encoder_resetFluxOffset(&controller->encoder);
+
+  // if controller is only powered with VDD, wait for motor power
   while (controller->powerstage.bus_voltage_measured < 9) {
     {
       char str[128];
@@ -396,14 +403,17 @@ void MotorController_runCalibrationSequence(MotorController *controller) {
     }
   }
 
-  float error_table[128 * 14];
+  // maximum supported number of pole pairs is 32
+  float error_table[ENCODER_LUT_RESOLUTION * 32];
 
-  // open loop calibration
+  // store normal running v_alpha and v_beta values. We need to change this during the calibration.
   float prev_v_alpha_target = controller->current_controller.v_alpha_setpoint;
   float prev_v_beta_target = controller->current_controller.v_beta_setpoint;
 
-  float flux_angle_setpoint = 0;
+  // starting voltage setpoint (V)
   float voltage_setpoint = 0.2;
+
+  float flux_angle_setpoint = 0;
 
   MotorController_setFluxAngle(controller, flux_angle_setpoint, voltage_setpoint);
 
@@ -411,19 +421,21 @@ void MotorController_runCalibrationSequence(MotorController *controller) {
 
   float phase_current = 0;
 
+  // gradually ramp up the voltage setpoint until we reach target phase current value.
   while (phase_current < CALIBRATION_CURRENT) {
     HAL_Delay(100);
     MotorController_setFluxAngle(controller, flux_angle_setpoint, voltage_setpoint);
 
-    voltage_setpoint += 0.1;
-    phase_current = 1./3. * (fabs(controller->current_controller.i_a_measured) + fabs(controller->current_controller.i_b_measured) + fabs(controller->current_controller.i_c_measured));
+    voltage_setpoint += 0.1f;
+    phase_current = 1.f/3.f * (fabs(controller->current_controller.i_a_measured) + fabs(controller->current_controller.i_b_measured) + fabs(controller->current_controller.i_c_measured));
     {
       char str[128];
       sprintf(str, "voltage: %f\tphase current: %f\r\n", voltage_setpoint, phase_current);
       HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 10);
     }
 
-    if (voltage_setpoint > 12) {
+    // if we cannot even reach the target phase current at 12V, there's something wrong. End calibration.
+    if (voltage_setpoint > 12.f) {
       SET_BITS(controller->error, ERROR_CALIBRATION_ERROR);
       MotorController_setMode(controller, MODE_IDLE);
       return;
@@ -462,7 +474,6 @@ void MotorController_runCalibrationSequence(MotorController *controller) {
     float error = Encoder_getPositionMeasured(&controller->encoder) * controller->motor.pole_pairs - flux_angle_setpoint;
     error_table[i-1] = 0.5f * (error_table[i-1] + error);
 
-
 //    {
 //      char str[128];
 //      sprintf(str, "%d: %f\r\n", i-1, error_table[i-1]);
@@ -479,20 +490,25 @@ void MotorController_runCalibrationSequence(MotorController *controller) {
   for (uint32_t i=0; i<128 * 14; i+=1) {
     flux_offset_sum += error_table[i];
   }
-  controller->encoder.flux_offset = wrapTo2Pi(flux_offset_sum / (float)(N_LUT * controller->motor.pole_pairs));
-//  controller->encoder.flux_offset = flux_offset_sum / (float)(N_LUT * controller->motor.pole_pairs);
+//  controller->encoder.flux_offset = wrapTo2Pi(flux_offset_sum / (float)(N_LUT * controller->motor.pole_pairs));
+  controller->encoder.flux_offset = flux_offset_sum / (float)(ENCODER_LUT_RESOLUTION * controller->motor.pole_pairs);
 
   // should be 6.178778
 
   {
     char str[128];
-    sprintf(str, "offset angle: %f %f\r\n", flux_offset_sum / (float)(N_LUT * controller->motor.pole_pairs), controller->encoder.flux_offset);
+    sprintf(str, "offset angle: %f %f\r\n", flux_offset_sum / (float)(ENCODER_LUT_RESOLUTION * controller->motor.pole_pairs), controller->encoder.flux_offset);
     HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 10);
   }
 
 // Moving average to filter out cogging ripple
-  int16_t window = N_LUT;
-  int lut_offset = ((controller->motor.pole_pairs*M_2PI_F)-error_table[0])*N_LUT / (controller->motor.pole_pairs*M_2PI_F);
+  int16_t window = ENCODER_LUT_RESOLUTION;
+  int16_t lut_offset = ((controller->motor.pole_pairs*M_2PI_F)-error_table[0])*ENCODER_LUT_RESOLUTION / (controller->motor.pole_pairs*M_2PI_F);
+
+  // make sure lut_offset is always >= 0
+  if (lut_offset < 0) {
+    lut_offset += ENCODER_LUT_RESOLUTION;
+  }
 
   {
     char str[128];
@@ -500,33 +516,41 @@ void MotorController_runCalibrationSequence(MotorController *controller) {
     HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 10);
   }
 
-  for (int16_t i=0; i<N_LUT; i+=1) {
+  for (int16_t i=0; i<ENCODER_LUT_RESOLUTION; i+=1) {
     float moving_avg = 0;
 
     for (int16_t j=-window/2; j<window/2; j+=1) {
-      int32_t index = i * controller->motor.pole_pairs * N_LUT / N_LUT + j;
+      int32_t index = (i * controller->motor.pole_pairs) + j;
+      // make sure index is always >= 0
       if (index < 0) {
-        index += controller->motor.pole_pairs * N_LUT;
+        index += controller->motor.pole_pairs * ENCODER_LUT_RESOLUTION;
       }
-      else if (index > controller->motor.pole_pairs * N_LUT - 1) {
-        index -= controller->motor.pole_pairs * N_LUT;
+      // make sure index is always < controller->motor.pole_pairs * ENCODER_LUT_RESOLUTION
+      else if (index >= controller->motor.pole_pairs * ENCODER_LUT_RESOLUTION) {
+        index -= controller->motor.pole_pairs * ENCODER_LUT_RESOLUTION;
       }
       moving_avg += error_table[index];
     }
 
     moving_avg = moving_avg / window;
     int32_t lut_index = lut_offset + i;
-    if (lut_index > (N_LUT-1)) {
-      lut_index -= N_LUT;
-    }
+//    if (lut_index >= N_LUT) {
+//      lut_index -= N_LUT;
+//    }
+    lut_index = lut_index % ENCODER_LUT_RESOLUTION;
     controller->encoder.flux_offset_table[lut_index] = moving_avg - controller->encoder.flux_offset;
 
     {
       char str[128];
-      sprintf(str, "%d %f\r\n", lut_index, moving_avg - controller->encoder.flux_offset);
+      sprintf(str, "lut_index: %d, %f\r\n", lut_index, moving_avg - controller->encoder.flux_offset);
       HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 10);
     }
   }
+
+
+  CurrentController_setPIGain(&controller->current_controller,
+      controller->motor.phase_resistance,
+      controller->motor.phase_inductance);
 
   {
     char str[128];
@@ -534,76 +558,9 @@ void MotorController_runCalibrationSequence(MotorController *controller) {
     HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 10);
   }
 
-//
-//
-//  flux_angle_setpoint = 0.f;
-//  MotorController_setFluxAngle(controller, flux_angle_setpoint, voltage_setpoint);
-//
-//  HAL_Delay(500);
-//
-//
-//  float start_position = Encoder_getPositionMeasured(&controller->encoder);
-//
-//
-//  // move one electrical revolution forward
-//  for (int16_t i=0; i<=500; i+=1) {
-//    flux_angle_setpoint = (i / 500.0f) * (2*M_PI);
-//
-//    MotorController_setFluxAngle(controller, flux_angle_setpoint, voltage_setpoint);
-//    HAL_Delay(2);
-//  }
-//  HAL_Delay(500);
-//
-//  float end_position = Encoder_getPositionMeasured(&controller->encoder);
-//
-//  for (int16_t i=500; i>=0; i-=1) {
-//    flux_angle_setpoint = (i / 500.0f) * (2*M_PI);
-//    MotorController_setFluxAngle(controller, flux_angle_setpoint, voltage_setpoint);
-//    HAL_Delay(2);
-//  }
-//
-//  flux_angle_setpoint = 0;
-//  MotorController_setFluxAngle(controller, flux_angle_setpoint, voltage_setpoint);
-//  HAL_Delay(500);
-//
-//  start_position = 0.5 * Encoder_getPositionMeasured(&controller->encoder) + 0.5 * start_position;
-//  HAL_Delay(500);
-
 
   controller->current_controller.v_alpha_setpoint = prev_v_alpha_target;
   controller->current_controller.v_beta_setpoint = prev_v_beta_target;
-
-//  float delta_position = end_position - start_position;
-//
-//  {
-//    char str[128];
-//    sprintf(str, "initial encoder angle: %f\r\n", start_position);
-//    HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 10);
-//    sprintf(str, "end encoder angle: %f\r\n", end_position);
-//    HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 10);
-//    sprintf(str, "delta angle: %f\r\n", delta_position);
-//    HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 10);
-//  }
-//
-//
-//  if (fabsf(delta_position) < 0.1) {
-//    // motor did not rotate
-//    HAL_UART_Transmit(&huart2, (uint8_t *)"ERROR: motor not rotating\r\n", strlen("ERROR: motor not rotating\r\n"), 10);
-//  }
-//
-//  if (fabsf(fabsf(delta_position)*controller->motor.pole_pairs-(2*M_PI)) > 0.5f) {
-//    HAL_UART_Transmit(&huart2, (uint8_t *)"ERROR: motor pole pair mismatch\r\n", strlen("ERROR: motor pole pair mismatch\r\n"), 10);
-//  }
-
-
-//  // set electrical angle
-//  controller->encoder.flux_offset = wrapTo2Pi(start_position * controller->motor.pole_pairs);
-//
-//  {
-//    char str[128];
-//    sprintf(str, "offset angle: %f\r\n", controller->encoder.flux_offset);
-//    HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 10);
-//  }
 
   MotorController_storeConfig(controller);
 
@@ -627,39 +584,38 @@ void MotorController_handleCANMessage(MotorController *controller, CAN_Frame *rx
   tx_frame.size = 0;
 
   switch (func_id) {
-    case CAN_ID_ESTOP:      // 0x00 []
+    case CAN_ID_ESTOP:            // 0x00
       MotorController_setMode(controller, MODE_DISABLED);
       tx_frame.size = 2;
       *((uint16_t *)tx_frame.data) = 0xDEAD;
       break;
 
-    case CAN_ID_INFO:         // 0x01
+    case CAN_ID_INFO:             // 0x01
       if (rx_frame->size) {
-        // controller->device_id = *((uint8_t *)rx_frame->data);
-        // TODO: restart logic
+        controller->device_id = *((uint8_t *)rx_frame->data);
       }
       tx_frame.size = 8;
-      *((uint8_t *)tx_frame.data) = controller->device_id;
-      *((uint32_t *)tx_frame.data + 1) = controller->firmware_version;
+      *((uint8_t *)(tx_frame.data)) = controller->device_id;
+      *((uint32_t *)(tx_frame.data + 4)) = controller->firmware_version;
       break;
 
-    case CAN_ID_SAFETY_WATCHDOG:  // 0x04 []
+    case CAN_ID_SAFETY_WATCHDOG:  // 0x02
       __HAL_TIM_SET_COUNTER(&htim2, 0);
       break;
 
-    case CAN_ID_MODE:  // 0x06 [mode, error] -> [mode, clear_error?]
+    case CAN_ID_MODE:             // 0x05 [mode, error] -> [mode, clear_error?]
       if (rx_frame->size) {
         MotorController_setMode(controller, *((uint16_t *)rx_frame->data));
-        if (*((uint16_t *)rx_frame->data + 1)) {
+        if (*((uint16_t *)(rx_frame->data + 2))) {
           MotorController_clearError(controller);
         }
       }
       tx_frame.size = 4;
       *((uint16_t *)tx_frame.data) = (uint16_t)MotorController_getMode(controller);
-      *((uint16_t *)tx_frame.data + 1) = (uint16_t)MotorController_getError(controller);
+      *((uint16_t *)(tx_frame.data + 2)) = (uint16_t)MotorController_getError(controller);
       break;
 
-    case CAN_ID_FLASH:      // 0x0F [0/1]
+    case CAN_ID_FLASH:            // 0x0E [0/1]
       if (rx_frame->size) {
         tx_frame.size = 1;
         if (*((uint8_t *)rx_frame->data)) {
@@ -671,27 +627,27 @@ void MotorController_handleCANMessage(MotorController *controller, CAN_Frame *rx
       }
       break;
 
-    case CAN_ID_USR_SETTING_READ:
+    case CAN_ID_USR_PARAM_READ:   // 0x10
       MotorController_handleCANRead(controller, *((uint8_t *)rx_frame->data), &tx_frame);
       break;
 
-    case CAN_ID_USR_SETTING_WRITE:
+    case CAN_ID_USR_PARAM_WRITE:  // 0x11
       MotorController_handleCANWrite(controller, *((uint8_t *)rx_frame->data), (uint8_t *)rx_frame->data + 4);
       break;
 
-    case CAN_ID_USR_FAST_FRAME_0:   // 0x11 [position_kp, position_ki]
+    case CAN_ID_USR_FAST_FRAME_0: // 0x12 [position_kp, position_ki]
       controller->position_controller.position_target = *((float *)rx_frame->data);
       controller->position_controller.torque_target = *((float *)rx_frame->data + 1);
       *((float *)tx_frame.data) = controller->position_controller.position_measured;
-      *((float *)tx_frame.data + 1) = controller->position_controller.torque_measured;
+      *((float *)(tx_frame.data + 4)) = controller->position_controller.torque_measured;
       break;
 
-    case CAN_ID_USR_FAST_FRAME_1:   // 0x11 [position_kp, position_ki]
+    case CAN_ID_USR_FAST_FRAME_1: // 0x13 [position_kp, position_ki]
       controller->position_controller.position_kp = *((float *)rx_frame->data);
-      controller->position_controller.position_ki = *((float *)rx_frame->data + 1);
+      controller->position_controller.position_ki = *((float *)(rx_frame->data + 4));
       break;
 
-    case CAN_ID_PING:  // 0x7F
+    case CAN_ID_PING:             // 0x1F
       tx_frame.size = 1;
       *((uint8_t *)tx_frame.data) = controller->device_id;
       break;
@@ -702,181 +658,189 @@ void MotorController_handleCANMessage(MotorController *controller, CAN_Frame *rx
   }
 }
 
-
 void MotorController_handleCANRead(MotorController *controller, Command command, CAN_Frame *tx_frame) {
   tx_frame->size = 8;
   *((uint8_t *)tx_frame->data) = command;
   switch (command) {
     case CMD_ENCODER_CPR:
-      *((int32_t *)tx_frame->data + 4) = controller->encoder.cpr;
+      *((int32_t *)(tx_frame->data + 4)) = controller->encoder.cpr;
       break;
     case CMD_ENCODER_OFFSET:
-      *((float *)tx_frame->data + 4) = controller->encoder.position_offset;
+      *((float *)(tx_frame->data + 4)) = controller->encoder.position_offset;
       break;
     case CMD_ENCODER_FILTER:
-      *((float *)tx_frame->data + 4) = controller->encoder.filter_alpha;
+      *((float *)(tx_frame->data + 4)) = controller->encoder.filter_alpha;
+      break;
+    case CMD_ENCODER_FLUX_OFFSET:
+      *((float *)(tx_frame->data + 4)) = controller->encoder.flux_offset;
       break;
     case CMD_ENCODER_POSITION_RAW:
-      *((int16_t *)tx_frame->data + 4) = controller->encoder.position_raw;
+      *((int32_t *)(tx_frame->data + 4)) = (int32_t)controller->encoder.position_raw;
       break;
     case CMD_ENCODER_N_ROTATIONS:
-      *((int32_t *)tx_frame->data + 4) = controller->encoder.n_rotations;
+      *((int32_t *)(tx_frame->data + 4)) = controller->encoder.n_rotations;
       break;
     case CMD_POWERSTAGE_VOLTAGE_THRESHOLD_LOW:
-      *((float *)tx_frame->data + 4) = controller->powerstage.undervoltage_threshold;
+      *((float *)(tx_frame->data + 4)) = controller->powerstage.undervoltage_threshold;
       break;
     case CMD_POWERSTAGE_VOLTAGE_THRESHOLD_HIGH:
-      *((float *)tx_frame->data + 4) = controller->powerstage.overvoltage_threshold;
+      *((float *)(tx_frame->data + 4)) = controller->powerstage.overvoltage_threshold;
       break;
     case CMD_POWERSTAGE_FILTER:
-      *((float *)tx_frame->data + 4) = controller->powerstage.bus_voltage_filter_alpha;
+      *((float *)(tx_frame->data + 4)) = controller->powerstage.bus_voltage_filter_alpha;
       break;
     case CMD_POWERSTAGE_BUS_VOLTAGE_MEASURED:
-      *((float *)tx_frame->data + 4) = controller->powerstage.bus_voltage_measured;
+      *((float *)(tx_frame->data + 4)) = controller->powerstage.bus_voltage_measured;
       break;
     case CMD_MOTOR_POLE_PAIR:
-      *((uint32_t *)tx_frame->data + 4) = controller->motor.pole_pairs;
+      *((uint32_t *)(tx_frame->data + 4)) = controller->motor.pole_pairs;
       break;
     case CMD_MOTOR_KV:
-      *((uint32_t *)tx_frame->data + 4) = controller->motor.kv_rating;
+      *((uint32_t *)(tx_frame->data + 4)) = controller->motor.kv_rating;
       break;
     case CMD_MOTOR_PHASE_ORDER:
-      *((int8_t *)tx_frame->data + 4) = controller->motor.phase_order;
+      *((int32_t *)(tx_frame->data + 4)) = (int32_t)controller->motor.phase_order;
       break;
-    case CMD_MOTOR_FLUX_OFFSET:
-      *((float *)tx_frame->data + 4) = controller->encoder.flux_offset;
+    case CMD_MOTOR_PHASE_RESISTANCE:
+      *((float *)(tx_frame->data + 4)) = controller->motor.phase_resistance;
+      break;
+    case CMD_MOTOR_PHASE_INDUCTANCE:
+      *((float *)(tx_frame->data + 4)) = controller->motor.phase_inductance;
       break;
     case CMD_CURRENT_KP:
-      *((float *)tx_frame->data + 4) = controller->current_controller.i_kp;
+      *((float *)(tx_frame->data + 4)) = controller->current_controller.i_kp;
       break;
     case CMD_CURRENT_KI:
-      *((float *)tx_frame->data + 4) = controller->current_controller.i_ki;
+      *((float *)(tx_frame->data + 4)) = controller->current_controller.i_ki;
+      break;
+    case CMD_CURRENT_BANDWIDTH:
+      *((float *)(tx_frame->data + 4)) = controller->current_controller.i_bandwidth;
       break;
     case CMD_CURRENT_LIMIT:
-      *((float *)tx_frame->data + 4) = controller->current_controller.i_limit;
+      *((float *)(tx_frame->data + 4)) = controller->current_controller.i_limit;
       break;
     case CMD_CURRENT_IA_MEASURED:
-      *((float *)tx_frame->data + 4) = controller->current_controller.i_a_measured;
+      *((float *)(tx_frame->data + 4)) = controller->current_controller.i_a_measured;
       break;
     case CMD_CURRENT_IB_MEASURED:
-      *((float *)tx_frame->data + 4) = controller->current_controller.i_b_measured;
+      *((float *)(tx_frame->data + 4)) = controller->current_controller.i_b_measured;
       break;
     case CMD_CURRENT_IC_MEASURED:
-      *((float *)tx_frame->data + 4) = controller->current_controller.i_c_measured;
+      *((float *)(tx_frame->data + 4)) = controller->current_controller.i_c_measured;
       break;
     case CMD_CURRENT_VA_SETPOINT:
-      *((float *)tx_frame->data + 4) = controller->current_controller.v_a_setpoint;
+      *((float *)(tx_frame->data + 4)) = controller->current_controller.v_a_setpoint;
       break;
     case CMD_CURRENT_VB_SETPOINT:
-      *((float *)tx_frame->data + 4) = controller->current_controller.v_b_setpoint;
+      *((float *)(tx_frame->data + 4)) = controller->current_controller.v_b_setpoint;
       break;
     case CMD_CURRENT_VC_SETPOINT:
-      *((float *)tx_frame->data + 4) = controller->current_controller.v_c_setpoint;
+      *((float *)(tx_frame->data + 4)) = controller->current_controller.v_c_setpoint;
       break;
     case CMD_CURRENT_IALPHA_MEASURED:
-      *((float *)tx_frame->data + 4) = controller->current_controller.i_alpha_measured;
+      *((float *)(tx_frame->data + 4)) = controller->current_controller.i_alpha_measured;
       break;
     case CMD_CURRENT_IBETA_MEASURED:
-      *((float *)tx_frame->data + 4) = controller->current_controller.i_beta_measured;
+      *((float *)(tx_frame->data + 4)) = controller->current_controller.i_beta_measured;
       break;
     case CMD_CURRENT_VALPHA_SETPOINT:
-      *((float *)tx_frame->data + 4) = controller->current_controller.v_alpha_setpoint;
+      *((float *)(tx_frame->data + 4)) = controller->current_controller.v_alpha_setpoint;
       break;
     case CMD_CURRENT_VBETA_SETPOINT:
-      *((float *)tx_frame->data + 4) = controller->current_controller.v_beta_setpoint;
+      *((float *)(tx_frame->data + 4)) = controller->current_controller.v_beta_setpoint;
       break;
     case CMD_CURRENT_VQ_TARGET:
-      *((float *)tx_frame->data + 4) = controller->current_controller.v_q_target;
+      *((float *)(tx_frame->data + 4)) = controller->current_controller.v_q_target;
       break;
     case CMD_CURRENT_VD_TARGET:
-      *((float *)tx_frame->data + 4) = controller->current_controller.v_d_target;
+      *((float *)(tx_frame->data + 4)) = controller->current_controller.v_d_target;
       break;
     case CMD_CURRENT_VQ_SETPOINT:
-      *((float *)tx_frame->data + 4) = controller->current_controller.v_q_setpoint;
+      *((float *)(tx_frame->data + 4)) = controller->current_controller.v_q_setpoint;
       break;
     case CMD_CURRENT_VD_SETPOINT:
-      *((float *)tx_frame->data + 4) = controller->current_controller.v_d_setpoint;
+      *((float *)(tx_frame->data + 4)) = controller->current_controller.v_d_setpoint;
       break;
     case CMD_CURRENT_IQ_TARGET:
-      *((float *)tx_frame->data + 4) = controller->current_controller.i_q_target;
+      *((float *)(tx_frame->data + 4)) = controller->current_controller.i_q_target;
       break;
     case CMD_CURRENT_ID_TARGET:
-      *((float *)tx_frame->data + 4) = controller->current_controller.i_d_target;
+      *((float *)(tx_frame->data + 4)) = controller->current_controller.i_d_target;
       break;
     case CMD_CURRENT_IQ_MEASURED:
-      *((float *)tx_frame->data + 4) = controller->current_controller.i_q_measured;
+      *((float *)(tx_frame->data + 4)) = controller->current_controller.i_q_measured;
       break;
     case CMD_CURRENT_ID_MEASURED:
-      *((float *)tx_frame->data + 4) = controller->current_controller.i_d_measured;
+      *((float *)(tx_frame->data + 4)) = controller->current_controller.i_d_measured;
       break;
     case CMD_CURRENT_IQ_SETPOINT:
-      *((float *)tx_frame->data + 4) = controller->current_controller.i_q_setpoint;
+      *((float *)(tx_frame->data + 4)) = controller->current_controller.i_q_setpoint;
       break;
     case CMD_CURRENT_ID_SETPOINT:
-      *((float *)tx_frame->data + 4) = controller->current_controller.i_d_setpoint;
+      *((float *)(tx_frame->data + 4)) = controller->current_controller.i_d_setpoint;
       break;
     case CMD_CURRENT_IQ_INTEGRATOR:
-      *((float *)tx_frame->data + 4) = controller->current_controller.i_q_integrator;
+      *((float *)(tx_frame->data + 4)) = controller->current_controller.i_q_integrator;
       break;
     case CMD_CURRENT_ID_INTEGRATOR:
-      *((float *)tx_frame->data + 4) = controller->current_controller.i_d_integrator;
+      *((float *)(tx_frame->data + 4)) = controller->current_controller.i_d_integrator;
       break;
     case CMD_POSITION_KP:
-      *((float *)tx_frame->data + 4) = controller->position_controller.position_kp;
+      *((float *)(tx_frame->data + 4)) = controller->position_controller.position_kp;
       break;
     case CMD_POSITION_KI:
-      *((float *)tx_frame->data + 4) = controller->position_controller.position_ki;
+      *((float *)(tx_frame->data + 4)) = controller->position_controller.position_ki;
       break;
     case CMD_VELOCITY_KP:
-      *((float *)tx_frame->data + 4) = controller->position_controller.velocity_kp;
+      *((float *)(tx_frame->data + 4)) = controller->position_controller.velocity_kp;
       break;
     case CMD_VELOCITY_KI:
-      *((float *)tx_frame->data + 4) = controller->position_controller.velocity_ki;
+      *((float *)(tx_frame->data + 4)) = controller->position_controller.velocity_ki;
       break;
     case CMD_TORQUE_LIMIT:
-      *((float *)tx_frame->data + 4) = controller->position_controller.torque_limit;
+      *((float *)(tx_frame->data + 4)) = controller->position_controller.torque_limit;
       break;
     case CMD_VELOCITY_LIMIT:
-      *((float *)tx_frame->data + 4) = controller->position_controller.velocity_limit;
+      *((float *)(tx_frame->data + 4)) = controller->position_controller.velocity_limit;
       break;
     case CMD_POSITION_LIMIT_LOW:
-      *((float *)tx_frame->data + 4) = controller->position_controller.position_limit_lower;
+      *((float *)(tx_frame->data + 4)) = controller->position_controller.position_limit_lower;
       break;
     case CMD_POSITION_LIMIT_HIGH:
-      *((float *)tx_frame->data + 4) = controller->position_controller.position_limit_upper;
+      *((float *)(tx_frame->data + 4)) = controller->position_controller.position_limit_upper;
       break;
     case CMD_TORQUE_TARGET:
-      *((float *)tx_frame->data + 4) = controller->position_controller.torque_target;
+      *((float *)(tx_frame->data + 4)) = controller->position_controller.torque_target;
       break;
     case CMD_TORQUE_MEASURED:
-      *((float *)tx_frame->data + 4) = controller->position_controller.torque_measured;
+      *((float *)(tx_frame->data + 4)) = controller->position_controller.torque_measured;
       break;
     case CMD_TORQUE_SETPOINT:
-      *((float *)tx_frame->data + 4) = controller->position_controller.torque_setpoint;
+      *((float *)(tx_frame->data + 4)) = controller->position_controller.torque_setpoint;
       break;
     case CMD_VELOCITY_TARGET:
-      *((float *)tx_frame->data + 4) = controller->position_controller.velocity_target;
+      *((float *)(tx_frame->data + 4)) = controller->position_controller.velocity_target;
       break;
     case CMD_VELOCITY_MEASURED:
-      *((float *)tx_frame->data + 4) = controller->position_controller.velocity_measured;
+      *((float *)(tx_frame->data + 4)) = controller->position_controller.velocity_measured;
       break;
     case CMD_VELOCITY_SETPOINT:
-      *((float *)tx_frame->data + 4) = controller->position_controller.velocity_setpoint;
+      *((float *)(tx_frame->data + 4)) = controller->position_controller.velocity_setpoint;
       break;
     case CMD_POSITION_TARGET:
-      *((float *)tx_frame->data + 4) = controller->position_controller.position_target;
+      *((float *)(tx_frame->data + 4)) = controller->position_controller.position_target;
       break;
     case CMD_POSITION_MEASURED:
-      *((float *)tx_frame->data + 4) = controller->position_controller.position_measured;
+      *((float *)(tx_frame->data + 4)) = controller->position_controller.position_measured;
       break;
     case CMD_POSITION_SETPOINT:
-      *((float *)tx_frame->data + 4) = controller->position_controller.position_setpoint;
+      *((float *)(tx_frame->data + 4)) = controller->position_controller.position_setpoint;
       break;
     case CMD_VELOCITY_INTEGRATOR:
-      *((float *)tx_frame->data + 4) = controller->position_controller.velocity_integrator;
+      *((float *)(tx_frame->data + 4)) = controller->position_controller.velocity_integrator;
       break;
     case CMD_POSITION_INTEGRATOR:
-      *((float *)tx_frame->data + 4) = controller->position_controller.position_integrator;
+      *((float *)(tx_frame->data + 4)) = controller->position_controller.position_integrator;
       break;
     default:
       break;
@@ -894,8 +858,11 @@ void MotorController_handleCANWrite(MotorController *controller, Command command
     case CMD_ENCODER_FILTER:
       controller->encoder.filter_alpha = *((float *)rx_data);
       break;
+    case CMD_ENCODER_FLUX_OFFSET:
+      controller->encoder.flux_offset = *((float *)rx_data);
+      break;
     case CMD_ENCODER_POSITION_RAW:
-//      controller->encoder.position_raw = *((int16_t *)rx_data);
+      controller->encoder.position_raw = (int16_t)*((int32_t *)rx_data);
       break;
     case CMD_ENCODER_N_ROTATIONS:
       controller->encoder.n_rotations = *((int32_t *)rx_data);
@@ -919,10 +886,13 @@ void MotorController_handleCANWrite(MotorController *controller, Command command
       controller->motor.kv_rating = *((uint32_t *)rx_data);
       break;
     case CMD_MOTOR_PHASE_ORDER:
-      controller->motor.phase_order = *((int8_t *)rx_data);
+      controller->motor.phase_order = (int8_t)*((int32_t *)rx_data);
       break;
-    case CMD_MOTOR_FLUX_OFFSET:
-      controller->encoder.flux_offset = *((float *)rx_data);
+    case CMD_MOTOR_PHASE_RESISTANCE:
+      controller->motor.phase_resistance = *((float *)rx_data);
+      break;
+    case CMD_MOTOR_PHASE_INDUCTANCE:
+      controller->motor.phase_inductance = *((float *)rx_data);
       break;
     case CMD_CURRENT_KP:
       controller->current_controller.i_kp = *((float *)rx_data);
@@ -930,17 +900,20 @@ void MotorController_handleCANWrite(MotorController *controller, Command command
     case CMD_CURRENT_KI:
       controller->current_controller.i_ki = *((float *)rx_data);
       break;
+    case CMD_CURRENT_BANDWIDTH:
+      controller->current_controller.i_bandwidth = *((float *)rx_data);
+      break;
     case CMD_CURRENT_LIMIT:
       controller->current_controller.i_limit = *((float *)rx_data);
       break;
     case CMD_CURRENT_IA_MEASURED:
-//      controller->current_controller.i_a_measured = *((float *)rx_data);
+      // this is a read-only term
       break;
     case CMD_CURRENT_IB_MEASURED:
-//      controller->current_controller.i_b_measured = *((float *)rx_data);
+      // this is a read-only term
       break;
     case CMD_CURRENT_IC_MEASURED:
-//      controller->current_controller.i_c_measured = *((float *)rx_data);
+      // this is a read-only term
       break;
     case CMD_CURRENT_VA_SETPOINT:
       controller->current_controller.v_a_setpoint = *((float *)rx_data);
@@ -952,10 +925,10 @@ void MotorController_handleCANWrite(MotorController *controller, Command command
       controller->current_controller.v_c_setpoint = *((float *)rx_data);
       break;
     case CMD_CURRENT_IALPHA_MEASURED:
-//      controller->current_controller.i_alpha_measured = *((float *)rx_data);
+      // this is a read-only term
       break;
     case CMD_CURRENT_IBETA_MEASURED:
-//      controller->current_controller.i_beta_measured = *((float *)rx_data);
+      // this is a read-only term
       break;
     case CMD_CURRENT_VALPHA_SETPOINT:
       controller->current_controller.v_alpha_setpoint = *((float *)rx_data);
@@ -982,10 +955,10 @@ void MotorController_handleCANWrite(MotorController *controller, Command command
       controller->current_controller.i_d_target = *((float *)rx_data);
       break;
     case CMD_CURRENT_IQ_MEASURED:
-//      controller->current_controller.i_q_measured = *((float *)rx_data);
+      // this is a read-only term
       break;
     case CMD_CURRENT_ID_MEASURED:
-//      controller->current_controller.i_d_measured = *((float *)rx_data);
+      // this is a read-only term
       break;
     case CMD_CURRENT_IQ_SETPOINT:
       controller->current_controller.i_q_setpoint = *((float *)rx_data);
@@ -1027,7 +1000,7 @@ void MotorController_handleCANWrite(MotorController *controller, Command command
       controller->position_controller.torque_target = *((float *)rx_data);
       break;
     case CMD_TORQUE_MEASURED:
-//      controller->position_controller.torque_measured = *((float *)rx_data);
+      // this is a read-only term
       break;
     case CMD_TORQUE_SETPOINT:
       controller->position_controller.torque_setpoint = *((float *)rx_data);
@@ -1036,7 +1009,7 @@ void MotorController_handleCANWrite(MotorController *controller, Command command
       controller->position_controller.velocity_target = *((float *)rx_data);
       break;
     case CMD_VELOCITY_MEASURED:
-//      controller->position_controller.velocity_measured = *((float *)rx_data);
+      // this is a read-only term
       break;
     case CMD_VELOCITY_SETPOINT:
       controller->position_controller.velocity_setpoint = *((float *)rx_data);
@@ -1045,7 +1018,7 @@ void MotorController_handleCANWrite(MotorController *controller, Command command
       controller->position_controller.position_target = *((float *)rx_data);
       break;
     case CMD_POSITION_MEASURED:
-//      controller->position_controller.position_measured = *((float *)rx_data);
+      // this is a read-only term
       break;
     case CMD_POSITION_SETPOINT:
       controller->position_controller.position_setpoint = *((float *)rx_data);

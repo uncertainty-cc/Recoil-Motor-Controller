@@ -19,7 +19,7 @@ typedef struct {
   I2C_HandleTypeDef *hi2c;
 
   uint8_t   i2c_buffer[2];
-  uint8_t   i2c_throttle_counter;
+  uint8_t   i2c_update_counter;
 
   int32_t   cpr;
   float     position_offset;      // in range (-inf, inf)
@@ -58,6 +58,8 @@ static inline float Encoder_getVelocity(Encoder *encoder) {
 HAL_StatusTypeDef Encoder_init(Encoder *encoder, I2C_HandleTypeDef *hi2c);
 
 void Encoder_setFilterBandwidth(Encoder *encoder, float bandwidth);
+
+void Encoder_resetFluxOffset(Encoder *encoder);
 
 void Encoder_update(Encoder *encoder, float dt);
 

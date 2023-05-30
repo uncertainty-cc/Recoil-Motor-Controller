@@ -31,9 +31,8 @@ void PositionController_init(PositionController *controller) {
 
 void PositionController_update(PositionController *controller, Mode mode) {
   if (mode == MODE_POSITION) {
-    float position_setpoint = controller->position_target;
     controller->position_setpoint = clampf(
-        position_setpoint,
+        controller->position_target,
         controller->position_limit_lower,
         controller->position_limit_upper);
 

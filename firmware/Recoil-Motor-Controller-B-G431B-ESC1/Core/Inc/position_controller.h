@@ -15,6 +15,8 @@
 #include "foc_math.h"
 
 typedef struct {
+  uint8_t update_counter;
+
   float position_kp;
   float position_ki;
   float velocity_kp;

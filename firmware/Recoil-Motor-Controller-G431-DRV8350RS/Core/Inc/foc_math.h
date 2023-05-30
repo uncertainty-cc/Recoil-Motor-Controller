@@ -16,15 +16,15 @@
 #define READ_BITS(REG, BIT)                   ((REG) & (BIT))
 #define WRITE_BITS(REG, CLEARMASK, SETMASK)   ((REG) = (((REG) & (~(CLEARMASK))) | (SETMASK)))
 
-#define M_E_F         2.7182818284590452354f
-#define M_LOG2E_F     1.4426950408889634074f
-#define M_LOG10E_F    0.43429448190325182765f
-#define M_LN2_F       _M_LN2
-#define M_LN10_F      2.302585092994046f
-#define M_PI_F        3.141592653589793f
-#define M_2PI_F       6.283185307179586f
-#define M_PI_2_F      1.5707963267948966f
-#define M_PI_4_F      0.7853981633974483f
+#define M_E_F             2.7182818284590452354f
+#define M_LOG2E_F         1.4426950408889634074f
+#define M_LOG10E_F        0.43429448190325182765f
+#define M_LN2_F           _M_LN2
+#define M_LN10_F          2.302585092994046f
+#define M_PI_F            3.141592653589793f
+#define M_2PI_F           6.283185307179586f
+#define M_PI_2_F          1.5707963267948966f
+#define M_PI_4_F          0.7853981633974483f
 
 #define Q31_TO_FLOAT(x)                       ((float)(x) / (float)(0x80000000))
 #define FLOAT_TO_Q31(x)                       ((int32_t)((float)(x) * (float)0x7FFFFFFF))

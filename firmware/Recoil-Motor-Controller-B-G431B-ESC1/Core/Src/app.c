@@ -89,9 +89,6 @@ void APP_init() {
   MotorController_init(&controller);
 
 
-
-
-
   HAL_Delay(1000);
 
 //  MotorController_setMode(&controller, MODE_DAMPING);
@@ -108,7 +105,7 @@ void APP_init() {
 //  controller.current_controller.i_q_target = 4.f;
 //
 //  controller.current_controller.i_q_target = 2.f;    // M6C12
-//  controller.current_controller.i_q_target = 0.4f;      // 5010 110KV
+//  controller.current_controller.i_q_target = 0.6f;      // 5010 110KV
 //  controller.current_controller.i_d_target = 0.;
 //  MotorController_setMode(&controller, MODE_CURRENT);
 
@@ -119,16 +116,20 @@ void APP_init() {
 void APP_main() {
   MotorController_updateService(&controller);
 
-  counter += 1;
+//  counter += 1;
 
 
+//  controller.current_controller.v_q_target = 0.6;
+////  controller.current_controller.v_q_target = 1.2;
+//  controller.current_controller.v_d_target = 0;
+//  MotorController_setMode(&controller, MODE_VQD_OVERRIDE);
+//  MotorController_setMode(&controller, MODE_CURRENT);
 //  if (counter > 1000) {
-//    controller.current_controller.i_q_target = 0.5f;
-////    controller.position_controller.position_target = 0.0f;
+////    controller.current_controller.i_q_target = 1.f;
+//    controller.position_controller.position_target = 0.0f;
 //  }
 //  if (counter > 2000) {
-//    controller.current_controller.i_q_target = 0.f;
-////    controller.position_controller.position_target = 3.0f * 14;
+//    controller.position_controller.position_target = 3.0f * 14;
 //    counter = 0;
 //  }
 
@@ -139,20 +140,19 @@ void APP_main() {
     MotorController_setMode(&controller, MODE_CALIBRATION);
   }
 
-    sprintf(str, "p:%f\tpp:%f\tv:%f\r\n",
-        controller.position_controller.position_measured,
-        controller.position_controller.position_measured + controller.encoder.flux_offset_table[controller.encoder.position_raw >> 5],
-        controller.position_controller.velocity_measured,
-        controller.powerstage.bus_voltage_measured,
-        APP_getUserPot());
+//    sprintf(str, "p_c:%f\tp_raw:%f\tp_com:%f\r\n",
+//        controller.encoder.position,
+//        (((float)controller.encoder.position_raw / (float)controller.encoder.cpr) + controller.encoder.n_rotations) * (M_2PI_F),
+//        (((float)controller.encoder.position_raw / (float)controller.encoder.cpr) + controller.encoder.n_rotations) * (M_2PI_F)+ controller.encoder.flux_offset_table[(controller.encoder.position_raw > 0 ? controller.encoder.position_raw : controller.encoder.position_raw + controller.encoder.cpr/2) >> 5]);
 
-
+  // initial status logging
 //  sprintf(str, "p:%f\tv:%f\tvoltage:%f\tpot:%f\r\n",
 //      controller.position_controller.position_measured,
 //      controller.position_controller.velocity_measured,
 //      controller.powerstage.bus_voltage_measured,
 //      APP_getUserPot());
 
+  // current loop logging
 //  sprintf(str, "iq_mea:%f\tid_mea:%f\tiq_tar:%f\tiq_set:%f\tvq_tar:%f\r\n",
 //      controller.current_controller.i_q_measured * 100,
 //      controller.current_controller.i_d_measured * 100,
@@ -161,29 +161,12 @@ void APP_main() {
 //      controller.current_controller.v_q_target);
 
 
-
-//  sprintf(str, "pwma:%d\tpwmb:%d\tpwmc:%d\r\n",
-//      __HAL_TIM_GET_COMPARE(controller.powerstage.htim, TIM_CHANNEL_1),
-//      __HAL_TIM_GET_COMPARE(controller.powerstage.htim, TIM_CHANNEL_2),
-//      __HAL_TIM_GET_COMPARE(controller.powerstage.htim, TIM_CHANNEL_3));
-
-//  sprintf(str, "ia:%f\tib:%f\tic:%f\r\n",
-//      controller.current_controller.i_a_measured,
-//      controller.current_controller.i_b_measured,
-//      controller.current_controller.i_c_measured);
-
-//  sprintf(str, "ialpha:%f\tibeta:%f\tiq:%f\tid:%f\r\n",
-//        controller.current_controller.i_alpha_measured * 100,
-//        controller.current_controller.i_beta_measured * 100,
-//        controller.current_controller.i_q_measured * 100,
-//        controller.current_controller.i_d_measured * 100);
-
-
-//  sprintf(str, "mea:%f\ttar:%f\tset:%f\tiq:%f\r\n",
-//      controller.position_controller.position_measured,
-//      controller.position_controller.position_target,
-//      controller.position_controller.position_setpoint,
-//      controller.current_controller.i_q_target * 100);
+  // position loop logging
+  sprintf(str, "mea:%f\ttar:%f\tset:%f\tiq:%f\r\n",
+      controller.position_controller.position_measured,
+      controller.position_controller.position_target,
+      controller.position_controller.position_setpoint,
+      controller.current_controller.i_q_target * 10);
 
 
 //  sprintf(str, "valpha:%f\tvbeta:%f\tvq:%f\tvd:%f\r\n",
@@ -198,23 +181,10 @@ void APP_main() {
 //      controller.current_controller.v_b_setpoint,
 //      controller.current_controller.v_c_setpoint);
 
-//  sprintf(str, "%d\r\n", val);
-//  sprintf(str, "pos:%f\tiq:%f\tid:%f\r\n",
-//      controller.position_controller.position_measured,
-//      controller.current_controller.i_q_setpoint,
-//      controller.current_controller.i_d_setpoint);
-//  sprintf(str, "pos:%f\tvq:%f\tvd:%f\r\n",
-//      controller.position_controller.position_measured,
-//      controller.current_controller.v_q_setpoint,
-//      controller.current_controller.v_d_setpoint);
-//  sprintf(str, "pos:%f\tvalpha:%f\tvbeta:%f\r\n",
-//      controller.position_controller.position_measured,
-//      controller.current_controller.v_alpha_setpoint,
-//      controller.current_controller.v_beta_setpoint);
-//    sprintf(str, "vbus:%f\tvel:%f\r\n",
-//        controller.powerstage.bus_voltage_measured,
-//        controller.encoder.velocity);
+
   HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 1000);
+
+  HAL_Delay(1);
 
 }
 

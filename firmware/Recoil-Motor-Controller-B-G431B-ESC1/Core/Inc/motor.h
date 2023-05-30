@@ -17,6 +17,8 @@ typedef struct {
   uint32_t pole_pairs;
   uint32_t kv_rating;
   int8_t phase_order;
+  float phase_resistance;
+  float phase_inductance;
 } Motor;
 
 HAL_StatusTypeDef Motor_init(Motor *motor);

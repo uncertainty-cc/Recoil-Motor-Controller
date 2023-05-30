@@ -1,2 +1,0 @@
-../Core/Src/rath_can.c:11:6:CAN_getRxFrame	40	static
-../Core/Src/rath_can.c:21:19:CAN_putTxFrame	48	static

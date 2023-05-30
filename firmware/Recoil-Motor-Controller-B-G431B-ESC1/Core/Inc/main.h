@@ -65,6 +65,7 @@ void Error_Handler(void);
 #define ADC_POT_GPIO_Port GPIOB
 #define GPIO_BUTTON_Pin GPIO_PIN_10
 #define GPIO_BUTTON_GPIO_Port GPIOC
+
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

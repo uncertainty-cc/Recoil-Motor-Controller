@@ -6,11 +6,11 @@
 ../Core/Src/motor_controller.c:236:7:MotorController_getTorque	0	static
 ../Core/Src/motor_controller.c:240:7:MotorController_getVelocity	0	static
 ../Core/Src/motor_controller.c:244:7:MotorController_getPosition	0	static
-../Core/Src/motor_controller.c:313:6:MotorController_setMode	24	static
+../Core/Src/motor_controller.c:311:6:MotorController_setMode	24	static
 ../Core/Src/motor_controller.c:31:6:MotorController_init	104	static
-../Core/Src/motor_controller.c:300:6:MotorController_updateSafety	8	static
-../Core/Src/motor_controller.c:416:6:MotorController_updateCommutation	16	static
+../Core/Src/motor_controller.c:298:6:MotorController_updateSafety	8	static
+../Core/Src/motor_controller.c:414:6:MotorController_updateCommutation	16	static
 ../Core/Src/motor_controller.c:248:6:MotorController_update	24	static
-../Core/Src/motor_controller.c:454:6:MotorController_runCalibrationSequence	200	static
-../Core/Src/motor_controller.c:447:6:MotorController_updateService	0	static
-../Core/Src/motor_controller.c:559:6:MotorController_handleCANMessage	32	static
+../Core/Src/motor_controller.c:452:6:MotorController_runCalibrationSequence	200	static
+../Core/Src/motor_controller.c:445:6:MotorController_updateService	0	static
+../Core/Src/motor_controller.c:557:6:MotorController_handleCANMessage	32	static

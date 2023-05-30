@@ -127,7 +127,7 @@ void MotorController_setFluxAngle(MotorController *controller, float angle_setpo
   float theta = wrapTo2Pi(angle_setpoint);
   float sin_theta = sinf(theta);
   float cos_theta = cosf(theta);
-  float v_q = 0.0;
+  float v_q = 0.f;
   float v_d = voltage_setpoint;
 
   controller->current_controller.v_alpha_setpoint = -sin_theta * v_q + cos_theta * v_d;
@@ -272,9 +272,6 @@ void MotorController_update(MotorController *controller) {
   controller->position_controller.torque_measured = (8.3f * controller->current_controller.i_q_measured) / (float)controller->motor.kv_rating;
 
 
-  PowerStage_updateBusVoltage(&controller->powerstage);
-
-
   // takes 6.94 us to run (13.9%) under -O2
   PositionController_update(&controller->position_controller, controller->mode);
 
@@ -290,6 +287,7 @@ void MotorController_update(MotorController *controller) {
   MotorController_updateSafety(controller);
 
 //  MotorController_setMode(controller);
+  PowerStage_updateBusVoltage(&controller->powerstage);
 
   // takes max 14.68 us to run (29.4%) under -O2
   MotorController_updateCommutation(controller);
@@ -311,7 +309,7 @@ void MotorController_updateSafety(MotorController *controller) {
 }
 
 void MotorController_setMode(MotorController *controller, Mode mode) {
-  switch (mode) {
+  switch(mode) {
     case MODE_DISABLED:
       PowerStage_disablePWM(&controller->powerstage);
       PowerStage_disableGateDriver(&controller->powerstage);
@@ -563,9 +561,8 @@ void MotorController_handleCANMessage(MotorController *controller, CAN_Frame *rx
   }
 
   uint16_t func_id = (rx_frame->id) >> 4;
-  uint8_t is_get_request = rx_frame->frame_type == CAN_FRAME_REMOTE || rx_frame->size == 0;
 
-  if (is_get_request) {
+  if (!rx_frame->size) {
     CAN_Frame tx_frame;
 
     tx_frame.id = rx_frame->id;

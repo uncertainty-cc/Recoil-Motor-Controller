@@ -16,14 +16,14 @@ void CurrentController_init(CurrentController *controller) {
 //  controller->i_d_kp = 10.;
 //  controller->i_d_ki = 0.003;
 
-  controller->i_kp = 0.0348;
-  controller->i_ki = 33;
+  controller->i_kp = 0.0348f;
+  controller->i_ki = 33.f;
 
-  controller->i_filter_alpha = 0.1;
-  controller->i_limit = 0.1;
+  controller->i_filter_alpha = 0.1f;
+  controller->i_limit = 0.1f;
 
-  controller->i_q_measured = 0;
-  controller->i_d_measured = 0;
+  controller->i_q_measured = 0.f;
+  controller->i_d_measured = 0.f;
 }
 
 void CurrentController_update(CurrentController *controller, Mode mode, float sin_theta, float cos_theta, float v_bus) {
@@ -105,6 +105,9 @@ void CurrentController_update(CurrentController *controller, Mode mode, float si
         controller->v_d_setpoint,
         sin_theta, cos_theta);
   }
+  else {
+    // user controls `controller->v_alpha_setpoint` and `controller->v_beta_setpoint`,
+  }
 
   if (mode != MODE_VABC_OVERRIDE) {
     FOC_invClarkSVPWM(
@@ -113,6 +116,10 @@ void CurrentController_update(CurrentController *controller, Mode mode, float si
         &controller->v_c_setpoint,
         controller->v_alpha_setpoint,
         controller->v_beta_setpoint);
+  }
+  else {
+    // user controls `controller->v_a_setpoint`, `controller->v_b_setpoint`,
+    // and `controller->v_c_setpoint`
   }
 }
 

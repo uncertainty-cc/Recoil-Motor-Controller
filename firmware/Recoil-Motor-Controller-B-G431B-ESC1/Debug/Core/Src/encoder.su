@@ -1,3 +1,4 @@
-../Core/Src/encoder.c:11:19:Encoder_init	24	static
+../Core/Src/encoder.c:11:19:Encoder_init	32	static
 ../Core/Src/encoder.c:32:6:Encoder_setFilterBandwidth	8	static
-../Core/Src/encoder.c:36:6:Encoder_update	16	static
+../Core/Src/encoder.c:36:6:Encoder_resetFluxOffset	0	static
+../Core/Src/encoder.c:43:6:Encoder_update	16	static

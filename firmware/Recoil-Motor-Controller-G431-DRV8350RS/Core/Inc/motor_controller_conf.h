@@ -15,6 +15,7 @@
 #define FIRST_TIME_BOOTUP               0
 #define LOAD_CONFIG_FROM_FLASH          0
 #define LOAD_CALIBRATION_FROM_FLASH     0
+
 #define SAFETY_WATCHDOG_ENABLED         0
 
 #define CALIBRATION_CURRENT             3

@@ -2,42 +2,22 @@
 #include "current_controller.h"
 
 HAL_StatusTypeDef CurrentController_init(CurrentController *controller) {
-
-
-#ifdef MOTORPROFILE_MAD_M6C12_150KV
-  //  controller->i_kp = 0.0348f;
-  //  controller->i_ki = 33.f;
-  controller->i_kp = 0.00015f;
-  controller->i_ki = 200.f;
-#endif
-#ifdef MOTORPROFILE_MAD_5010_310KV
-  controller->i_kp = 0.0001f;
-  controller->i_ki = 200.f;
-#endif
-#ifdef MOTORPROFILE_MAD_5010_110KV
-
-  // 0.07438987889987386
-  // 1692.4673041730082
-  //
-
-  float R = 0.21210899547699139f;
-  float L = 0.0001253253134958695f;
-
-  float f_bandwidth = 2e2f;
-  controller->i_kp = f_bandwidth * 2*M_PI * L;
-  controller->i_ki = R / L;
-
-
-//  controller->i_kp = 0.0004f;
-//  controller->i_ki = 100.f;
-#endif
-
-  controller->i_limit = 2.f;
+  controller->i_limit = 3.f;
 
   controller->i_q_measured = 0.f;
   controller->i_d_measured = 0.f;
 
+  controller->i_bandwidth = 4e2f;
+
+  controller->i_kp = 0.f;
+  controller->i_ki = 0.f;
+
   return HAL_OK;
+}
+
+void CurrentController_setPIGain(CurrentController *controller, float phase_resistance, float phase_inductance) {
+  controller->i_kp = controller->i_bandwidth * M_2_PI * phase_inductance;
+  controller->i_ki = phase_resistance / phase_inductance;
 }
 
 void CurrentController_update(CurrentController *controller, Mode mode, float sin_theta, float cos_theta, float v_bus) {
@@ -63,9 +43,9 @@ void CurrentController_update(CurrentController *controller, Mode mode, float si
     float i_d_error = controller->i_d_setpoint - controller->i_d_measured;
 
     controller->i_q_integrator = clampf(
-        controller->i_q_integrator + controller->i_kp * controller->i_ki * i_q_error / COMMUTATION_FREQ, -v_bus, v_bus);
+        controller->i_q_integrator + controller->i_kp * controller->i_ki * i_q_error / (float)COMMUTATION_FREQ, -v_bus, v_bus);
     controller->i_d_integrator = clampf(
-        controller->i_d_integrator + controller->i_kp * controller->i_ki * i_d_error / COMMUTATION_FREQ, -v_bus, v_bus);
+        controller->i_d_integrator + controller->i_kp * controller->i_ki * i_d_error / (float)COMMUTATION_FREQ, -v_bus, v_bus);
 
     controller->v_q_target = controller->i_kp * i_q_error + controller->i_q_integrator;
     controller->v_d_target = controller->i_kp * i_d_error + controller->i_d_integrator;

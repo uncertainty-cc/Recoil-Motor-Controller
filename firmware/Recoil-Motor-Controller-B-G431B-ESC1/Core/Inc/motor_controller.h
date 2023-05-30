@@ -34,34 +34,35 @@ typedef struct {
 } MotorController;
 
 typedef struct {
-  uint32_t  device_id;
-  uint32_t  firmware_version;
+  __IO  uint32_t  device_id;
+  __IO  uint32_t  firmware_version;
 
-  int32_t   encoder_cpr;
-  float     encoder_position_offset;
-  float     encoder_filter_alpha;
+  __IO  int32_t   encoder_cpr;
+  __IO  float     encoder_position_offset;
+  __IO  float     encoder_filter_alpha;
+  __IO  float     encoder_flux_offset;
 
-  float     powerstage_undervoltage_threshold;
-  float     powerstage_overvoltage_threshold;
-  float     powerstage_bus_voltage_filter_alpha;
+  __IO  float     powerstage_undervoltage_threshold;
+  __IO  float     powerstage_overvoltage_threshold;
+  __IO  float     powerstage_bus_voltage_filter_alpha;
 
-  uint32_t  motor_pole_pairs;
-  uint32_t  motor_kv_rating;
-  int32_t   motor_phase_order;
-  float     encoder_flux_offset;
+  __IO  uint32_t  motor_pole_pairs;
+  __IO  uint32_t  motor_kv_rating;
+  __IO  int32_t   motor_phase_order;
+  __IO  float     motor_phase_resistance;
+  __IO  float     motor_phase_inductance;
 
-  float     current_controller_i_kp;
-  float     current_controller_i_ki;
-  float     current_controller_i_limit;
+  __IO  float     current_controller_i_bandwidth;
+  __IO  float     current_controller_i_limit;
 
-  float     position_controller_position_kp;
-  float     position_controller_position_ki;
-  float     position_controller_velocity_kp;
-  float     position_controller_velocity_ki;
-  float     position_controller_torque_limit;
-  float     position_controller_velocity_limit;
-  float     position_controller_position_limit_upper;
-  float     position_controller_position_limit_lower;
+  __IO  float     position_controller_position_kp;
+  __IO  float     position_controller_position_ki;
+  __IO  float     position_controller_velocity_kp;
+  __IO  float     position_controller_velocity_ki;
+  __IO  float     position_controller_torque_limit;
+  __IO  float     position_controller_velocity_limit;
+  __IO  float     position_controller_position_limit_upper;
+  __IO  float     position_controller_position_limit_lower;
 } EEPROMConfig;
 
 

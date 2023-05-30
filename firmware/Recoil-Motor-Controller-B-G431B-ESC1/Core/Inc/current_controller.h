@@ -16,10 +16,11 @@
 
 typedef struct {
   // parameters
+  float i_bandwidth;
+  float i_limit;
+
   float i_kp;
   float i_ki;
-
-  float i_limit;
 
   // variables
   float i_a_measured;
@@ -51,6 +52,8 @@ typedef struct {
 } CurrentController;
 
 HAL_StatusTypeDef CurrentController_init(CurrentController *controller);
+
+void CurrentController_setPIGain(CurrentController *controller, float phase_resistance, float phase_inductance);
 
 void CurrentController_update(CurrentController *controller, Mode mode,
                               float sin_theta, float cos_theta, float v_bus);

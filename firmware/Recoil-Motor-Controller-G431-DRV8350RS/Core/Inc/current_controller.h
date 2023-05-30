@@ -50,7 +50,6 @@ typedef struct {
 
   float i_q_integrator;
   float i_d_integrator;
-
 } CurrentController;
 
 void CurrentController_init(CurrentController *controller);
