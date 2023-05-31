@@ -15,7 +15,7 @@ HAL_StatusTypeDef Encoder_init(Encoder *encoder, I2C_HandleTypeDef *hi2c) {
   encoder->cpr = 1 * (1 << 12);  // 12 bit precision
 
   encoder->position_offset = 0.f;
-  Encoder_setFilterBandwidth(encoder, 2e5f / 10e6f);
+  Encoder_setFilterBandwidth(encoder, 2000.f / ENCODER_UPDATE_FREQ);
   Encoder_resetFluxOffset(encoder);
 
   encoder->position_raw = 0;
