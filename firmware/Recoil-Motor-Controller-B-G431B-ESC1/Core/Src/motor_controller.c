@@ -43,7 +43,7 @@ void MotorController_init(MotorController *controller) {
   status |= CurrentController_init(&controller->current_controller);
   status |= PositionController_init(&controller->position_controller);
 
-  MotorController_loadConfig(controller);
+  status |= MotorController_loadConfig(controller);
   #if !LOAD_ID_FROM_FLASH || !LOAD_CONFIG_FROM_FLASH || !LOAD_CALIBRATION_FROM_FLASH
     MotorController_storeConfig(controller);
   #endif
@@ -198,6 +198,9 @@ void MotorController_setFluxAngle(MotorController *controller, float angle_setpo
 HAL_StatusTypeDef MotorController_loadConfig(MotorController *controller) {
   EEPROMConfig *config = (EEPROMConfig *)FLASH_CONFIG_ADDRESS;
   #if LOAD_CALIBRATION_FROM_FLASH
+    if (isnan(config->encoder_flux_offset)) {
+      return HAL_ERROR;
+    }
     controller->encoder.flux_offset                       = config->encoder_flux_offset;
   #endif
   #if LOAD_ID_FROM_FLASH
@@ -322,14 +325,14 @@ void MotorController_update(MotorController *controller) {
 
   controller->position_controller.position_measured = Encoder_getPosition(&controller->encoder);
   controller->position_controller.velocity_measured = Encoder_getVelocity(&controller->encoder);
-  controller->position_controller.torque_measured = (8.3f * controller->current_controller.i_q_measured) / (float)controller->motor.kv_rating;
+  controller->position_controller.torque_measured = (1.75* 8.3f * controller->current_controller.i_q_measured) / (float)controller->motor.kv_rating;
 
   PositionController_update(&controller->position_controller, controller->mode);
 
   if (controller->mode == MODE_POSITION
       || controller->mode == MODE_VELOCITY
       || controller->mode == MODE_TORQUE) {
-    controller->current_controller.i_q_target = (controller->position_controller.torque_setpoint * (float)controller->motor.kv_rating) / 8.3f;
+    controller->current_controller.i_q_target = (controller->position_controller.torque_setpoint * (float)controller->motor.kv_rating) / (1.75* 8.3f);
     controller->current_controller.i_d_target = 0.f;
   }
   else {
