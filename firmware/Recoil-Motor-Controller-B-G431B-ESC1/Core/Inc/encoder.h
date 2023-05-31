@@ -9,7 +9,9 @@
 #define INC_ENCODER_H_
 
 #include <stdint.h>
+#include <stdlib.h>
 #include <math.h>
+#include <string.h>
 
 #include "stm32g4xx_hal.h"
 #include "motor_controller_conf.h"
@@ -23,9 +25,11 @@ typedef struct {
 
   int32_t   cpr;
   float     position_offset;      // in range (-inf, inf)
-  float     filter_alpha;
+  float     filter_bandwidth;
   float     flux_offset;
   float     flux_offset_table[128];
+
+  float     filter_alpha;
 
   int16_t   position_raw;         // in range [-cpr/2, cpr/2)
   int32_t   n_rotations;
@@ -57,7 +61,7 @@ static inline float Encoder_getVelocity(Encoder *encoder) {
 
 HAL_StatusTypeDef Encoder_init(Encoder *encoder, I2C_HandleTypeDef *hi2c);
 
-void Encoder_setFilterBandwidth(Encoder *encoder, float bandwidth);
+void Encoder_setFilterGain(Encoder *encoder, float bandwidth);
 
 void Encoder_resetFluxOffset(Encoder *encoder);
 

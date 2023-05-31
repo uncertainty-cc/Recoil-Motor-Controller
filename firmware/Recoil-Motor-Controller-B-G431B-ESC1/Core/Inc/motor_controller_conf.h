@@ -8,17 +8,12 @@
 #ifndef INC_MOTOR_CONTROLLER_CONF_H_
 #define INC_MOTOR_CONTROLLER_CONF_H_
 
-#define FIRMWARE_VERSION                0x00010001    // (MAJOR [7:4]) . (MINOR [3:2]) . (PATCH [1:0])
+/** ======== Controller Settings ======== **/
+// (MAJOR [7:4]) . (MINOR [3:2]) . (PATCH [1:0])
+#define FIRMWARE_VERSION                0x00010002
 
 // min 1, max 63
 #define DEVICE_CAN_ID                   6
-
-
-//#define MOTORPROFILE_MAD_M6C12_150KV
-#define MOTORPROFILE_MAD_5010_110KV
-//#define MOTORPROFILE_MAD_5010_310KV
-//#define MOTORPROFILE_MAD_5010_370KV
-
 
 #define FIRST_TIME_BOOTUP               0             // first time bootup: change Flash option byte, store config to Flash
 
@@ -28,32 +23,14 @@
 #define SAFETY_WATCHDOG_ENABLED         0             // timeout
 
 
-// current control loop frequency (Hz)
-#define COMMUTATION_FREQ                20000
+/** ======== Motor Selection ======== **/
 
-// position encoder update frequency (Hz), equals I2C packet rate
-#define ENCODER_UPDATE_FREQ             10000
+//#define MOTORPROFILE_MAD_M6C12_150KV
+//#define MOTORPROFILE_MAD_5010_110KV
+//#define MOTORPROFILE_MAD_5010_310KV
+#define MOTORPROFILE_MAD_5010_370KV
 
-// position control loop frequency (Hz)
-#define POSITION_UPDATE_FREQ            2000
-
-// number of entries in the encoder offset table
-#define ENCODER_LUT_RESOLUTION          128
-
-// (bits)
-#define ADC_RESOLUTION                  4096          // 12-bit ADC
-
-// (bits / V)
-#define ADC_READING_COEFFICIENT         (3.3f / (float)ADC_RESOLUTION)
-
-// ()
-#define ADC_BUS_VOLTAGE_COEFFICIENT     (ADC_READING_COEFFICIENT * ((18.f + 169.f) / 18.f))   // convert ADC bits to Volts
-
-// ()                                 // = ((3V3 / ADC_RESOLUTION) / opamp_factor) / R
-#define ADC_OPAMP_CURRENT_COEFFICIENT   ((ADC_READING_COEFFICIENT / 16.f) / 0.003f)     // convert ADC bits to Amps
-
-
-// calibration phase current
+/** ======== Motor Calibration Phase Current Configuration ======== **/
 #ifdef MOTORPROFILE_MAD_M6C12_150KV
 #define CALIBRATION_CURRENT             5
 #endif
@@ -68,6 +45,43 @@
 #endif
 
 
+/** ======== Timing Configuration ======== **/
+
+// current control loop frequency (Hz)
+#define COMMUTATION_FREQ                20000
+
+// position encoder update frequency (Hz), equals I2C packet rate
+#define ENCODER_UPDATE_FREQ             10000
+
+// position control loop frequency (Hz)
+#define POSITION_UPDATE_FREQ            2000
+
+// current PI loop gain cutoff frequency (Hz)
+#define CURRENT_LOOP_BANDWIDTH          4e2f
+
+// encoder filter loop gain cutoff frequency (Hz)
+#define ENCODER_FILTER_BANDWIDTH        2e3f
+
+
+/** ======== Constants ======== **/
+
+// number of entries in the encoder offset table
+#define ENCODER_LUT_RESOLUTION          128
+
+// (bits)
+#define ADC_RESOLUTION                  4096          // 12-bit ADC
+
+// (V / bits)
+#define ADC_READING_COEFFICIENT         (3.3f / (float)ADC_RESOLUTION)
+
+// (V / bits)
+#define ADC_BUS_VOLTAGE_COEFFICIENT     (ADC_READING_COEFFICIENT * ((18.f + 169.f) / 18.f))   // convert ADC bits to Volts
+
+// (A / bits)                                 // = ((3V3 / ADC_RESOLUTION) / opamp_factor) / R
+#define ADC_OPAMP_CURRENT_COEFFICIENT   ((ADC_READING_COEFFICIENT / 16.f) / 0.003f)     // convert ADC bits to Amps
+
+
+/** ======== Controller State Definitions ======== **/
 typedef enum {
   // these are three safe modes
   MODE_DISABLED                   = 0x00U,
@@ -107,6 +121,8 @@ typedef enum {
   ERROR_I2C_FAULT                 = 0b0000100000000000U,
 } ErrorCode;
 
+
+/** ======== CAN Packet Definitions ======== **/
 typedef enum {
   CAN_ID_ESTOP                    = 0x00U,
   CAN_ID_INFO                     = 0x01U,
@@ -128,7 +144,7 @@ typedef enum {
 typedef enum {
   CMD_ENCODER_CPR                 = 0x10U,
   CMD_ENCODER_OFFSET              = 0x11U,
-  CMD_ENCODER_FILTER              = 0x12U,
+  CMD_ENCODER_FILTER_BANDWIDTH    = 0x12U,
   CMD_ENCODER_FLUX_OFFSET         = 0x13U,
   CMD_ENCODER_POSITION_RAW        = 0x14U,
   CMD_ENCODER_N_ROTATIONS         = 0x15U,

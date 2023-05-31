@@ -1,8 +1,8 @@
 ../Core/Src/app.c:27:6:HAL_FDCAN_RxFifo0Callback	24	static
 ../Core/Src/app.c:33:6:HAL_TIM_PeriodElapsedCallback	0	static
 ../Core/Src/app.c:53:6:HAL_I2C_MasterRxCpltCallback	0	static
-../Core/Src/app.c:57:9:APP_getUserButton	8	static
-../Core/Src/app.c:61:7:APP_getUserPot	8	static
-../Core/Src/app.c:65:6:APP_initFlashOption	8	static
-../Core/Src/app.c:82:6:APP_init	8	static
+../Core/Src/app.c:57:6:APP_initFlashOption	8	static
+../Core/Src/app.c:74:6:APP_init	8	static
+../Core/Src/app.c:109:9:APP_getUserButton	8	static
+../Core/Src/app.c:113:7:APP_getUserPot	8	static
 ../Core/Src/app.c:117:6:APP_main	176	static

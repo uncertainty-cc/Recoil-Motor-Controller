@@ -12,11 +12,10 @@ HAL_StatusTypeDef Encoder_init(Encoder *encoder, I2C_HandleTypeDef *hi2c) {
   encoder->hi2c = hi2c;
   encoder->i2c_update_counter = 0;
 
-  encoder->cpr = 1 * (1 << 12);  // 12 bit precision
+  encoder->cpr = +1 * (1 << 12);  // 12 bit precision
 
   encoder->position_offset = 0.f;
-  Encoder_setFilterBandwidth(encoder, 2000.f / ENCODER_UPDATE_FREQ);
-  Encoder_resetFluxOffset(encoder);
+  encoder->filter_bandwidth = ENCODER_FILTER_BANDWIDTH;
 
   encoder->position_raw = 0;
   encoder->n_rotations = 0;
@@ -24,13 +23,16 @@ HAL_StatusTypeDef Encoder_init(Encoder *encoder, I2C_HandleTypeDef *hi2c) {
   encoder->position = 0.f;
   encoder->velocity = 0.f;
 
+  Encoder_resetFluxOffset(encoder);
+
+  // wait for I2C device to power up
   HAL_Delay(100);
 
   return HAL_I2C_Mem_Read(encoder->hi2c, 0b0110110<<1, 0x0E, I2C_MEMADD_SIZE_8BIT, encoder->i2c_buffer, 2, 100);
 }
 
-void Encoder_setFilterBandwidth(Encoder *encoder, float bandwidth) {
-  encoder->filter_alpha = clampf(1.f - pow(M_E, -2.f * M_PI * bandwidth), 0.f, 1.f);
+void Encoder_setFilterGain(Encoder *encoder, float bandwitdth) {
+  encoder->filter_alpha = clampf(1.f - pow(M_E, -2.f * M_PI * (bandwitdth / ENCODER_UPDATE_FREQ)), 0.f, 1.f);
 }
 
 void Encoder_resetFluxOffset(Encoder *encoder) {

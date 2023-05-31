@@ -54,14 +54,6 @@ void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c) {
   // do nothing here
 }
 
-uint8_t APP_getUserButton() {
-  return HAL_GPIO_ReadPin(GPIO_BUTTON_GPIO_Port, GPIO_BUTTON_Pin) ? 0 : 1;
-}
-
-float APP_getUserPot() {
-  return HAL_ADCEx_InjectedGetValue(&hadc1, ADC_INJECTED_RANK_3) * ADC_READING_COEFFICIENT / 3.3;
-}
-
 void APP_initFlashOption() {
   while (__HAL_FLASH_GET_FLAG(FLASH_FLAG_BSY)) {}
 
@@ -108,10 +100,18 @@ void APP_init() {
 //  controller.current_controller.i_q_target = 0.6f;      // 5010 110KV
 //  controller.current_controller.i_d_target = 0.;
 //  MotorController_setMode(&controller, MODE_CURRENT);
-  // MotorController_setMode(&controller, MODE_TORQUE);
+//   MotorController_setMode(&controller, MODE_TORQUE);
 
 //  controller.position_controller.position_target = 0.0f;
 //  MotorController_setMode(&controller, MODE_POSITION);
+}
+
+uint8_t APP_getUserButton() {
+  return HAL_GPIO_ReadPin(GPIO_BUTTON_GPIO_Port, GPIO_BUTTON_Pin) ? 0 : 1;
+}
+
+float APP_getUserPot() {
+  return HAL_ADCEx_InjectedGetValue(&hadc1, ADC_INJECTED_RANK_3) * ADC_READING_COEFFICIENT / 3.3;
 }
 
 void APP_main() {
@@ -126,7 +126,7 @@ void APP_main() {
 //  MotorController_setMode(&controller, MODE_VQD_OVERRIDE);
 //  MotorController_setMode(&controller, MODE_CURRENT);
 //  controller.current_controller.i_q_target = 1 * APP_getUserPot();
-  // controller.position_controller.torque_target = -0.5 * APP_getUserPot();
+//   controller.position_controller.torque_target = -0.5 * APP_getUserPot();
 //  if (counter > 1000) {
 //    controller.position_controller.torque_target = 0.01 * APP_getUserPot();
 //    controller.position_controller.position_target = 0.0f;
@@ -173,7 +173,7 @@ void APP_main() {
 
   // torque testing
   sprintf(str, "pos:%f\tiq_mea:%f\tiq_tar:%f\ttorque:%f\r\n",
-        controller.position_controller.position_measured,
+        controller.position_controller.torque_measured,
         controller.current_controller.i_q_measured * 100,
         controller.current_controller.i_q_target * 100,
         controller.position_controller.torque_setpoint);
@@ -193,7 +193,6 @@ void APP_main() {
 
 
   HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 1000);
-
   HAL_Delay(1);
 
 }

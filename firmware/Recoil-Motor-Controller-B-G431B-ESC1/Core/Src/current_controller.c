@@ -14,7 +14,7 @@ HAL_StatusTypeDef CurrentController_init(CurrentController *controller) {
   controller->i_q_measured = 0.f;
   controller->i_d_measured = 0.f;
 
-  controller->i_bandwidth = 4e2f;
+  controller->i_bandwidth = CURRENT_LOOP_BANDWIDTH;
 
   controller->i_kp = 0.f;
   controller->i_ki = 0.f;

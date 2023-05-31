@@ -19,11 +19,11 @@
 #include "motor_controller.h"
 
 
+void APP_initFlashOption();
+
 uint8_t APP_getUserButton();
 
 float APP_getUserPot();
-
-void APP_initFlashOption();
 
 void APP_init();
 

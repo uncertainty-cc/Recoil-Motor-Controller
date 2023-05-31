@@ -39,7 +39,7 @@ typedef struct {
 
   __IO  int32_t   encoder_cpr;
   __IO  float     encoder_position_offset;
-  __IO  float     encoder_filter_alpha;
+  __IO  float     encoder_filter_bandwidth;
   __IO  float     encoder_flux_offset;
 
   __IO  float     powerstage_undervoltage_threshold;

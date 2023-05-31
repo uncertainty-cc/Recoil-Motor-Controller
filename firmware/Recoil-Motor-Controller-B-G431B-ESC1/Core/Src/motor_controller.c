@@ -198,9 +198,7 @@ void MotorController_setFluxAngle(MotorController *controller, float angle_setpo
 HAL_StatusTypeDef MotorController_loadConfig(MotorController *controller) {
   EEPROMConfig *config = (EEPROMConfig *)FLASH_CONFIG_ADDRESS;
   #if LOAD_CALIBRATION_FROM_FLASH
-    if (isnan(config->encoder_flux_offset)) {
-      return HAL_ERROR;
-    }
+    if (isnan(config->encoder_flux_offset)) return HAL_ERROR;
     controller->encoder.flux_offset                       = config->encoder_flux_offset;
   #endif
   #if LOAD_ID_FROM_FLASH
@@ -209,31 +207,50 @@ HAL_StatusTypeDef MotorController_loadConfig(MotorController *controller) {
   #if LOAD_CONFIG_FROM_FLASH
     controller->firmware_version                          = config->firmware_version;
     controller->encoder.cpr                               = config->encoder_cpr;
+    if (isnan(config->encoder_position_offset)) return HAL_ERROR;
     controller->encoder.position_offset                   = config->encoder_position_offset;
-    controller->encoder.filter_alpha                      = config->encoder_filter_alpha;
+    if (isnan(config->encoder_filter_bandwidth)) return HAL_ERROR;
+    controller->encoder.filter_bandwidth                  = config->encoder_filter_bandwidth;
+    if (isnan(config->powerstage_undervoltage_threshold)) return HAL_ERROR;
     controller->powerstage.undervoltage_threshold         = config->powerstage_undervoltage_threshold;
+    if (isnan(config->powerstage_overvoltage_threshold)) return HAL_ERROR;
     controller->powerstage.overvoltage_threshold          = config->powerstage_overvoltage_threshold;
+    if (isnan(config->powerstage_bus_voltage_filter_alpha)) return HAL_ERROR;
     controller->powerstage.bus_voltage_filter_alpha       = config->powerstage_bus_voltage_filter_alpha;
     controller->motor.pole_pairs                          = config->motor_pole_pairs;
     controller->motor.kv_rating                           = config->motor_kv_rating;
     controller->motor.phase_order                         = (int8_t)config->motor_phase_order;
+    if (isnan(config->motor_phase_resistance)) return HAL_ERROR;
     controller->motor.phase_resistance                    = config->motor_phase_resistance;
+    if (isnan(config->motor_phase_inductance)) return HAL_ERROR;
     controller->motor.phase_inductance                    = config->motor_phase_inductance;
+    if (isnan(config->current_controller_i_bandwidth)) return HAL_ERROR;
     controller->current_controller.i_bandwidth            = config->current_controller_i_bandwidth;
+    if (isnan(config->current_controller_i_limit)) return HAL_ERROR;
     controller->current_controller.i_limit                = config->current_controller_i_limit;
+    if (isnan(config->position_controller_position_kp)) return HAL_ERROR;
     controller->position_controller.position_kp           = config->position_controller_position_kp;
+    if (isnan(config->position_controller_position_ki)) return HAL_ERROR;
     controller->position_controller.position_ki           = config->position_controller_position_ki;
+    if (isnan(config->position_controller_velocity_kp)) return HAL_ERROR;
     controller->position_controller.velocity_kp           = config->position_controller_velocity_kp;
+    if (isnan(config->position_controller_velocity_ki)) return HAL_ERROR;
     controller->position_controller.velocity_ki           = config->position_controller_velocity_ki;
+    if (isnan(config->position_controller_torque_limit)) return HAL_ERROR;
     controller->position_controller.torque_limit          = config->position_controller_torque_limit;
+    if (isnan(config->position_controller_velocity_limit)) return HAL_ERROR;
     controller->position_controller.velocity_limit        = config->position_controller_velocity_limit;
+    if (isnan(config->position_controller_position_limit_upper)) return HAL_ERROR;
     controller->position_controller.position_limit_upper  = config->position_controller_position_limit_upper;
+    if (isnan(config->position_controller_position_limit_lower)) return HAL_ERROR;
     controller->position_controller.position_limit_lower  = config->position_controller_position_limit_lower;
   #endif
 
   CurrentController_setPIGain(&controller->current_controller,
       controller->motor.phase_resistance,
       controller->motor.phase_inductance);
+
+  Encoder_setFilterGain(&controller->encoder, controller->encoder.filter_bandwidth);
 
   return HAL_OK;
 }
@@ -245,7 +262,7 @@ HAL_StatusTypeDef MotorController_storeConfig(MotorController *controller) {
   config.firmware_version                               = controller->firmware_version;
   config.encoder_cpr                                    = controller->encoder.cpr;
   config.encoder_position_offset                        = controller->encoder.position_offset;
-  config.encoder_filter_alpha                           = controller->encoder.filter_alpha;
+  config.encoder_filter_bandwidth                       = controller->encoder.filter_bandwidth;
   config.encoder_flux_offset                            = controller->encoder.flux_offset;
   config.powerstage_undervoltage_threshold              = controller->powerstage.undervoltage_threshold;
   config.powerstage_overvoltage_threshold               = controller->powerstage.overvoltage_threshold;
@@ -673,8 +690,8 @@ void MotorController_handleCANRead(MotorController *controller, Command command,
     case CMD_ENCODER_OFFSET:
       *((float *)(tx_frame->data + 4)) = controller->encoder.position_offset;
       break;
-    case CMD_ENCODER_FILTER:
-      *((float *)(tx_frame->data + 4)) = controller->encoder.filter_alpha;
+    case CMD_ENCODER_FILTER_BANDWIDTH:
+      *((float *)(tx_frame->data + 4)) = controller->encoder.filter_bandwidth;
       break;
     case CMD_ENCODER_FLUX_OFFSET:
       *((float *)(tx_frame->data + 4)) = controller->encoder.flux_offset;
@@ -860,8 +877,8 @@ void MotorController_handleCANWrite(MotorController *controller, Command command
     case CMD_ENCODER_OFFSET:
       controller->encoder.position_offset = *((float *)rx_data);
       break;
-    case CMD_ENCODER_FILTER:
-      controller->encoder.filter_alpha = *((float *)rx_data);
+    case CMD_ENCODER_FILTER_BANDWIDTH:
+      controller->encoder.filter_bandwidth = *((float *)rx_data);
       break;
     case CMD_ENCODER_FLUX_OFFSET:
       controller->encoder.flux_offset = *((float *)rx_data);
