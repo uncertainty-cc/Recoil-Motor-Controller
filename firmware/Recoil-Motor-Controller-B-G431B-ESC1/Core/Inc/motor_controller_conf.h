@@ -8,24 +8,24 @@
 #ifndef INC_MOTOR_CONTROLLER_CONF_H_
 #define INC_MOTOR_CONTROLLER_CONF_H_
 
-#define FIRMWARE_VERSION                0x00010000    // (MAJOR [7:4]) . (MINOR [3:2]) . (PATCH [1:0])
+#define FIRMWARE_VERSION                0x00010001    // (MAJOR [7:4]) . (MINOR [3:2]) . (PATCH [1:0])
 
 // min 1, max 63
 #define DEVICE_CAN_ID                   6
 
 
-#define MOTORPROFILE_MAD_M6C12_150KV
-//#define MOTORPROFILE_MAD_5010_110KV
+//#define MOTORPROFILE_MAD_M6C12_150KV
+#define MOTORPROFILE_MAD_5010_110KV
 //#define MOTORPROFILE_MAD_5010_310KV
 //#define MOTORPROFILE_MAD_5010_370KV
 
 
 #define FIRST_TIME_BOOTUP               0             // first time bootup: change Flash option byte, store config to Flash
 
-#define LOAD_ID_FROM_FLASH              1             // load ID config from Flash
-#define LOAD_CONFIG_FROM_FLASH          1             // load config settings from Flash (everything except motor flux offset and can id)
+#define LOAD_ID_FROM_FLASH              0             // load ID config from Flash
+#define LOAD_CONFIG_FROM_FLASH          0             // load config settings from Flash (everything except motor flux offset and can id)
 #define LOAD_CALIBRATION_FROM_FLASH     1             // load encoder flux offset settings from Flash
-#define SAFETY_WATCHDOG_ENABLED         1             // timeout
+#define SAFETY_WATCHDOG_ENABLED         0             // timeout
 
 
 // current control loop frequency (Hz)

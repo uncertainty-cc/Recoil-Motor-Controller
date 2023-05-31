@@ -108,6 +108,7 @@ void APP_init() {
 //  controller.current_controller.i_q_target = 0.6f;      // 5010 110KV
 //  controller.current_controller.i_d_target = 0.;
 //  MotorController_setMode(&controller, MODE_CURRENT);
+  // MotorController_setMode(&controller, MODE_TORQUE);
 
 //  controller.position_controller.position_target = 0.0f;
 //  MotorController_setMode(&controller, MODE_POSITION);
@@ -124,8 +125,10 @@ void APP_main() {
 //  controller.current_controller.v_d_target = 0;
 //  MotorController_setMode(&controller, MODE_VQD_OVERRIDE);
 //  MotorController_setMode(&controller, MODE_CURRENT);
+//  controller.current_controller.i_q_target = 1 * APP_getUserPot();
+  // controller.position_controller.torque_target = -0.5 * APP_getUserPot();
 //  if (counter > 1000) {
-////    controller.current_controller.i_q_target = 1.f;
+//    controller.position_controller.torque_target = 0.01 * APP_getUserPot();
 //    controller.position_controller.position_target = 0.0f;
 //  }
 //  if (counter > 2000) {
@@ -145,7 +148,7 @@ void APP_main() {
 //        (((float)controller.encoder.position_raw / (float)controller.encoder.cpr) + controller.encoder.n_rotations) * (M_2PI_F),
 //        (((float)controller.encoder.position_raw / (float)controller.encoder.cpr) + controller.encoder.n_rotations) * (M_2PI_F)+ controller.encoder.flux_offset_table[(controller.encoder.position_raw > 0 ? controller.encoder.position_raw : controller.encoder.position_raw + controller.encoder.cpr/2) >> 5]);
 
-  // initial status logging
+//   initial status logging
 //  sprintf(str, "p:%f\tv:%f\tvoltage:%f\tpot:%f\r\n",
 //      controller.position_controller.position_measured,
 //      controller.position_controller.velocity_measured,
@@ -161,12 +164,19 @@ void APP_main() {
 //      controller.current_controller.v_q_target);
 
 
-  // position loop logging
-  sprintf(str, "mea:%f\ttar:%f\tset:%f\tiq:%f\r\n",
-      controller.position_controller.position_measured,
-      controller.position_controller.position_target,
-      controller.position_controller.position_setpoint,
-      controller.current_controller.i_q_target * 10);
+//  // position loop logging
+//  sprintf(str, "mea:%f\ttar:%f\tset:%f\tiq:%f\r\n",
+//      controller.position_controller.position_measured,
+//      controller.position_controller.position_target,
+//      controller.position_controller.position_setpoint,
+//      controller.current_controller.i_q_target * 10);
+
+  // torque testing
+  sprintf(str, "pos:%f\tiq_mea:%f\tiq_tar:%f\ttorque:%f\r\n",
+        controller.position_controller.position_measured,
+        controller.current_controller.i_q_measured * 100,
+        controller.current_controller.i_q_target * 100,
+        controller.position_controller.torque_setpoint);
 
 
 //  sprintf(str, "valpha:%f\tvbeta:%f\tvq:%f\tvd:%f\r\n",
