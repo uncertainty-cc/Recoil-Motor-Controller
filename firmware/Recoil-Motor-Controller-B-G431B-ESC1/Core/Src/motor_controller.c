@@ -325,6 +325,7 @@ void MotorController_update(MotorController *controller) {
 
   controller->position_controller.position_measured = Encoder_getPosition(&controller->encoder);
   controller->position_controller.velocity_measured = Encoder_getVelocity(&controller->encoder);
+  // 1.75 is a magic number.... need to find out why it's different from the theoretical value
   controller->position_controller.torque_measured = (1.75* 8.3f * controller->current_controller.i_q_measured) / (float)controller->motor.kv_rating;
 
   PositionController_update(&controller->position_controller, controller->mode);
@@ -332,6 +333,7 @@ void MotorController_update(MotorController *controller) {
   if (controller->mode == MODE_POSITION
       || controller->mode == MODE_VELOCITY
       || controller->mode == MODE_TORQUE) {
+    // same here, the 1.75 magic number...
     controller->current_controller.i_q_target = (controller->position_controller.torque_setpoint * (float)controller->motor.kv_rating) / (1.75* 8.3f);
     controller->current_controller.i_d_target = 0.f;
   }
