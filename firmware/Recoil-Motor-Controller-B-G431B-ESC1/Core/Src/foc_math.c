@@ -8,19 +8,18 @@
 #include "foc_math.h"
 
 void FOC_clarkTransform(float *i_alpha, float *i_beta, float i_a, float i_b, float i_c) {
-  *i_alpha = (1. / 3.) * (2. * i_a - i_b - i_c);
-  *i_beta = (1. / sqrtf(3.)) * (i_b - i_c);
+  *i_alpha = (1.f / 3.f) * (2.f * i_a - i_b - i_c);
+  *i_beta = (1.f / sqrtf(3.f)) * (i_b - i_c);
 }
 
 void FOC_parkTransform(float *i_q, float *i_d, float i_alpha, float i_beta, float sin_theta, float cos_theta) {
   *i_q  = -(sin_theta * i_alpha) + (cos_theta * i_beta);
   *i_d  =  (cos_theta * i_alpha) + (sin_theta * i_beta);
-
 }
 
 void FOC_invParkTransform(float *v_alpha, float *v_beta, float v_q, float v_d, float sin_theta, float cos_theta) {
-  *v_alpha  = -sin_theta * v_q + cos_theta * v_d;
-  *v_beta   =  cos_theta * v_q + sin_theta * v_d;
+  *v_alpha  = -(sin_theta * v_q) + (cos_theta * v_d);
+  *v_beta   =  (cos_theta * v_q) + (sin_theta * v_d);
 }
 
 void FOC_invClarkSVPWM(float *v_a, float *v_b, float *v_c, float v_alpha, float v_beta) {
