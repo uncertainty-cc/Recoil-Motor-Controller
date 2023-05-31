@@ -69,7 +69,7 @@ void MotorController_init(MotorController *controller) {
 
   if (status != HAL_OK) {
     SET_BITS(controller->error, ERROR_INITIALIZATION_ERROR);
-    MotorController_setMode(controller, MODE_IDLE);
+    MotorController_setMode(controller, MODE_DISABLED);
 
     __HAL_TIM_SET_AUTORELOAD(&htim3, 999);
     __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, __HAL_TIM_GET_AUTORELOAD(&htim3) / 2);

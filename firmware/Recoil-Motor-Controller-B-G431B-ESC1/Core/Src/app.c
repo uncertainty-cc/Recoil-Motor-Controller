@@ -42,7 +42,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
   else if (htim == &htim2) {
     #if SAFETY_WATCHDOG_ENABLED
     // watchdog time: 1000ms
-    if (controller.mode != MODE_IDLE && controller.mode != MODE_CALIBRATION) {
+    if (controller.mode != MODE_DISABLED && controller.mode != MODE_IDLE && controller.mode != MODE_CALIBRATION) {
       MotorController_setMode(&controller, MODE_DAMPING);
       SET_BITS(controller.error, ERROR_WATCHDOG_TIMEOUT);
     }
@@ -83,7 +83,6 @@ void APP_init() {
 
   HAL_Delay(1000);
 
-//  MotorController_setMode(&controller, MODE_DAMPING);
 
 //  MotorController_setMode(&controller, MODE_CALIBRATION);
 //  MotorController_updateService(&controller);
@@ -143,10 +142,7 @@ void APP_main() {
     MotorController_setMode(&controller, MODE_CALIBRATION);
   }
 
-//    sprintf(str, "p_c:%f\tp_raw:%f\tp_com:%f\r\n",
-//        controller.encoder.position,
-//        (((float)controller.encoder.position_raw / (float)controller.encoder.cpr) + controller.encoder.n_rotations) * (M_2PI_F),
-//        (((float)controller.encoder.position_raw / (float)controller.encoder.cpr) + controller.encoder.n_rotations) * (M_2PI_F)+ controller.encoder.flux_offset_table[(controller.encoder.position_raw > 0 ? controller.encoder.position_raw : controller.encoder.position_raw + controller.encoder.cpr/2) >> 5]);
+    sprintf(str, "mode:%d\r\n", controller.mode);
 
 //   initial status logging
 //  sprintf(str, "p:%f\tv:%f\tvoltage:%f\tpot:%f\r\n",
@@ -172,11 +168,11 @@ void APP_main() {
 //      controller.current_controller.i_q_target * 10);
 
   // torque testing
-  sprintf(str, "pos:%f\tiq_mea:%f\tiq_tar:%f\ttorque:%f\r\n",
-        controller.position_controller.torque_measured,
-        controller.current_controller.i_q_measured * 100,
-        controller.current_controller.i_q_target * 100,
-        controller.position_controller.torque_setpoint);
+//  sprintf(str, "pos:%f\tiq_mea:%f\tiq_tar:%f\ttorque:%f\r\n",
+//        controller.position_controller.torque_measured,
+//        controller.current_controller.i_q_measured * 100,
+//        controller.current_controller.i_q_target * 100,
+//        controller.position_controller.torque_setpoint);
 
 
 //  sprintf(str, "valpha:%f\tvbeta:%f\tvq:%f\tvd:%f\r\n",

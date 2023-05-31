@@ -2,8 +2,8 @@
 ../Core/Src/motor_controller.c:109:6:MotorController_setMode	16	static
 ../Core/Src/motor_controller.c:187:6:MotorController_setFluxAngle	24	static
 ../Core/Src/motor_controller.c:198:19:MotorController_loadConfig	8	static
-../Core/Src/motor_controller.c:258:19:MotorController_storeConfig	144	static
 ../Core/Src/motor_controller.c:29:6:MotorController_init	24	static
+../Core/Src/motor_controller.c:258:19:MotorController_storeConfig	144	static
 ../Core/Src/motor_controller.c:324:6:MotorController_update	40	static
 ../Core/Src/motor_controller.c:412:6:MotorController_runCalibrationSequence	16592	static
 ../Core/Src/motor_controller.c:405:6:MotorController_updateService	0	static

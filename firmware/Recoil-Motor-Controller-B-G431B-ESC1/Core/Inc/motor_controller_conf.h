@@ -10,25 +10,25 @@
 
 /** ======== Controller Settings ======== **/
 // (MAJOR [7:4]) . (MINOR [3:2]) . (PATCH [1:0])
-#define FIRMWARE_VERSION                0x00010002
+#define FIRMWARE_VERSION                0x00010003
 
 // min 1, max 63
-#define DEVICE_CAN_ID                   6
+#define DEVICE_CAN_ID                   2
 
 #define FIRST_TIME_BOOTUP               0             // first time bootup: change Flash option byte, store config to Flash
 
-#define LOAD_ID_FROM_FLASH              0             // load ID config from Flash
-#define LOAD_CONFIG_FROM_FLASH          0             // load config settings from Flash (everything except motor flux offset and can id)
+#define LOAD_ID_FROM_FLASH              1             // load ID config from Flash
+#define LOAD_CONFIG_FROM_FLASH          1             // load config settings from Flash (everything except motor flux offset and can id)
 #define LOAD_CALIBRATION_FROM_FLASH     1             // load encoder flux offset settings from Flash
-#define SAFETY_WATCHDOG_ENABLED         0             // timeout
+#define SAFETY_WATCHDOG_ENABLED         1             // timeout
 
 
 /** ======== Motor Selection ======== **/
 
-//#define MOTORPROFILE_MAD_M6C12_150KV
+#define MOTORPROFILE_MAD_M6C12_150KV
 //#define MOTORPROFILE_MAD_5010_110KV
 //#define MOTORPROFILE_MAD_5010_310KV
-#define MOTORPROFILE_MAD_5010_370KV
+//#define MOTORPROFILE_MAD_5010_370KV
 
 /** ======== Motor Calibration Phase Current Configuration ======== **/
 #ifdef MOTORPROFILE_MAD_M6C12_150KV
@@ -57,10 +57,10 @@
 #define POSITION_UPDATE_FREQ            2000
 
 // current PI loop gain cutoff frequency (Hz)
-#define CURRENT_LOOP_BANDWIDTH          4e2f
+#define CURRENT_LOOP_BANDWIDTH          400
 
 // encoder filter loop gain cutoff frequency (Hz)
-#define ENCODER_FILTER_BANDWIDTH        2e3f
+#define ENCODER_FILTER_BANDWIDTH        2000
 
 
 /** ======== Constants ======== **/
