@@ -322,37 +322,47 @@ HAL_StatusTypeDef MotorController_storeConfig(MotorController *controller) {
 }
 
 void MotorController_update(MotorController *controller) {
-  // CPU time: 74%, 31.4 us total
+  // CPU time: 42%, 20.6 us maximum total
   // 20kHz refresh rate requirements:
   //  - -O2 optimization
-  //  - 50% I2C transaction
-  //  -
-
+  //  - 10kHz I2C transaction rate
+  //  - float32 calculation
 
   // this is the most time-sensitive
-  // takes 1.42 us to run (2.8%) under -O2
+  // takes 1.5 us to run (3%)
   PowerStage_updatePhaseCurrent(&controller->powerstage,
       &controller->current_controller.i_a_measured,
       &controller->current_controller.i_b_measured,
       &controller->current_controller.i_c_measured,
       controller->motor.phase_order);
 
-  // also quite time-sensitive
-  // takes 10.92 us to run (22%) under -O2
-  Encoder_update(&controller->encoder, 1.f / (20000.f));
+  // this is also quite time-sensitive
+  // if issuing new I2C frame, takes 1.4 us to run (3%)
+  // else takes 1.1 us to run (2%)
+  Encoder_update(&controller->encoder);
 
+  // this block takes 0.5 us to run (1%)
   controller->position_controller.position_measured = Encoder_getPosition(&controller->encoder);
   controller->position_controller.velocity_measured = Encoder_getVelocity(&controller->encoder);
   // 1.75 is a magic number.... need to find out why it's different from the theoretical value
-  controller->position_controller.torque_measured = (1.75* 8.3f * controller->current_controller.i_q_measured) / (float)controller->motor.kv_rating;
+  // need to make sure all numbers are float32
+  controller->position_controller.torque_measured = (1.75f * 8.3f)
+      * controller->current_controller.i_q_measured
+      / (float)controller->motor.kv_rating;
 
+  // takes 1.3 us to run (3%)
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
   PositionController_update(&controller->position_controller, controller->mode);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
 
+  // this block takes 0.5 us to run (1%)
   if (controller->mode == MODE_POSITION
       || controller->mode == MODE_VELOCITY
       || controller->mode == MODE_TORQUE) {
     // same here, the 1.75 magic number...
-    controller->current_controller.i_q_target = (controller->position_controller.torque_setpoint * (float)controller->motor.kv_rating) / (1.75* 8.3f);
+    controller->current_controller.i_q_target = controller->position_controller.torque_setpoint
+        * (float)controller->motor.kv_rating
+        / (1.75f * 8.3f);
     controller->current_controller.i_d_target = 0.f;
   }
   else {
@@ -362,11 +372,10 @@ void MotorController_update(MotorController *controller) {
      */
   }
 
-
-//  MotorController_updateSafety(controller);
-
+  // this block takes 0.7 us to run (1%)
   PowerStage_updateBusVoltage(&controller->powerstage);
 
+  // this block takes 7.3 us maximum to run (15%)
   float theta = wrapTo2Pi(
       (Encoder_getPositionMeasured(&controller->encoder) * (float)controller->motor.pole_pairs)
       - controller->encoder.flux_offset
@@ -374,12 +383,14 @@ void MotorController_update(MotorController *controller) {
   float sin_theta = sinf(theta);
   float cos_theta = cosf(theta);
 
+  // takes 6 us to run (12%)
   CurrentController_update(&controller->current_controller,
       controller->mode,
       sin_theta,
       cos_theta,
       controller->powerstage.bus_voltage_measured);
 
+  // takes 1.8 us to run (4%)
   if (controller->mode == MODE_DAMPING) {
     PowerStage_setOutputPWM(&controller->powerstage, 0U, 0U, 0U, controller->motor.phase_order);
   }
@@ -450,7 +461,10 @@ void MotorController_runCalibrationSequence(MotorController *controller) {
     MotorController_setFluxAngle(controller, flux_angle_setpoint, voltage_setpoint);
 
     voltage_setpoint += 0.1f;
-    phase_current = 1.f/3.f * (fabs(controller->current_controller.i_a_measured) + fabs(controller->current_controller.i_b_measured) + fabs(controller->current_controller.i_c_measured));
+    phase_current = 1.f/3.f * (
+        fabs(controller->current_controller.i_a_measured)
+        + fabs(controller->current_controller.i_b_measured)
+        + fabs(controller->current_controller.i_c_measured));
     {
       char str[128];
       sprintf(str, "voltage: %f\tphase current: %f\r\n", voltage_setpoint, phase_current);

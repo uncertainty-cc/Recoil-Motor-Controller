@@ -4,9 +4,9 @@
 ../Core/Src/motor_controller.c:198:19:MotorController_loadConfig	8	static
 ../Core/Src/motor_controller.c:258:19:MotorController_storeConfig	144	static
 ../Core/Src/motor_controller.c:29:6:MotorController_init	24	static
-../Core/Src/motor_controller.c:324:6:MotorController_update	40	static
-../Core/Src/motor_controller.c:413:6:MotorController_runCalibrationSequence	16592	static
-../Core/Src/motor_controller.c:406:6:MotorController_updateService	0	static
-../Core/Src/motor_controller.c:684:6:MotorController_handleCANRead	0	static
-../Core/Src/motor_controller.c:873:6:MotorController_handleCANWrite	0	static
-../Core/Src/motor_controller.c:595:6:MotorController_handleCANMessage	32	static
+../Core/Src/motor_controller.c:324:6:MotorController_update	32	static
+../Core/Src/motor_controller.c:424:6:MotorController_runCalibrationSequence	16592	static
+../Core/Src/motor_controller.c:417:6:MotorController_updateService	0	static
+../Core/Src/motor_controller.c:698:6:MotorController_handleCANRead	0	static
+../Core/Src/motor_controller.c:887:6:MotorController_handleCANWrite	0	static
+../Core/Src/motor_controller.c:609:6:MotorController_handleCANMessage	32	static

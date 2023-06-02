@@ -1,4 +1,4 @@
 encoder.c:11:19:Encoder_init	1
 encoder.c:34:6:Encoder_setFilterGain	3
 encoder.c:38:6:Encoder_resetFluxOffset	1
-encoder.c:45:6:Encoder_update	4
+encoder.c:45:6:Encoder_update	3

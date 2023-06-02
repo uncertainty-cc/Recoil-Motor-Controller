@@ -65,6 +65,6 @@ void Encoder_setFilterGain(Encoder *encoder, float bandwidth);
 
 void Encoder_resetFluxOffset(Encoder *encoder);
 
-void Encoder_update(Encoder *encoder, float dt);
+void Encoder_update(Encoder *encoder);
 
 #endif /* INC_ENCODER_H_ */

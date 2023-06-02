@@ -42,15 +42,14 @@ void Encoder_resetFluxOffset(Encoder *encoder) {
 }
 
 
-void Encoder_update(Encoder *encoder, float dt) {
+void Encoder_update(Encoder *encoder) {
   // 20 kHz commutation cycle is faster than I2C transfer speed (~13.44kHz), so we need to throttle here
   encoder->i2c_update_counter += 1;
   if (encoder->i2c_update_counter == (COMMUTATION_FREQ / ENCODER_UPDATE_FREQ)) {
     encoder->i2c_update_counter = 0;
     HAL_I2C_Master_Receive_IT(encoder->hi2c, 0b0110110<<1, encoder->i2c_buffer, 2);
   }
-  dt *= COMMUTATION_FREQ / ENCODER_UPDATE_FREQ;
-
+  float dt = 1.f / ENCODER_UPDATE_FREQ;
 
   // reading is center aligned with range [-cpr/2, cpr/2)
   int16_t reading = ((int16_t)((encoder->i2c_buffer[0]) << 8) | encoder->i2c_buffer[1]) - abs(encoder->cpr / 2);
