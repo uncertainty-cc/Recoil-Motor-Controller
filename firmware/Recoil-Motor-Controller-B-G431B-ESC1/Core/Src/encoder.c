@@ -32,7 +32,7 @@ HAL_StatusTypeDef Encoder_init(Encoder *encoder, I2C_HandleTypeDef *hi2c) {
 }
 
 void Encoder_setFilterGain(Encoder *encoder, float bandwitdth) {
-  encoder->filter_alpha = clampf(1.f - pow(M_E, -2.f * M_PI * (bandwitdth / ENCODER_UPDATE_FREQ)), 0.f, 1.f);
+  encoder->filter_alpha = clampf(1.f - pow(M_E, -2.f * M_PI * (bandwitdth / (float)ENCODER_UPDATE_FREQ)), 0.f, 1.f);
 }
 
 void Encoder_resetFluxOffset(Encoder *encoder) {

@@ -13,22 +13,22 @@
 #define FIRMWARE_VERSION                0x00010003
 
 // min 1, max 63
-#define DEVICE_CAN_ID                   2
+#define DEVICE_CAN_ID                   1
 
 #define FIRST_TIME_BOOTUP               0             // first time bootup: change Flash option byte, store config to Flash
 
 #define LOAD_ID_FROM_FLASH              1             // load ID config from Flash
-#define LOAD_CONFIG_FROM_FLASH          1             // load config settings from Flash (everything except motor flux offset and can id)
+#define LOAD_CONFIG_FROM_FLASH          0             // load config settings from Flash (everything except motor flux offset and can id)
 #define LOAD_CALIBRATION_FROM_FLASH     1             // load encoder flux offset settings from Flash
-#define SAFETY_WATCHDOG_ENABLED         1             // timeout
+#define SAFETY_WATCHDOG_ENABLED         0             // timeout
 
 
 /** ======== Motor Selection ======== **/
 
-#define MOTORPROFILE_MAD_M6C12_150KV
+//#define MOTORPROFILE_MAD_M6C12_150KV
 //#define MOTORPROFILE_MAD_5010_110KV
 //#define MOTORPROFILE_MAD_5010_310KV
-//#define MOTORPROFILE_MAD_5010_370KV
+#define MOTORPROFILE_MAD_5010_370KV
 
 /** ======== Motor Calibration Phase Current Configuration ======== **/
 #ifdef MOTORPROFILE_MAD_M6C12_150KV
@@ -48,6 +48,7 @@
 /** ======== Timing Configuration ======== **/
 
 // current control loop frequency (Hz)
+// = SYS_CLK / TIM_AAR / TIM_REPTITION = 160 MHz / 4000 / 2 = 20 kHz
 #define COMMUTATION_FREQ                20000
 
 // position encoder update frequency (Hz), equals I2C packet rate
@@ -57,7 +58,7 @@
 #define POSITION_UPDATE_FREQ            2000
 
 // current PI loop gain cutoff frequency (Hz)
-#define CURRENT_LOOP_BANDWIDTH          400
+#define CURRENT_LOOP_BANDWIDTH          1000
 
 // encoder filter loop gain cutoff frequency (Hz)
 #define ENCODER_FILTER_BANDWIDTH        2000

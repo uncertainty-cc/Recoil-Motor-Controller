@@ -322,11 +322,12 @@ HAL_StatusTypeDef MotorController_storeConfig(MotorController *controller) {
 }
 
 void MotorController_update(MotorController *controller) {
-  // CPU time: 74%, 37 us total
+  // CPU time: 74%, 31.4 us total
   // 20kHz refresh rate requirements:
   //  - -O2 optimization
   //  - 50% I2C transaction
   //  -
+
 
   // this is the most time-sensitive
   // takes 1.42 us to run (2.8%) under -O2

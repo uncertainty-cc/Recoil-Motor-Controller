@@ -101,8 +101,8 @@ void APP_init() {
 //  MotorController_setMode(&controller, MODE_CURRENT);
 //   MotorController_setMode(&controller, MODE_TORQUE);
 
-//  controller.position_controller.position_target = 0.0f;
-//  MotorController_setMode(&controller, MODE_POSITION);
+  controller.position_controller.position_target = 0.0f;
+  MotorController_setMode(&controller, MODE_POSITION);
 }
 
 uint8_t APP_getUserButton() {
@@ -135,6 +135,9 @@ void APP_main() {
 //    counter = 0;
 //  }
 
+  controller.position_controller.position_target = 10 * APP_getUserPot();
+  MotorController_setMode(&controller, MODE_POSITION);
+
 
   char str[128];
 
@@ -142,7 +145,7 @@ void APP_main() {
     MotorController_setMode(&controller, MODE_CALIBRATION);
   }
 
-    sprintf(str, "mode:%d\r\n", controller.mode);
+//    sprintf(str, "mode:%d\r\n", controller.mode);
 
 //   initial status logging
 //  sprintf(str, "p:%f\tv:%f\tvoltage:%f\tpot:%f\r\n",
@@ -160,12 +163,12 @@ void APP_main() {
 //      controller.current_controller.v_q_target);
 
 
-//  // position loop logging
-//  sprintf(str, "mea:%f\ttar:%f\tset:%f\tiq:%f\r\n",
-//      controller.position_controller.position_measured,
-//      controller.position_controller.position_target,
-//      controller.position_controller.position_setpoint,
-//      controller.current_controller.i_q_target * 10);
+  // position loop logging
+  sprintf(str, "mea:%f\ttar:%f\tset:%f\tiq:%f\r\n",
+      controller.position_controller.position_measured,
+      controller.position_controller.position_target,
+      controller.position_controller.position_setpoint,
+      controller.current_controller.i_q_target * 10);
 
   // torque testing
 //  sprintf(str, "pos:%f\tiq_mea:%f\tiq_tar:%f\ttorque:%f\r\n",

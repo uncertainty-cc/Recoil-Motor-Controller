@@ -32,7 +32,7 @@ HAL_StatusTypeDef Motor_init(Motor *motor) {
   motor->phase_inductance = 1.0717319302328058e-05f;
 #endif
 
-  motor->phase_order = 1;
+  motor->phase_order = -1;
 
   return HAL_OK;
 }
