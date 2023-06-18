@@ -49,7 +49,6 @@ void Encoder_update(Encoder *encoder) {
     encoder->i2c_update_counter = 0;
     HAL_I2C_Master_Receive_IT(encoder->hi2c, 0b0110110<<1, encoder->i2c_buffer, 2);
   }
-  float dt = 1.f / ENCODER_UPDATE_FREQ;
 
   // reading is center aligned with range [-cpr/2, cpr/2)
   int16_t reading = ((int16_t)((encoder->i2c_buffer[0]) << 8) | encoder->i2c_buffer[1]) - abs(encoder->cpr / 2);
@@ -74,7 +73,7 @@ void Encoder_update(Encoder *encoder) {
   float delta_position_filtered = encoder->filter_alpha * (position - encoder->position);
   encoder->position += delta_position_filtered;
 
-  if (dt > 0) {
-    encoder->velocity = (delta_position_filtered / dt);
-  }
+  float velocity = delta_position_filtered * (float)ENCODER_UPDATE_FREQ;
+  float delta_velocity_filtered = encoder->filter_alpha * (velocity - encoder->velocity);
+  encoder->velocity += delta_velocity_filtered;
 }

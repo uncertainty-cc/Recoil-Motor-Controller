@@ -44,9 +44,6 @@ void MotorController_init(MotorController *controller) {
   status |= PositionController_init(&controller->position_controller);
 
   status |= MotorController_loadConfig(controller);
-  #if !LOAD_ID_FROM_FLASH || !LOAD_CONFIG_FROM_FLASH || !LOAD_CALIBRATION_FROM_FLASH
-    MotorController_storeConfig(controller);
-  #endif
 
   MotorController_reset(controller);
 
@@ -77,6 +74,10 @@ void MotorController_init(MotorController *controller) {
       // error loop
     }
   }
+
+  #if !LOAD_ID_FROM_FLASH || !LOAD_CONFIG_FROM_FLASH || !LOAD_CALIBRATION_FROM_FLASH
+    MotorController_storeConfig(controller);
+  #endif
 
   HAL_Delay(100);
   PowerStage_calibratePhaseCurrentOffset(&controller->powerstage);
@@ -351,9 +352,7 @@ void MotorController_update(MotorController *controller) {
       / (float)controller->motor.kv_rating;
 
   // takes 1.3 us to run (3%)
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
   PositionController_update(&controller->position_controller, controller->mode);
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
 
   // this block takes 0.5 us to run (1%)
   if (controller->mode == MODE_POSITION

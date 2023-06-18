@@ -10,10 +10,10 @@
 
 /** ======== Controller Settings ======== **/
 // (MAJOR [7:4]) . (MINOR [3:2]) . (PATCH [1:0])
-#define FIRMWARE_VERSION                0x00010004
+#define FIRMWARE_VERSION                0x00010005
 
 // min 1, max 63
-#define DEVICE_CAN_ID                   1
+#define DEVICE_CAN_ID                   2
 
 #define FIRST_TIME_BOOTUP               0             // first time bootup: change Flash option byte, store config to Flash
 
@@ -25,10 +25,10 @@
 
 /** ======== Motor Selection ======== **/
 
-//#define MOTORPROFILE_MAD_M6C12_150KV
+#define MOTORPROFILE_MAD_M6C12_150KV
 //#define MOTORPROFILE_MAD_5010_110KV
 //#define MOTORPROFILE_MAD_5010_310KV
-#define MOTORPROFILE_MAD_5010_370KV
+//#define MOTORPROFILE_MAD_5010_370KV
 
 /** ======== Motor Calibration Phase Current Configuration ======== **/
 #ifdef MOTORPROFILE_MAD_M6C12_150KV
@@ -61,7 +61,7 @@
 #define CURRENT_LOOP_BANDWIDTH          1000
 
 // encoder filter loop gain cutoff frequency (Hz)
-#define ENCODER_FILTER_BANDWIDTH        2000
+#define ENCODER_FILTER_BANDWIDTH        1000
 
 
 /** ======== Constants ======== **/

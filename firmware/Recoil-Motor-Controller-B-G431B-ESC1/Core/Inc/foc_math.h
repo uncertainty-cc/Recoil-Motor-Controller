@@ -41,10 +41,10 @@ static inline float clampf(float value, float min, float max) {
   return (value > max) ? max : ((value < min) ? min : value);
 }
 
-  static inline float wrapTo2Pi(float value) {
-    value = fmodf(value, M_2PI_F);
-    return value >= 0.f ? value : (value + M_2PI_F);
-  }
+static inline float wrapTo2Pi(float value) {
+  value = fmodf(value, M_2PI_F);
+  return value >= 0.f ? value : (value + M_2PI_F);
+}
 
 static inline float fast_fmaxf(float a, float b) {
   return a > b ? a : b;

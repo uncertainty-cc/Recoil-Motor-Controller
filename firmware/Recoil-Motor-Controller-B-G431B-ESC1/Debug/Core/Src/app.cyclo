@@ -1,8 +1,8 @@
 app.c:27:6:HAL_FDCAN_RxFifo0Callback	1
-app.c:33:6:HAL_TIM_PeriodElapsedCallback	2
+app.c:33:6:HAL_TIM_PeriodElapsedCallback	5
 app.c:53:6:HAL_I2C_MasterRxCpltCallback	1
 app.c:57:6:APP_initFlashOption	3
 app.c:74:6:APP_init	1
-app.c:108:9:APP_getUserButton	1
-app.c:112:7:APP_getUserPot	1
-app.c:116:6:APP_main	2
+app.c:93:9:APP_getUserButton	1
+app.c:97:7:APP_getUserPot	1
+app.c:101:6:APP_main	2
