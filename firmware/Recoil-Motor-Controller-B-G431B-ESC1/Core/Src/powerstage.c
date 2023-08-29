@@ -63,9 +63,18 @@ void PowerStage_setOutputVoltage(PowerStage *powerstage, float v_a, float v_b, f
 }
 
 void PowerStage_calibratePhaseCurrentOffset(PowerStage *powerstage) {
-  powerstage->adc_reading_offset[0] = HAL_ADCEx_InjectedGetValue(powerstage->hadc1, ADC_INJECTED_RANK_1);
-  powerstage->adc_reading_offset[1] = HAL_ADCEx_InjectedGetValue(powerstage->hadc2, ADC_INJECTED_RANK_1);
-  powerstage->adc_reading_offset[2] = HAL_ADCEx_InjectedGetValue(powerstage->hadc2, ADC_INJECTED_RANK_2);
+  int32_t adc_reading_0 = 0;
+  int32_t adc_reading_1 = 0;
+  int32_t adc_reading_2 = 0;
+  for (uint16_t i=0; i<10; i+=1) {
+    adc_reading_0 += HAL_ADCEx_InjectedGetValue(powerstage->hadc1, ADC_INJECTED_RANK_1);
+    adc_reading_1 += HAL_ADCEx_InjectedGetValue(powerstage->hadc2, ADC_INJECTED_RANK_1);
+    adc_reading_2 += HAL_ADCEx_InjectedGetValue(powerstage->hadc2, ADC_INJECTED_RANK_2);
+    HAL_Delay(10);
+  }
+  powerstage->adc_reading_offset[0] = adc_reading_0 / 10;
+  powerstage->adc_reading_offset[1] = adc_reading_1 / 10;
+  powerstage->adc_reading_offset[2] = adc_reading_2 / 10;
 }
 
 void PowerStage_updateBusVoltage(PowerStage *powerstage) {

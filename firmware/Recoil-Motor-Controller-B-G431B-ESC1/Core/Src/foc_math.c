@@ -8,8 +8,8 @@
 #include "foc_math.h"
 
 void FOC_clarkTransform(float *i_alpha, float *i_beta, float i_a, float i_b, float i_c) {
-  *i_alpha = (1.f / 3.f) * (2.f * i_a - i_b - i_c);
-  *i_beta = (1.f / sqrtf(3.f)) * (i_b - i_c);
+  *i_alpha = (1.f / 3.f)        * (2.f * i_a - i_b - i_c);
+  *i_beta  = (1.f / sqrtf(3.f)) * (i_b - i_c);
 }
 
 void FOC_parkTransform(float *i_q, float *i_d, float i_alpha, float i_beta, float sin_theta, float cos_theta) {

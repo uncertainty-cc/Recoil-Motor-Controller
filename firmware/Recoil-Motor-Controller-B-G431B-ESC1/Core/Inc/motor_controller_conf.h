@@ -17,18 +17,18 @@
 
 #define FIRST_TIME_BOOTUP               0             // first time bootup: change Flash option byte, store config to Flash
 
-#define LOAD_ID_FROM_FLASH              1             // load ID config from Flash
-#define LOAD_CONFIG_FROM_FLASH          1             // load config settings from Flash (everything except motor flux offset and can id)
+#define LOAD_ID_FROM_FLASH              0             // load ID config from Flash
+#define LOAD_CONFIG_FROM_FLASH          0             // load config settings from Flash (everything except motor flux offset and can id)
 #define LOAD_CALIBRATION_FROM_FLASH     1             // load encoder flux offset settings from Flash
-#define SAFETY_WATCHDOG_ENABLED         1             // timeout
+#define SAFETY_WATCHDOG_ENABLED         0             // timeout
 
 
 /** ======== Motor Selection ======== **/
 
-#define MOTORPROFILE_MAD_M6C12_150KV
+//#define MOTORPROFILE_MAD_M6C12_150KV
 //#define MOTORPROFILE_MAD_5010_110KV
 //#define MOTORPROFILE_MAD_5010_310KV
-//#define MOTORPROFILE_MAD_5010_370KV
+#define MOTORPROFILE_MAD_5010_370KV
 
 /** ======== Motor Calibration Phase Current Configuration ======== **/
 #ifdef MOTORPROFILE_MAD_M6C12_150KV
@@ -75,11 +75,12 @@
 // (V / bits)
 #define ADC_READING_COEFFICIENT         (3.3f / (float)ADC_RESOLUTION)
 
-// (V / bits)
-#define ADC_BUS_VOLTAGE_COEFFICIENT     (ADC_READING_COEFFICIENT * ((18.f + 169.f) / 18.f))   // convert ADC bits to Volts
+// convert ADC bits to Volts (V / bits)
+#define ADC_BUS_VOLTAGE_COEFFICIENT     (ADC_READING_COEFFICIENT * ((18.f + 169.f) / 18.f))
 
-// (A / bits)                                 // = ((3V3 / ADC_RESOLUTION) / opamp_factor) / R
-#define ADC_OPAMP_CURRENT_COEFFICIENT   ((ADC_READING_COEFFICIENT / 16.f) / 0.003f)     // convert ADC bits to Amps
+// convert ADC bits to Amps (A / bits)
+// = ((3V3 / ADC_RESOLUTION) / opamp_factor) / R
+#define ADC_OPAMP_CURRENT_COEFFICIENT   ((ADC_READING_COEFFICIENT / 16.f) / 0.003f)
 
 
 /** ======== Controller State Definitions ======== **/

@@ -17,7 +17,7 @@ HAL_StatusTypeDef PositionController_init(PositionController *controller) {
   controller->velocity_ki = 0.f;
 
 
-  controller->torque_limit = .1f;
+  controller->torque_limit = .2f;
 
   controller->velocity_limit = 20.f;
 

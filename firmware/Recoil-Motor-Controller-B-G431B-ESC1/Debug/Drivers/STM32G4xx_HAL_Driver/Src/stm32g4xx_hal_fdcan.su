@@ -4,7 +4,7 @@
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_fdcan.c:611:19:HAL_FDCAN_EnterPowerDownMode	16	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_fdcan.c:646:19:HAL_FDCAN_ExitPowerDownMode	16	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_fdcan.c:1295:19:HAL_FDCAN_ConfigFilter	8	static
-../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_fdcan.c:1379:19:HAL_FDCAN_ConfigGlobalFilter	12	static
+../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_fdcan.c:1379:19:HAL_FDCAN_ConfigGlobalFilter	4	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_fdcan.c:1423:19:HAL_FDCAN_ConfigExtendedIdMask	0	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_fdcan.c:1457:19:HAL_FDCAN_ConfigRxFifoOverwrite	0	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_fdcan.c:1497:19:HAL_FDCAN_ConfigRamWatchdog	0	static

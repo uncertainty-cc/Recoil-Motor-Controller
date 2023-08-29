@@ -28,6 +28,7 @@ extern UART_HandleTypeDef huart2;
 
 void MotorController_init(MotorController *controller) {
   controller->mode = MODE_DISABLED;
+  controller->error = 0;
   controller->device_id = DEVICE_CAN_ID;
   controller->firmware_version = FIRMWARE_VERSION;
 
@@ -177,7 +178,6 @@ void MotorController_setMode(MotorController *controller, Mode mode) {
       break;
 
     default:
-      PowerStage_disablePWM(&controller->powerstage);
       controller->mode = MODE_IDLE;
       SET_BITS(controller->error, ERROR_INVALID_MODE);
       return;  // return directly, do not update mode
