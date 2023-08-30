@@ -102,14 +102,14 @@ void APP_init() {
 
   HAL_Delay(1000);
 
-//    MotorController_setMode(&controller, MODE_DAMPING);
+//  MotorController_setMode(&controller, MODE_DAMPING);
 
 //  controller.current_controller.i_q_target = 0;
 //  controller.current_controller.i_d_target = 0;
 //  MotorController_setMode(&controller, MODE_CURRENT);
-
-  controller.position_controller.position_target = 0;
-  MotorController_setMode(&controller, MODE_POSITION);
+//
+//  controller.position_controller.position_target = 0;
+//  MotorController_setMode(&controller, MODE_POSITION);
 
 }
 
@@ -150,13 +150,11 @@ void APP_main() {
 
 
 //  // position loop logging
-  sprintf(str, "mea:%f\ttar:%f\tset:%f\tiq_tar:%f\tiq_set:%f\tv:%f\r\n",
+  sprintf(str, "p_mea:%f\tp_tar:%f\tiq_set:%f\tvel_mea:%f\r\n",
       controller.position_controller.position_measured,
       controller.position_controller.position_target,
-      controller.position_controller.position_setpoint,
-      controller.current_controller.i_q_target * 10,
 	  controller.current_controller.i_q_setpoint * 10,
-	  controller.position_controller.velocity_measured * 100);
+	  controller.position_controller.velocity_measured * 10);
 
   // torque testing
 //  sprintf(str, "pos:%f\tiq_mea:%f\tiq_tar:%f\ttorque:%f\r\n",
