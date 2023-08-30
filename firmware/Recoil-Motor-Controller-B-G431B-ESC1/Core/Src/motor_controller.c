@@ -38,6 +38,19 @@ void MotorController_init(MotorController *controller) {
   status |= CAN_init(&hfdcan1, 0, 0);
 
   status |= Encoder_init(&controller->encoder, &hi2c1);
+  while (status) {
+    hi2c1.Instance = I2C1;
+    hi2c1.Init.Timing = 0x00F07BFF;
+    hi2c1.Init.OwnAddress1 = 0;
+    hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+    hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+    hi2c1.Init.OwnAddress2 = 0;
+    hi2c1.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
+    hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+    hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+    HAL_I2C_Init(&hi2c1);
+    status = Encoder_init(&controller->encoder, &hi2c1);
+  }
   status |= PowerStage_init(&controller->powerstage, &htim1, &hadc1, &hadc2);
   status |= Motor_init(&controller->motor);
 
@@ -375,10 +388,12 @@ void MotorController_update(MotorController *controller) {
   PowerStage_updateBusVoltage(&controller->powerstage);
 
   // this block takes 7.3 us maximum to run (15%)
+  // 0.002f is kinda a magic number. Ideally this should be the delay, in seconds, of the encoder signal.
   float theta = wrapTo2Pi(
-      (Encoder_getPositionMeasured(&controller->encoder) * (float)controller->motor.pole_pairs)
+      ((Encoder_getPositionMeasured(&controller->encoder) + 0.002f * controller->encoder.velocity) * (float)controller->motor.pole_pairs)
       - controller->encoder.flux_offset
       );
+
   float sin_theta = sinf(theta);
   float cos_theta = cosf(theta);
 

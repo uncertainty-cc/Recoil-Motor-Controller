@@ -5,4 +5,4 @@
 ../Core/Src/app.c:93:6:APP_init	8	static
 ../Core/Src/app.c:116:9:APP_getUserButton	8	static
 ../Core/Src/app.c:120:7:APP_getUserPot	8	static
-../Core/Src/app.c:124:6:APP_main	168	static
+../Core/Src/app.c:124:6:APP_main	192	static

@@ -150,12 +150,13 @@ void APP_main() {
 
 
 //  // position loop logging
-//  sprintf(str, "mea:%f\ttar:%f\tset:%f\tiq_tar:%f\tiq_set:%f\r\n",
-//      controller.position_controller.position_measured,
-//      controller.position_controller.position_target,
-//      controller.position_controller.position_setpoint,
-//      controller.current_controller.i_q_target * 10,
-//	  controller.current_controller.i_q_setpoint * 10);
+  sprintf(str, "mea:%f\ttar:%f\tset:%f\tiq_tar:%f\tiq_set:%f\tv:%f\r\n",
+      controller.position_controller.position_measured,
+      controller.position_controller.position_target,
+      controller.position_controller.position_setpoint,
+      controller.current_controller.i_q_target * 10,
+	  controller.current_controller.i_q_setpoint * 10,
+	  controller.position_controller.velocity_measured * 100);
 
   // torque testing
 //  sprintf(str, "pos:%f\tiq_mea:%f\tiq_tar:%f\ttorque:%f\r\n",
@@ -171,11 +172,11 @@ void APP_main() {
 //        controller.current_controller.v_q_setpoint * 10,
 //        controller.current_controller.v_d_setpoint * 10);
 
-  sprintf(str, "pos:%f\tva:%f\tvb:%f\tvc:%f\r\n",
-      controller.position_controller.position_measured,
-      controller.current_controller.v_a_setpoint,
-      controller.current_controller.v_b_setpoint,
-      controller.current_controller.v_c_setpoint);
+//  sprintf(str, "pos:%f\tva:%f\tvb:%f\tvc:%f\r\n",
+//      controller.position_controller.position_measured,
+//      controller.current_controller.v_a_setpoint,
+//      controller.current_controller.v_b_setpoint,
+//      controller.current_controller.v_c_setpoint);
 
 
   HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 1000);
