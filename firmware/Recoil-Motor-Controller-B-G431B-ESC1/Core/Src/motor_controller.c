@@ -28,7 +28,7 @@ extern UART_HandleTypeDef huart2;
 
 void MotorController_init(MotorController *controller) {
   controller->mode = MODE_DISABLED;
-  controller->error = 0;
+  controller->error = ERROR_NO_ERROR;
   controller->device_id = DEVICE_CAN_ID;
   controller->firmware_version = FIRMWARE_VERSION;
 
@@ -93,6 +93,7 @@ void MotorController_init(MotorController *controller) {
     MotorController_storeConfig(controller);
   #endif
 
+  // wait ADC and opamp to settle.
   HAL_Delay(100);
   PowerStage_calibratePhaseCurrentOffset(&controller->powerstage);
 
@@ -437,6 +438,7 @@ void MotorController_updateService(MotorController *controller) {
 
 void MotorController_runCalibrationSequence(MotorController *controller) {
   MotorController_setMode(controller, MODE_CALIBRATION);
+  HAL_Delay(10);  // wait for state machine to switch
 
   // set all calibration data to 0
   // we also reset n_rotation to 0 so Encoder_getPositionMeasured will return value in (-2pi, 2pi)
@@ -460,7 +462,6 @@ void MotorController_runCalibrationSequence(MotorController *controller) {
 
   // starting voltage setpoint (V)
   float voltage_setpoint = 0.2;
-
   float flux_angle_setpoint = 0;
 
   MotorController_setFluxAngle(controller, flux_angle_setpoint, voltage_setpoint);
@@ -495,7 +496,6 @@ void MotorController_runCalibrationSequence(MotorController *controller) {
 
   HAL_Delay(1000);
 
-
   // move one mechanical revolution forward
   for (uint32_t i=0; i<128 * 14; i+=1) {
     flux_angle_setpoint = ((float)i / (128.f*14.f)) * (2*M_PI) * controller->motor.pole_pairs;
@@ -505,12 +505,6 @@ void MotorController_runCalibrationSequence(MotorController *controller) {
 
     float error = Encoder_getPositionMeasured(&controller->encoder) * controller->motor.pole_pairs - flux_angle_setpoint;
     error_table[i] = error;
-
-//    {
-//      char str[128];
-//      sprintf(str, "%d: %f\r\n", i, error_table[i]);
-//      HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 10);
-//    }
   }
 
   HAL_Delay(500);
@@ -524,17 +518,10 @@ void MotorController_runCalibrationSequence(MotorController *controller) {
 
     float error = Encoder_getPositionMeasured(&controller->encoder) * controller->motor.pole_pairs - flux_angle_setpoint;
     error_table[i-1] = 0.5f * (error_table[i-1] + error);
-
-//    {
-//      char str[128];
-//      sprintf(str, "%d: %f\r\n", i-1, error_table[i-1]);
-//      HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 10);
-//    }
   }
 
   // release motor
   PowerStage_disablePWM(&controller->powerstage);
-
 
   // Calculate average offset
   float flux_offset_sum = 0;

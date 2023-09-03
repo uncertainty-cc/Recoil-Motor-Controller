@@ -10,9 +10,10 @@
 
 #include <stdint.h>
 
+#include "stm32g4xx_hal.h"
+
 #include "foc_math.h"
 #include "motor_controller_conf.h"
-#include "stm32g4xx_hal.h"
 
 typedef struct {
   // parameters
