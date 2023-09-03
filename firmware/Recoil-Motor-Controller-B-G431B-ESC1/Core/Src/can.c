@@ -1,11 +1,30 @@
-/*
- * can.c
- *
- *  Created on: Sep 9, 2022
- *      Author: TK
+/**
+ * @file can.c
+ * @author -T.K.-
+ * @brief Generic CAN driver library.
+ * @version 1.0.0
+ * @date 2023-05-25
  */
 
 #include "can.h"
+
+HAL_StatusTypeDef CAN_init(FDCAN_HandleTypeDef *hfdcan, uint32_t id_filter, uint32_t id_mask) {
+  FDCAN_FilterTypeDef filter_config;
+  filter_config.IdType = FDCAN_STANDARD_ID;
+  filter_config.FilterIndex = 0;
+  filter_config.FilterType = FDCAN_FILTER_MASK;
+  filter_config.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;
+  filter_config.FilterID1 = id_filter;
+  filter_config.FilterID2 = id_mask;
+
+  HAL_StatusTypeDef status = HAL_OK;
+
+  status |= HAL_FDCAN_ConfigFilter(hfdcan, &filter_config);
+  status |= HAL_FDCAN_Start(hfdcan);
+  status |= HAL_FDCAN_ActivateNotification(hfdcan, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);
+
+  return status;
+}
 
 void CAN_getRxFrame(FDCAN_HandleTypeDef *hfdcan, CAN_Frame *rx_frame) {
   FDCAN_RxHeaderTypeDef rx_header;

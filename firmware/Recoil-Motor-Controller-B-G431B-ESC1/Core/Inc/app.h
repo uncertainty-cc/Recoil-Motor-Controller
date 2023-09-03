@@ -12,16 +12,18 @@
 #include <stdio.h>
 
 #include "stm32g4xx_hal.h"
-#include "main.h"
 
+#include "motor_controller_conf.h"
+#include "main.h"
 #include "can.h"
 #include "motor_controller.h"
+
+
+void APP_initFlashOption();
 
 uint8_t APP_getUserButton();
 
 float APP_getUserPot();
-
-void APP_initFlashOption();
 
 void APP_init();
 

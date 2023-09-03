@@ -13,7 +13,7 @@ void Motor_init(Motor *motor) {
   motor->pole_pairs = 14;
   motor->kv_rating = 150;
 
-  motor->flux_angle_offset = 0.;
+  motor->flux_angle_offset = 1.560145f;
 }
 
 

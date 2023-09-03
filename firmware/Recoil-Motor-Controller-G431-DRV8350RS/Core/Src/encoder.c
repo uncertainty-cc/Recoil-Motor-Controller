@@ -7,90 +7,61 @@
 
 #include "encoder.h"
 
-/**
- * In the case of even parity, for a given set of bits, the bits whose value is 1 are counted.
- * If that count is odd, the parity bit value is set to 1, making the total count of occurrences of 1s in the whole set (including the parity bit) an even number.
- * If the count of 1s in a given set of bits is already even, the parity bit's value is 0.
- *
- * @return true if the number of ones in the data package is even, else false.
- */
-uint16_t getParity(uint16_t data) {
-  data ^= data >> 8;              // example for 8-bit (this line scales it up to 16 bit)
-  data ^= data >> 4;              // ( a b c d e f g h ) xor ( 0 0 0 0 a b c d ) = ( a b c d ae bf cg dh )
-  data ^= data >> 2;              // ( a b c d ae bf cg dh ) xor ( 0 0 a b c d ae bf ) = ( a b ac bd ace bdf aceg bdfh )
-  data ^= data >> 1;              // ( a b ac bd ace bdf aceg bdfh ) xor ( 0 a b ac bd ace bdf aceg ) = ( a ab abc abcd abcde abcdef abcdefg abcdefgh )
-  return data & 1;                // if lsb of data is 0 -> data is even. if lsb of data is 1 -> data is odd.
-}
 
-
-void Encoder_init(Encoder *encoder, SPI_HandleTypeDef *hspi, TIM_HandleTypeDef *htim) {
+void Encoder_init(Encoder *encoder, SPI_HandleTypeDef *hspi) {
   encoder->hspi = hspi;
-  encoder->htim = htim;
 
-  encoder->cpr = -16384;  // 14 bit precision
+  encoder->cpr = -1 * (1 << 14);  // 14 bit precision
 
-  encoder->velocity_filter_alpha = 0.02;
-  encoder->position_offset = 0;
+  encoder->position_offset = 0.f;
+  Encoder_setFilterBandwidth(encoder, 2e4f / 20e6f);
 
+  encoder->position_raw = 0;
   encoder->n_rotations = 0;
+
+  encoder->position = 0.f;
+  encoder->velocity = 0.f;
 }
 
-float Encoder_getOffset(Encoder *encoder) {
-  return encoder->position_offset;
+void Encoder_setFilterBandwidth(Encoder *encoder, float bandwidth) {
+  encoder->filter_alpha = clampf(1.f - pow(M_E, -2.f * M_PI * bandwidth), 0.f, 1.f);
+
+////  encoder->filter_bandwidth = bandwidth;
+//  encoder->filter_bandwidth = 50;
+//  float w3db = (1. / 8000.) * 2 * M_PI * encoder->filter_bandwidth;
+//  encoder->filter_k_p = .5 * (2 * w3db);
+//  encoder->filter_k_i = .5 * (w3db * w3db);
 }
 
-void Encoder_setOffset(Encoder *encoder, float offset) {
-  encoder->position_offset = offset;
-}
-
-void Encoder_triggerUpdate(Encoder *encoder) {
-  __HAL_TIM_SET_COUNTER(encoder->htim, 0);
-
-  encoder->spi_tx_buffer = 0x3FFF;
-  encoder->spi_tx_buffer |= 1 << 14;
+void Encoder_update(Encoder *encoder, float dt) {
+  encoder->spi_tx_buffer = 0x3FFF | (1 << 14);
   encoder->spi_tx_buffer |= getParity(encoder->spi_tx_buffer) << 15;
 
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, 0);
-  HAL_SPI_TransmitReceive_IT(encoder->hspi, (uint8_t *)&encoder->spi_tx_buffer, (uint8_t *)&encoder->spi_rx_buffer, 1);
-}
+  HAL_SPI_TransmitReceive(encoder->hspi, (uint8_t *)&encoder->spi_tx_buffer, (uint8_t *)&encoder->spi_rx_buffer, 1, 100);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, 1);
 
-void Encoder_update(Encoder *encoder) {
-  float dt = (float)__HAL_TIM_GET_COUNTER(encoder->htim) / 100000.;
-//
-//  float dt = 1/4000.;
+  // reading is center aligned with range [-cpr/2, cpr/2)
+  int16_t reading = READ_BITS(encoder->spi_rx_buffer, 0x3FFF) - abs(encoder->cpr / 2);
 
-  uint16_t reading = READ_BITS(encoder->spi_rx_buffer, 0x3FFF);
-//  uint16_t error = READ_BITS(encoder->spi_rx_buffer, 0x4000);
-
-  float position_relative = ((float)reading / (float)encoder->cpr) * (2*M_PI);
-
-  float delta_position = position_relative - encoder->position_relative;
-
-  if (fabsf(delta_position) > 0.75 * (2*M_PI)) {
-    encoder->n_rotations += (delta_position > 0) ? -1 : 1;
-
-    // unwrap delta pos to correct value for velocity calculation
-    delta_position += (delta_position > 0) ? -2*M_PI : 2*M_PI;
+  // handle multi-rotation crossing
+  int16_t reading_delta = encoder->position_raw - reading;
+  if (abs(reading_delta) > abs(encoder->cpr / 2)) {
+    encoder->n_rotations += ((encoder->cpr * reading_delta) > 0) ? 1 : -1;
   }
+  encoder->position_raw = reading;
 
-  encoder->position_relative = position_relative;
-  encoder->position_raw = encoder->position_relative + (encoder->n_rotations * (2*M_PI));
-  encoder->position = encoder->position_raw + encoder->position_offset;
-  encoder->velocity = (encoder->velocity_filter_alpha * delta_position / dt) + ((1 - encoder->velocity_filter_alpha) * encoder->velocity);
+  float position = (((float)reading / (float)encoder->cpr) + encoder->n_rotations) * (M_2PI_F);
+
+  float delta_position = position - encoder->position;
+  delta_position *= encoder->filter_alpha;
+  encoder->position += delta_position;
+
+  // subtract the offset to get "true" revolution
+//  encoder->position_relative = wrapTo2Pi(encoder->position);
+
+  if (dt > 0) {
+    encoder->velocity = (delta_position / dt);
+  }
 }
 
-float Encoder_getRelativePosition(Encoder *encoder) {
-  return encoder->position_relative;
-}
-
-float Encoder_getRawPosition(Encoder *encoder) {
-  return encoder->position_raw;
-}
-
-float Encoder_getPosition(Encoder *encoder) {
-  return encoder->position;
-}
-
-float Encoder_getVelocity(Encoder *encoder) {
-  return encoder->velocity;
-}

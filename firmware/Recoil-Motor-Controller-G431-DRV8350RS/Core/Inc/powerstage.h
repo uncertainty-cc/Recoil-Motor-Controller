@@ -19,6 +19,7 @@ typedef struct {
   TIM_HandleTypeDef *htim;
   ADC_HandleTypeDef *hadc1;
   ADC_HandleTypeDef *hadc2;
+  SPI_HandleTypeDef *hspi;
 
   float undervoltage_threshold;
   float overvoltage_threshold;
@@ -29,22 +30,30 @@ typedef struct {
   float bus_voltage_measured;
 } PowerStage;
 
-void PowerStage_init(PowerStage *powerstage, TIM_HandleTypeDef *htim, ADC_HandleTypeDef *hadc1, ADC_HandleTypeDef *hadc2);
+void PowerStage_init(PowerStage *powerstage, TIM_HandleTypeDef *htim, ADC_HandleTypeDef *hadc1, ADC_HandleTypeDef *hadc2, SPI_HandleTypeDef *hspi);
+
+void PowerStage_reset(PowerStage *powerstage);
 
 void PowerStage_start(PowerStage *powerstage);
 
-uint8_t PowerStage_isEnabled(PowerStage *powerstage);
+void PowerStage_disableGateDriver(PowerStage *powerstage);
 
-void PowerStage_disable(PowerStage *powerstage);
+void PowerStage_enableGateDriver(PowerStage *powerstage);
 
-void PowerStage_enable(PowerStage *powerstage);
+uint8_t PowerStage_isPWMEnabled(PowerStage *powerstage);
+
+void PowerStage_disablePWM(PowerStage *powerstage);
+
+void PowerStage_enablePWM(PowerStage *powerstage);
+
+ErrorCode PowerStage_updateErrorStatus(PowerStage *powerstage);
 
 void PowerStage_setBridgeOutput(PowerStage *powerstage, float v_a, float v_b, float v_c);
 
 void PowerStage_calibratePhaseCurrentOffset(PowerStage *powerstage);
 
-void PowerStage_getBusVoltage(PowerStage *powerstage);
+void PowerStage_updatePhaseCurrent(PowerStage *powerstage, float *i_a, float *i_b, float *i_c);
 
-void PowerStage_getPhaseCurrent(PowerStage *powerstage, float *i_a, float *i_b, float *i_c);
+void PowerStage_updateBusVoltage(PowerStage *powerstage);
 
 #endif /* INC_POWERSTAGE_H_ */

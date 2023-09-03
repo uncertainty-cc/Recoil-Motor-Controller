@@ -1,9 +1,4 @@
-../Core/Src/encoder.c:13:6:Encoder_init	32	static
-../Core/Src/encoder.c:27:7:Encoder_getOffset	16	static
-../Core/Src/encoder.c:31:6:Encoder_setOffset	16	static
-../Core/Src/encoder.c:35:6:Encoder_triggerUpdate	16	static
-../Core/Src/encoder.c:40:6:Encoder_update	40	static
-../Core/Src/encoder.c:63:7:Encoder_getRelativePosition	16	static
-../Core/Src/encoder.c:67:7:Encoder_getRawPosition	16	static
-../Core/Src/encoder.c:71:7:Encoder_getPosition	16	static
-../Core/Src/encoder.c:77:7:Encoder_getVelocity	16	static
+../Core/Src/encoder.c:11:19:Encoder_init	24	static
+../Core/Src/encoder.c:34:6:Encoder_setFilterGain	8	static
+../Core/Src/encoder.c:38:6:Encoder_resetFluxOffset	0	static
+../Core/Src/encoder.c:45:6:Encoder_update	8	static
