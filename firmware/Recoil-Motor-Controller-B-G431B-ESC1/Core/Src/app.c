@@ -179,6 +179,5 @@ void APP_main() {
 
   HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 1000);
   HAL_Delay(1);
-
 }
 
