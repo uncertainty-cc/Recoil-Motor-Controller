@@ -28,7 +28,6 @@ typedef struct {
   float overvoltage_threshold;
   float bus_voltage_filter_alpha;
 
-  uint8_t enabled;
   float bus_voltage_measured;
 } PowerStage;
 
@@ -39,6 +38,10 @@ static inline void PowerStage_disablePWM(PowerStage *powerstage) {
 
 static inline void PowerStage_enablePWM(PowerStage *powerstage) {
   __HAL_TIM_MOE_ENABLE(powerstage->htim);
+}
+
+static inline uint8_t PowerStage_isPWMEnabled(PowerStage *powerstage) {
+  return READ_BITS(powerstage->htim->Instance->BDTR, TIM_BDTR_MOE) ? 1 : 0;
 }
 
 HAL_StatusTypeDef PowerStage_init(PowerStage *powerstage, TIM_HandleTypeDef *htim, ADC_HandleTypeDef *hadc1, ADC_HandleTypeDef *hadc2);

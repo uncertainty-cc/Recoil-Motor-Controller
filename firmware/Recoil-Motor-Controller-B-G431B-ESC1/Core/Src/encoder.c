@@ -41,7 +41,6 @@ void Encoder_resetFluxOffset(Encoder *encoder) {
   memset((uint8_t *)encoder->flux_offset_table, 0, 128*sizeof(float));
 }
 
-
 void Encoder_update(Encoder *encoder) {
   // 20 kHz commutation cycle is faster than I2C transfer speed (~13.44kHz), so we need to throttle here
   encoder->i2c_update_counter += 1;

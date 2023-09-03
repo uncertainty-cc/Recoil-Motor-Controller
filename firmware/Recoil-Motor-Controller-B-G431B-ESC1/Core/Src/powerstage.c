@@ -13,8 +13,6 @@ HAL_StatusTypeDef PowerStage_init(PowerStage *powerstage, TIM_HandleTypeDef *hti
   powerstage->hadc1 = hadc1;
   powerstage->hadc2 = hadc2;
 
-  powerstage->enabled = 0;
-
   powerstage->bus_voltage_filter_alpha = .5f;
 
   powerstage->bus_voltage_measured = 12.f;

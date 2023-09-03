@@ -26,11 +26,11 @@ typedef struct {
   CurrentController   current_controller;
   PositionController  position_controller;
 
-  Mode mode;
-  ErrorCode error;
+  Mode        mode;
+  ErrorCode   error;
 
-  uint8_t device_id;
-  uint32_t firmware_version;
+  uint32_t    firmware_version;
+  uint8_t     device_id;
 } MotorController;
 
 typedef struct {

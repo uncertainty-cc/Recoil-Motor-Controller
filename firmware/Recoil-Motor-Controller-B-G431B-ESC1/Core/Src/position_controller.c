@@ -82,5 +82,8 @@ void PositionController_update(PositionController *controller, Mode mode) {
      */
   }
 
-  controller->torque_setpoint = clampf(controller->torque_target, -controller->torque_limit, controller->torque_limit);
+  controller->torque_setpoint = clampf(
+      controller->torque_target,
+      -controller->torque_limit,
+      controller->torque_limit);
 }
