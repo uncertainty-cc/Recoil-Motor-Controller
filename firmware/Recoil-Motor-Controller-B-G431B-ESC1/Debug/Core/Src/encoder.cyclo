@@ -1,4 +1,4 @@
-../Core/Src/encoder.c:11:19:Encoder_init	1
-../Core/Src/encoder.c:34:6:Encoder_setFilterGain	3
-../Core/Src/encoder.c:38:6:Encoder_resetFluxOffset	1
-../Core/Src/encoder.c:45:6:Encoder_update	3
+../Core/Src/encoder.c:11:19:Encoder_init	2
+../Core/Src/encoder.c:41:6:Encoder_setFilterGain	3
+../Core/Src/encoder.c:45:6:Encoder_resetFluxOffset	1
+../Core/Src/encoder.c:51:6:Encoder_update	3

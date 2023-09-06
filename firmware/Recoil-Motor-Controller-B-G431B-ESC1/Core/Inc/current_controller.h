@@ -10,10 +10,14 @@
 
 #include <stdint.h>
 
+#include "stm32g4xx_hal.h"
 #include "foc_math.h"
 #include "motor_controller_conf.h"
-#include "stm32g4xx_hal.h"
 
+
+/**
+ * @brief CurrentController object.
+ */
 typedef struct {
   // parameters
   float i_bandwidth;
@@ -51,10 +55,43 @@ typedef struct {
   float i_d_integrator;
 } CurrentController;
 
+
+/**
+ * @brief Initialize the CurrentController instance with default values.
+ *
+ * This function initializes a CurrentController struct with default initial current limits,
+ * measured currents, bandwidth, and proportional-integral gains for the current control loop.
+ *
+ * @param controller Pointer to the CurrentController struct.
+ * @return Status of the initialization process. HAL_OK if successful.
+ */
 HAL_StatusTypeDef CurrentController_init(CurrentController *controller);
 
+/**
+ * @brief Set the proportional-integral (PI) gains for the current controller.
+ *
+ * This function calculates and sets the proportional and integral gains (KP and KI)
+ * for the current controller based on the provided phase resistance and inductance values.
+ *
+ * @param controller Pointer to the CurrentController struct.
+ * @param phase_resistance Phase resistance value in Ohms (R).
+ * @param phase_inductance Phase inductance value in Henry (H).
+ */
 void CurrentController_setPIGain(CurrentController *controller, float phase_resistance, float phase_inductance);
 
+/**
+ * @brief Update the CurrentController state based on the specified mode and inputs.
+ *
+ * This function updates the state of the current controller according to the specified mode
+ * and input values. It performs transformations, calculations, and clamping necessary for
+ * controlling a motor's currents using Field-Oriented Control (FOC) techniques.
+ *
+ * @param controller Pointer to the CurrentController struct.
+ * @param mode The operating mode of the controller.
+ * @param sin_theta Sine value of the rotor angle in radians (rad).
+ * @param cos_theta Cosine value of the rotor angle in radians (rad).
+ * @param v_bus The motor bus voltage in Volts (V).
+ */
 void CurrentController_update(CurrentController *controller, Mode mode,
                               float sin_theta, float cos_theta, float v_bus);
 

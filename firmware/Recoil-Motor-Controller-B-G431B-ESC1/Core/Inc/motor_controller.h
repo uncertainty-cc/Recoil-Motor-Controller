@@ -10,15 +10,29 @@
 
 #include "stm32g4xx_hal.h"
 
-#include "can.h"
 #include "motor_controller_conf.h"
-#include "encoder.h"
-#include "powerstage.h"
-#include "motor.h"
+#include "can.h"
 #include "current_controller.h"
+#include "encoder.h"
+#include "motor_profiles.h"
+#include "motor.h"
 #include "position_controller.h"
+#include "powerstage.h"
 
+
+#define FLASH_CONFIG_ADDRESS    0x0801F800U  // Bank 1, Page 63
+#define FLASH_CONFIG_BANK       FLASH_BANK_1
+#define FLASH_CONFIG_PAGE       63
+#define FLASH_CONFIG_SIZE       32
+
+
+/**
+ * @brief MotorController object.
+ */
 typedef struct {
+  uint8_t             device_id;
+  uint32_t            firmware_version;
+
   Encoder             encoder;
   PowerStage          powerstage;
   Motor               motor;
@@ -26,13 +40,14 @@ typedef struct {
   CurrentController   current_controller;
   PositionController  position_controller;
 
-  Mode mode;
-  ErrorCode error;
-
-  uint8_t device_id;
-  uint32_t firmware_version;
+  Mode                mode;
+  ErrorCode           error;
 } MotorController;
 
+
+/**
+ * @brief EEPROMConfig structure.
+ */
 typedef struct {
   __IO  uint32_t  device_id;
   __IO  uint32_t  firmware_version;
@@ -51,6 +66,7 @@ typedef struct {
   __IO  int32_t   motor_phase_order;
   __IO  float     motor_phase_resistance;
   __IO  float     motor_phase_inductance;
+  __IO  float     motor_max_calibration_current;
 
   __IO  float     current_controller_i_bandwidth;
   __IO  float     current_controller_i_limit;
@@ -66,32 +82,81 @@ typedef struct {
 } EEPROMConfig;
 
 
+/**
+ * @brief Get the measured torque.
+ *
+ * @param controller Pointer to the MotorController struct.
+ * @return The measured torque in Newton-meter (Nm).
+ */
 static inline float MotorController_getTorque(MotorController *controller) {
   return controller->position_controller.torque_measured;
 }
 
+/**
+ * @brief Get the measured velocity.
+ *
+ * @param controller Pointer to the MotorController struct.
+ * @return The measured velocity in radian per second (rad/s).
+ */
 static inline float MotorController_getVelocity(MotorController *controller) {
   return controller->position_controller.velocity_measured;
 }
 
+/**
+ * @brief Get the measured position.
+ *
+ * @param controller Pointer to the MotorController struct.
+ * @return The measured position in radians (rad).
+ */
 static inline float MotorController_getPosition(MotorController *controller) {
   return controller->position_controller.position_measured;
 }
 
+/**
+ * @brief Get the error status.
+ *
+ * @param controller Pointer to the MotorController struct.
+ * @return The error code.
+ */
 static inline ErrorCode MotorController_getError(MotorController *controller) {
   return controller->error;
 }
 
+/**
+ * @brief Clear the error.
+ *
+ * @param controller Pointer to the MotorController struct.
+ */
 static inline void MotorController_clearError(MotorController *controller) {
   controller->error = ERROR_NO_ERROR;
 }
 
+/**
+ * @brief Get the current operating mode of the motor controller.
+ *
+ * @param controller Pointer to the MotorController struct.
+ * @return The current mode.
+ */
 static inline Mode MotorController_getMode(MotorController *controller) {
   return controller->mode;
 }
 
+/**
+ * @brief Initialize the MotorController instance.
+ *
+ * @param controller Pointer to the MotorController struct.
+ */
 void MotorController_init(MotorController *controller);
 
+/**
+ * Reset the Motor Controller to the initial state.
+ *
+ * This function clears all intermediate states and sets various controller
+ * parameters and variables to their initial values. It is used between mode
+ * switches to reset the controller state.
+ *
+ * @param controller Pointer to the MotorController struct.
+ */
 void MotorController_reset(MotorController *controller);
 
 void MotorController_setMode(MotorController *controller, Mode mode);

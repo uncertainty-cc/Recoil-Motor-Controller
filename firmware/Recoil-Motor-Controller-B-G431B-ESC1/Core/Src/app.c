@@ -33,7 +33,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
     MotorController_update(&controller);
 
     /* ====== Start user APP code ====== */
-  //  controller.position_controller.position_target = APP_getUserPot() * M_PI;
+    //  controller.position_controller.position_target = APP_getUserPot() * M_PI;
 
     /* ====== End user APP code ====== */
   }
@@ -134,11 +134,11 @@ void APP_main() {
 //    sprintf(str, "mode:%d\r\n", controller.mode);
 
 //   initial status logging
-//  sprintf(str, "p:%f\tv:%f\tvoltage:%f\tpot:%f\r\n",
-//      controller.position_controller.position_measured,
-//      controller.position_controller.velocity_measured,
-//      controller.powerstage.bus_voltage_measured,
-//      APP_getUserPot());
+  sprintf(str, "p:%f\tv:%f\tvoltage:%f\tpot:%f\r\n",
+      controller.position_controller.position_measured,
+      controller.position_controller.velocity_measured,
+      controller.powerstage.bus_voltage_measured,
+      APP_getUserPot());
 
 //   current loop logging
 //  sprintf(str, "iq_mea:%f\tiq_set:%f\tiq_tar:%f\ttor:%f\tvel:%f\r\n",
@@ -150,11 +150,11 @@ void APP_main() {
 
 
 //  // position loop logging
-  sprintf(str, "p_mea:%f\tp_tar:%f\tiq_set:%f\tvel_mea:%f\r\n",
-      controller.position_controller.position_measured,
-      controller.position_controller.position_target,
-	  controller.current_controller.i_q_setpoint * 10,
-	  controller.position_controller.velocity_measured * 10);
+//  sprintf(str, "p_mea:%f\tp_tar:%f\tiq_set:%f\tvel_mea:%f\r\n",
+//      controller.position_controller.position_measured,
+//      controller.position_controller.position_target,
+//	  controller.current_controller.i_q_setpoint * 10,
+//	  controller.position_controller.velocity_measured * 10);
 
   // torque testing
 //  sprintf(str, "pos:%f\tiq_mea:%f\tiq_tar:%f\ttorque:%f\r\n",
@@ -178,6 +178,6 @@ void APP_main() {
 
 
   HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 1000);
-  HAL_Delay(1);
+  HAL_Delay(10);
 }
 
