@@ -13,16 +13,31 @@
 
 #include "stm32g4xx_hal.h"
 
-#include "motor_controller_conf.h"
-#include "main.h"
-#include "can.h"
 #include "motor_controller.h"
+#include "main.h"
 
 
+/**
+ * @brief Initialize Flash Option Bytes to always boot from Flash.
+ *
+ * @note The device need to be power-cycled to apply the changes.
+ */
 void APP_initFlashOption();
 
+/**
+ * @brief Get the state of the button on the daughter board.
+ *
+ * @return The state of the user button:
+ *         - 0 if the button is not pressed.
+ *         - 1 if the button is pressed.
+ */
 uint8_t APP_getUserButton();
 
+/**
+ * @brief Get the value of the potentiometer on the daughter board.
+ *
+ * @return Scaled value of the user potentiometer reading in range [0.0, 1.0]
+ */
 float APP_getUserPot();
 
 void APP_init();

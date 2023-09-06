@@ -7,11 +7,6 @@
 
 #include "motor_controller.h"
 
-#define FLASH_CONFIG_ADDRESS    0x0801F800U  // Bank 1, Page 63
-#define FLASH_CONFIG_BANK       FLASH_BANK_1
-#define FLASH_CONFIG_PAGE       63
-#define FLASH_CONFIG_SIZE       32
-
 
 extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc2;
@@ -26,6 +21,7 @@ extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim6;
 extern UART_HandleTypeDef huart2;
 
+
 void MotorController_init(MotorController *controller) {
   controller->mode = MODE_DISABLED;
   controller->error = ERROR_NO_ERROR;
@@ -38,19 +34,6 @@ void MotorController_init(MotorController *controller) {
   status |= CAN_init(&hfdcan1, 0, 0);
 
   status |= Encoder_init(&controller->encoder, &hi2c1);
-  while (status) {
-    hi2c1.Instance = I2C1;
-    hi2c1.Init.Timing = 0x00F07BFF;
-    hi2c1.Init.OwnAddress1 = 0;
-    hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
-    hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
-    hi2c1.Init.OwnAddress2 = 0;
-    hi2c1.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
-    hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
-    hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
-    HAL_I2C_Init(&hi2c1);
-    status = Encoder_init(&controller->encoder, &hi2c1);
-  }
   status |= PowerStage_init(&controller->powerstage, &htim1, &hadc1, &hadc2);
   status |= Motor_init(&controller->motor);
 
@@ -214,51 +197,53 @@ HAL_StatusTypeDef MotorController_loadConfig(MotorController *controller) {
   EEPROMConfig *config = (EEPROMConfig *)FLASH_CONFIG_ADDRESS;
   #if LOAD_CALIBRATION_FROM_FLASH
     if (isnan(config->encoder_flux_offset)) return HAL_ERROR;
-    controller->encoder.flux_offset                       = config->encoder_flux_offset;
+    controller->encoder.flux_offset                             = config->encoder_flux_offset;
   #endif
   #if LOAD_ID_FROM_FLASH
-    controller->device_id                                 = (uint8_t)config->device_id;
+    controller->device_id                                       = (uint8_t)config->device_id;
   #endif
   #if LOAD_CONFIG_FROM_FLASH
-    controller->firmware_version                          = config->firmware_version;
-    controller->encoder.cpr                               = config->encoder_cpr;
-    if (isnan(config->encoder_position_offset)) return HAL_ERROR;
-    controller->encoder.position_offset                   = config->encoder_position_offset;
-    if (isnan(config->encoder_filter_bandwidth)) return HAL_ERROR;
-    controller->encoder.filter_bandwidth                  = config->encoder_filter_bandwidth;
-    if (isnan(config->powerstage_undervoltage_threshold)) return HAL_ERROR;
-    controller->powerstage.undervoltage_threshold         = config->powerstage_undervoltage_threshold;
-    if (isnan(config->powerstage_overvoltage_threshold)) return HAL_ERROR;
-    controller->powerstage.overvoltage_threshold          = config->powerstage_overvoltage_threshold;
-    if (isnan(config->powerstage_bus_voltage_filter_alpha)) return HAL_ERROR;
-    controller->powerstage.bus_voltage_filter_alpha       = config->powerstage_bus_voltage_filter_alpha;
-    controller->motor.pole_pairs                          = config->motor_pole_pairs;
-    controller->motor.kv_rating                           = config->motor_kv_rating;
-    controller->motor.phase_order                         = (int8_t)config->motor_phase_order;
-    if (isnan(config->motor_phase_resistance)) return HAL_ERROR;
-    controller->motor.phase_resistance                    = config->motor_phase_resistance;
-    if (isnan(config->motor_phase_inductance)) return HAL_ERROR;
-    controller->motor.phase_inductance                    = config->motor_phase_inductance;
-    if (isnan(config->current_controller_i_bandwidth)) return HAL_ERROR;
-    controller->current_controller.i_bandwidth            = config->current_controller_i_bandwidth;
-    if (isnan(config->current_controller_i_limit)) return HAL_ERROR;
-    controller->current_controller.i_limit                = config->current_controller_i_limit;
-    if (isnan(config->position_controller_position_kp)) return HAL_ERROR;
-    controller->position_controller.position_kp           = config->position_controller_position_kp;
-    if (isnan(config->position_controller_position_ki)) return HAL_ERROR;
-    controller->position_controller.position_ki           = config->position_controller_position_ki;
-    if (isnan(config->position_controller_velocity_kp)) return HAL_ERROR;
-    controller->position_controller.velocity_kp           = config->position_controller_velocity_kp;
-    if (isnan(config->position_controller_velocity_ki)) return HAL_ERROR;
-    controller->position_controller.velocity_ki           = config->position_controller_velocity_ki;
-    if (isnan(config->position_controller_torque_limit)) return HAL_ERROR;
-    controller->position_controller.torque_limit          = config->position_controller_torque_limit;
-    if (isnan(config->position_controller_velocity_limit)) return HAL_ERROR;
-    controller->position_controller.velocity_limit        = config->position_controller_velocity_limit;
-    if (isnan(config->position_controller_position_limit_upper)) return HAL_ERROR;
-    controller->position_controller.position_limit_upper  = config->position_controller_position_limit_upper;
-    if (isnan(config->position_controller_position_limit_lower)) return HAL_ERROR;
-    controller->position_controller.position_limit_lower  = config->position_controller_position_limit_lower;
+    controller->firmware_version                                = config->firmware_version;
+    controller->encoder.cpr                                     = config->encoder_cpr;
+    if (isnan(config->encoder_position_offset))                   return HAL_ERROR;
+    controller->encoder.position_offset                         = config->encoder_position_offset;
+    if (isnan(config->encoder_filter_bandwidth))                  return HAL_ERROR;
+    controller->encoder.filter_bandwidth                        = config->encoder_filter_bandwidth;
+    if (isnan(config->powerstage_undervoltage_threshold))         return HAL_ERROR;
+    controller->powerstage.undervoltage_threshold               = config->powerstage_undervoltage_threshold;
+    if (isnan(config->powerstage_overvoltage_threshold))          return HAL_ERROR;
+    controller->powerstage.overvoltage_threshold                = config->powerstage_overvoltage_threshold;
+    if (isnan(config->powerstage_bus_voltage_filter_alpha))       return HAL_ERROR;
+    controller->powerstage.bus_voltage_filter_alpha             = config->powerstage_bus_voltage_filter_alpha;
+    controller->motor.pole_pairs                                = config->motor_pole_pairs;
+    controller->motor.kv_rating                                 = config->motor_kv_rating;
+    controller->motor.phase_order                               = (int8_t)config->motor_phase_order;
+    if (isnan(config->motor_phase_resistance))                    return HAL_ERROR;
+    controller->motor.phase_resistance                          = config->motor_phase_resistance;
+    if (isnan(config->motor_phase_inductance))                    return HAL_ERROR;
+    controller->motor.phase_inductance                          = config->motor_phase_inductance;
+    if (isnan(config->motor_max_calibration_current))             return HAL_ERROR;
+    controller->motor.max_calibration_current                   = config->motor_max_calibration_current;
+    if (isnan(config->current_controller_i_bandwidth))            return HAL_ERROR;
+    controller->current_controller.i_bandwidth                  = config->current_controller_i_bandwidth;
+    if (isnan(config->current_controller_i_limit))                return HAL_ERROR;
+    controller->current_controller.i_limit                      = config->current_controller_i_limit;
+    if (isnan(config->position_controller_position_kp))           return HAL_ERROR;
+    controller->position_controller.position_kp                 = config->position_controller_position_kp;
+    if (isnan(config->position_controller_position_ki))           return HAL_ERROR;
+    controller->position_controller.position_ki                 = config->position_controller_position_ki;
+    if (isnan(config->position_controller_velocity_kp))           return HAL_ERROR;
+    controller->position_controller.velocity_kp                 = config->position_controller_velocity_kp;
+    if (isnan(config->position_controller_velocity_ki))           return HAL_ERROR;
+    controller->position_controller.velocity_ki                 = config->position_controller_velocity_ki;
+    if (isnan(config->position_controller_torque_limit))          return HAL_ERROR;
+    controller->position_controller.torque_limit                = config->position_controller_torque_limit;
+    if (isnan(config->position_controller_velocity_limit))        return HAL_ERROR;
+    controller->position_controller.velocity_limit              = config->position_controller_velocity_limit;
+    if (isnan(config->position_controller_position_limit_upper))  return HAL_ERROR;
+    controller->position_controller.position_limit_upper        = config->position_controller_position_limit_upper;
+    if (isnan(config->position_controller_position_limit_lower))  return HAL_ERROR;
+    controller->position_controller.position_limit_lower        = config->position_controller_position_limit_lower;
   #endif
 
   CurrentController_setPIGain(&controller->current_controller,
@@ -287,6 +272,7 @@ HAL_StatusTypeDef MotorController_storeConfig(MotorController *controller) {
   config.motor_phase_order                              = (int32_t)controller->motor.phase_order;
   config.motor_phase_resistance                         = controller->motor.phase_resistance;
   config.motor_phase_inductance                         = controller->motor.phase_inductance;
+  config.motor_max_calibration_current                  = controller->motor.max_calibration_current;
   config.current_controller_i_bandwidth                 = controller->current_controller.i_bandwidth;
   config.current_controller_i_limit                     = controller->current_controller.i_limit;
   config.position_controller_position_kp                = controller->position_controller.position_kp;
@@ -312,7 +298,6 @@ HAL_StatusTypeDef MotorController_storeConfig(MotorController *controller) {
 
   if (HAL_FLASHEx_Erase(&erase_init_struct, &page_error) != HAL_OK) {
     /*Error occurred while page erase.*/
-//    uint32_t error = HAL_FLASH_GetError();
     HAL_FLASH_Lock();
     return HAL_ERROR;
   }
@@ -323,7 +308,6 @@ HAL_StatusTypeDef MotorController_storeConfig(MotorController *controller) {
 
     uint32_t target_address = FLASH_CONFIG_ADDRESS + i*8;
     if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, target_address, buf) != HAL_OK) {
-//      uint32_t error = HAL_FLASH_GetError();
       HAL_FLASH_Lock();
       return HAL_ERROR;
     }
@@ -454,24 +438,24 @@ void MotorController_runCalibrationSequence(MotorController *controller) {
   }
 
   // maximum supported number of pole pairs is 32
-  float error_table[ENCODER_LUT_RESOLUTION * 32];
+  float error_table[ENCODER_LUT_ENTRIES * 32];
 
   // store normal running v_alpha and v_beta values. We need to change this during the calibration.
   float prev_v_alpha_target = controller->current_controller.v_alpha_setpoint;
   float prev_v_beta_target = controller->current_controller.v_beta_setpoint;
 
   // starting voltage setpoint (V)
-  float voltage_setpoint = 0.2;
-  float flux_angle_setpoint = 0;
+  float voltage_setpoint = 0.2f;
+  float flux_angle_setpoint = 0.f;
 
   MotorController_setFluxAngle(controller, flux_angle_setpoint, voltage_setpoint);
 
   HAL_Delay(500);
 
-  float phase_current = 0;
+  float phase_current = 0.f;
 
   // gradually ramp up the voltage setpoint until we reach target phase current value.
-  while (phase_current < CALIBRATION_CURRENT) {
+  while (phase_current < controller->motor.max_calibration_current) {
     HAL_Delay(100);
     MotorController_setFluxAngle(controller, flux_angle_setpoint, voltage_setpoint);
 
@@ -486,8 +470,8 @@ void MotorController_runCalibrationSequence(MotorController *controller) {
       HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 10);
     }
 
-    // if we cannot even reach the target phase current at 12V, there's something wrong. End calibration.
-    if (voltage_setpoint > 12.f) {
+    // if we cannot even reach the target phase current at more than 10V above nominal bus voltage, there's something wrong. End calibration.
+    if (voltage_setpoint > NOMINAL_BUS_VOLTAGE + 10.f) {
       SET_BITS(controller->error, ERROR_CALIBRATION_ERROR);
       MotorController_setMode(controller, MODE_IDLE);
       return;
@@ -497,8 +481,8 @@ void MotorController_runCalibrationSequence(MotorController *controller) {
   HAL_Delay(1000);
 
   // move one mechanical revolution forward
-  for (uint32_t i=0; i<128 * 14; i+=1) {
-    flux_angle_setpoint = ((float)i / (128.f*14.f)) * (2*M_PI) * controller->motor.pole_pairs;
+  for (uint32_t i=0; i<ENCODER_LUT_ENTRIES*controller->motor.pole_pairs; i+=1) {
+    flux_angle_setpoint = ((float)i / (ENCODER_LUT_ENTRIES * controller->motor.pole_pairs)) * (2*M_PI) * controller->motor.pole_pairs;
 
     MotorController_setFluxAngle(controller, flux_angle_setpoint, voltage_setpoint);
     HAL_Delay(2);
@@ -510,8 +494,8 @@ void MotorController_runCalibrationSequence(MotorController *controller) {
   HAL_Delay(500);
 
   // move one mechanical revolution backward
-  for (uint32_t i=128 * 14; i>0; i-=1) {
-    flux_angle_setpoint = ((float)i / (128.f*14.f)) * (2*M_PI) * controller->motor.pole_pairs;
+  for (uint32_t i=ENCODER_LUT_ENTRIES*controller->motor.pole_pairs; i>0; i-=1) {
+    flux_angle_setpoint = ((float)i / (ENCODER_LUT_ENTRIES * controller->motor.pole_pairs)) * (2*M_PI) * controller->motor.pole_pairs;
 
     MotorController_setFluxAngle(controller, flux_angle_setpoint, voltage_setpoint);
     HAL_Delay(2);
@@ -525,27 +509,27 @@ void MotorController_runCalibrationSequence(MotorController *controller) {
 
   // Calculate average offset
   float flux_offset_sum = 0;
-  for (uint32_t i=0; i<128 * 14; i+=1) {
+  for (uint32_t i=0; i<ENCODER_LUT_ENTRIES*controller->motor.pole_pairs; i+=1) {
     flux_offset_sum += error_table[i];
   }
 //  controller->encoder.flux_offset = wrapTo2Pi(flux_offset_sum / (float)(N_LUT * controller->motor.pole_pairs));
-  controller->encoder.flux_offset = flux_offset_sum / (float)(ENCODER_LUT_RESOLUTION * controller->motor.pole_pairs);
+  controller->encoder.flux_offset = flux_offset_sum / (float)(ENCODER_LUT_ENTRIES * controller->motor.pole_pairs);
 
   // should be 6.178778
 
   {
     char str[128];
-    sprintf(str, "offset angle: %f %f\r\n", flux_offset_sum / (float)(ENCODER_LUT_RESOLUTION * controller->motor.pole_pairs), controller->encoder.flux_offset);
+    sprintf(str, "offset angle: %f %f\r\n", flux_offset_sum / (float)(ENCODER_LUT_ENTRIES * controller->motor.pole_pairs), controller->encoder.flux_offset);
     HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 10);
   }
 
 // Moving average to filter out cogging ripple
-  int16_t window = ENCODER_LUT_RESOLUTION;
-  int16_t lut_offset = ((controller->motor.pole_pairs*M_2PI_F)-error_table[0])*ENCODER_LUT_RESOLUTION / (controller->motor.pole_pairs*M_2PI_F);
+  int16_t window = ENCODER_LUT_ENTRIES;
+  int16_t lut_offset = ((controller->motor.pole_pairs*M_2PI_F)-error_table[0]) * ENCODER_LUT_ENTRIES / (controller->motor.pole_pairs*M_2PI_F);
 
   // make sure lut_offset is always >= 0
   if (lut_offset < 0) {
-    lut_offset += ENCODER_LUT_RESOLUTION;
+    lut_offset += ENCODER_LUT_ENTRIES;
   }
 
   {
@@ -554,18 +538,18 @@ void MotorController_runCalibrationSequence(MotorController *controller) {
     HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 10);
   }
 
-  for (int16_t i=0; i<ENCODER_LUT_RESOLUTION; i+=1) {
+  for (int16_t i=0; i<ENCODER_LUT_ENTRIES; i+=1) {
     float moving_avg = 0;
 
     for (int16_t j=-window/2; j<window/2; j+=1) {
       int32_t index = (i * controller->motor.pole_pairs) + j;
       // make sure index is always >= 0
       if (index < 0) {
-        index += controller->motor.pole_pairs * ENCODER_LUT_RESOLUTION;
+        index += controller->motor.pole_pairs * ENCODER_LUT_ENTRIES;
       }
       // make sure index is always < controller->motor.pole_pairs * ENCODER_LUT_RESOLUTION
-      else if (index >= controller->motor.pole_pairs * ENCODER_LUT_RESOLUTION) {
-        index -= controller->motor.pole_pairs * ENCODER_LUT_RESOLUTION;
+      else if (index >= controller->motor.pole_pairs * ENCODER_LUT_ENTRIES) {
+        index -= controller->motor.pole_pairs * ENCODER_LUT_ENTRIES;
       }
       moving_avg += error_table[index];
     }
@@ -575,7 +559,7 @@ void MotorController_runCalibrationSequence(MotorController *controller) {
 //    if (lut_index >= N_LUT) {
 //      lut_index -= N_LUT;
 //    }
-    lut_index = lut_index % ENCODER_LUT_RESOLUTION;
+    lut_index = lut_index % ENCODER_LUT_ENTRIES;
     controller->encoder.flux_offset_table[lut_index] = moving_avg - controller->encoder.flux_offset;
 
     {
@@ -744,6 +728,9 @@ void MotorController_handleCANRead(MotorController *controller, Command command,
       break;
     case CMD_MOTOR_PHASE_INDUCTANCE:
       *((float *)(tx_frame->data + 4)) = controller->motor.phase_inductance;
+      break;
+    case CMD_MOTOR_MAX_CALIBRATION_CURRENT:
+      *((float *)(tx_frame->data + 4)) = controller->motor.max_calibration_current;
       break;
     case CMD_CURRENT_KP:
       *((float *)(tx_frame->data + 4)) = controller->current_controller.i_kp;
@@ -931,6 +918,9 @@ void MotorController_handleCANWrite(MotorController *controller, Command command
       break;
     case CMD_MOTOR_PHASE_INDUCTANCE:
       controller->motor.phase_inductance = *((float *)rx_data);
+      break;
+    case CMD_MOTOR_MAX_CALIBRATION_CURRENT:
+      controller->motor.max_calibration_current = *((float *)rx_data);
       break;
     case CMD_CURRENT_KP:
       controller->current_controller.i_kp = *((float *)rx_data);
