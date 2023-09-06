@@ -7,11 +7,6 @@
 
 #include "motor_controller.h"
 
-#define FLASH_CONFIG_ADDRESS    0x0801F800U  // Bank 1, Page 63
-#define FLASH_CONFIG_BANK       FLASH_BANK_1
-#define FLASH_CONFIG_PAGE       63
-#define FLASH_CONFIG_SIZE       32
-
 
 extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc2;
@@ -25,6 +20,7 @@ extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim6;
 extern UART_HandleTypeDef huart2;
+
 
 void MotorController_init(MotorController *controller) {
   controller->mode = MODE_DISABLED;
@@ -239,6 +235,8 @@ HAL_StatusTypeDef MotorController_loadConfig(MotorController *controller) {
     controller->motor.phase_resistance                    = config->motor_phase_resistance;
     if (isnan(config->motor_phase_inductance)) return HAL_ERROR;
     controller->motor.phase_inductance                    = config->motor_phase_inductance;
+    if (isnan(config->motor_max_calibration_current)) return HAL_ERROR;
+    controller->motor.max_calibration_current                    = config->motor_max_calibration_current;
     if (isnan(config->current_controller_i_bandwidth)) return HAL_ERROR;
     controller->current_controller.i_bandwidth            = config->current_controller_i_bandwidth;
     if (isnan(config->current_controller_i_limit)) return HAL_ERROR;
@@ -287,6 +285,7 @@ HAL_StatusTypeDef MotorController_storeConfig(MotorController *controller) {
   config.motor_phase_order                              = (int32_t)controller->motor.phase_order;
   config.motor_phase_resistance                         = controller->motor.phase_resistance;
   config.motor_phase_inductance                         = controller->motor.phase_inductance;
+  config.motor_max_calibration_current                  = controller->motor.max_calibration_current;
   config.current_controller_i_bandwidth                 = controller->current_controller.i_bandwidth;
   config.current_controller_i_limit                     = controller->current_controller.i_limit;
   config.position_controller_position_kp                = controller->position_controller.position_kp;
@@ -471,7 +470,7 @@ void MotorController_runCalibrationSequence(MotorController *controller) {
   float phase_current = 0;
 
   // gradually ramp up the voltage setpoint until we reach target phase current value.
-  while (phase_current < CALIBRATION_CURRENT) {
+  while (phase_current < MOTOR_CALIBRATION_CURRENT) {
     HAL_Delay(100);
     MotorController_setFluxAngle(controller, flux_angle_setpoint, voltage_setpoint);
 

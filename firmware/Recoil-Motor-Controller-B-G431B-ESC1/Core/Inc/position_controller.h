@@ -9,11 +9,15 @@
 #define INC_POSITION_CONTROLLER_H_
 
 #include <stdint.h>
+
 #include "stm32g4xx_hal.h"
-
-#include "motor_controller_conf.h"
 #include "foc_math.h"
+#include "motor_controller_conf.h"
 
+
+/**
+ * @brief PositionController object.
+ */
 typedef struct {
   uint8_t update_counter;
 
@@ -44,8 +48,40 @@ typedef struct {
 } PositionController;
 
 
+/**
+ * @brief Initialize the PositionController instance with default values.
+ *
+ * This function initializes a PositionController struct with default initial position, velocity
+ * and torque limits, and PID gains for the position control loop.
+ *
+ * @param controller Pointer to the PositionController struct.
+ * @return Status of the initialization process. HAL_OK if successful.
+ */
 HAL_StatusTypeDef PositionController_init(PositionController *controller);
 
+/**
+ * @brief Update the PositionController state based on the specified mode and inputs.
+ *
+ * This function updates the position controller with the given mode.
+ * It calculates the control torque based on the specified control mode
+ * (position, velocity, or torque) and the corresponding control parameters.
+ *
+ * If mode is MODE_POSITION:
+ *   - Sets the position setpoint based on the target position and position limits.
+ *   - Computes position and velocity errors.
+ *   - Integrates the position error and limits the integrator value.
+ *   - Calculates the control torque based on position and velocity errors and PID gains.
+ *
+ * If mode is MODE_VELOCITY (not implemented in this function):
+ *   - TODO: Implement velocity control loop.
+ *
+ * If mode is MODE_TORQUE:
+ *   - The user should have previously set the torque target directly in `controller->torque_target`.
+ *   - No further calculations are performed in this function for torque control.
+ *
+ * @param controller Pointer to the PositionController struct.
+ * @param mode The operating mode of the controller.
+ */
 void PositionController_update(PositionController *controller, Mode mode);
 
 #endif /* INC_POSITION_CONTROLLER_H_ */
