@@ -8,11 +8,13 @@
 #ifndef INC_ENCODER_H_
 #define INC_ENCODER_H_
 
-#include <stdlib.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <math.h>
+#include <string.h>
 
 #include "stm32g4xx_hal.h"
+#include "motor_controller_conf.h"
 #include "foc_math.h"
 
 
@@ -24,6 +26,9 @@ typedef struct {
 
   int32_t   cpr;
   float     position_offset;      // in range (-inf, inf)
+  float     filter_bandwidth;
+  float     flux_offset;
+  float     flux_offset_table[128];
 
   float     filter_alpha;
 
@@ -70,10 +75,12 @@ static inline float Encoder_getVelocity(Encoder *encoder) {
   return encoder->velocity;
 }
 
-void Encoder_init(Encoder *encoder, SPI_HandleTypeDef *hi2c);
+HAL_StatusTypeDef Encoder_init(Encoder *encoder, SPI_HandleTypeDef *hi2c);
 
-void Encoder_setFilterBandwidth(Encoder *encoder, float bandwidth);
+void Encoder_setFilterGain(Encoder *encoder, float bandwidth);
 
-void Encoder_update(Encoder *encoder, float dt);
+void Encoder_resetFluxOffset(Encoder *encoder);
+
+void Encoder_update(Encoder *encoder);
 
 #endif /* INC_ENCODER_H_ */

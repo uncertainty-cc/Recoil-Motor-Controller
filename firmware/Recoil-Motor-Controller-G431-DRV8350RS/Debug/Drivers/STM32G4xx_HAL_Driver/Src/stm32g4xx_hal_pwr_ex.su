@@ -1,5 +1,5 @@
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.c:109:10:HAL_PWREx_GetVoltageRange	0	static
-../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.c:153:19:HAL_PWREx_ControlVoltageScaling	4	static
+../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.c:153:19:HAL_PWREx_ControlVoltageScaling	0	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.c:238:6:HAL_PWREx_EnableBatteryCharging	0	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.c:254:6:HAL_PWREx_DisableBatteryCharging	0	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.c:264:6:HAL_PWREx_EnableInternalWakeUpLine	0	static
@@ -22,7 +22,7 @@
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.c:654:6:HAL_PWREx_DisablePVM4	0	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.c:674:19:HAL_PWREx_ConfigPVM	0	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.c:835:6:HAL_PWREx_EnableLowPowerRunMode	0	static
-../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.c:850:19:HAL_PWREx_DisableLowPowerRunMode	4	static
+../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.c:850:19:HAL_PWREx_DisableLowPowerRunMode	0	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.c:894:6:HAL_PWREx_EnterSTOP0Mode	0	static,ignoring_inline_asm
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.c:945:6:HAL_PWREx_EnterSTOP1Mode	0	static,ignoring_inline_asm
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.c:986:6:HAL_PWREx_EnterSHUTDOWNMode	0	static,ignoring_inline_asm

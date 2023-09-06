@@ -15,6 +15,8 @@
 #include "foc_math.h"
 
 typedef struct {
+  uint8_t update_counter;
+
   float position_kp;
   float position_ki;
   float velocity_kp;
@@ -42,7 +44,7 @@ typedef struct {
 } PositionController;
 
 
-void PositionController_init(PositionController *controller);
+HAL_StatusTypeDef PositionController_init(PositionController *controller);
 
 void PositionController_update(PositionController *controller, Mode mode);
 

@@ -12,10 +12,10 @@
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_spi.c:1246:19:HAL_SPI_TransmitReceive	32	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_spi.c:1006:19:HAL_SPI_Receive	32	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_spi.c:1555:19:HAL_SPI_Transmit_IT	4	static
-../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_spi.c:1747:19:HAL_SPI_TransmitReceive_IT	4	static
+../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_spi.c:1747:19:HAL_SPI_TransmitReceive_IT	8	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_spi.c:1640:19:HAL_SPI_Receive_IT	8	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_spi.c:1856:19:HAL_SPI_Transmit_DMA	24	static
-../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_spi.c:2126:19:HAL_SPI_TransmitReceive_DMA	8	static
+../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_spi.c:2126:19:HAL_SPI_TransmitReceive_DMA	16	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_spi.c:1981:19:HAL_SPI_Receive_DMA	24	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_spi.c:2318:19:HAL_SPI_Abort	24	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_spi.c:2639:19:HAL_SPI_DMAPause	4	static
@@ -46,7 +46,7 @@
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_spi.c:3012:13:SPI_DMATransmitCplt	24	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_spi.c:3069:13:SPI_DMAReceiveCplt	16	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_spi.c:3186:13:SPI_DMATransmitReceiveCplt	16	static
-../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_spi.c:2719:6:HAL_SPI_IRQHandler	32	static
+../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_spi.c:2719:6:HAL_SPI_IRQHandler	24	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_spi.c:3363:13:SPI_DMAAbortOnError	8	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_spi.c:2940:13:HAL_SPI_AbortCpltCallback	0	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_spi.c:2478:19:HAL_SPI_Abort_IT	32	static

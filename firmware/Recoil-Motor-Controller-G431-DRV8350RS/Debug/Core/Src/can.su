@@ -1,3 +1,3 @@
 ../Core/Src/can.c:10:19:CAN_init	48	static
-../Core/Src/can.c:29:6:CAN_getRxFrame	48	static
-../Core/Src/can.c:60:19:CAN_putTxFrame	56	static
+../Core/Src/can.c:28:6:CAN_getRxFrame	48	static
+../Core/Src/can.c:59:19:CAN_putTxFrame	56	static

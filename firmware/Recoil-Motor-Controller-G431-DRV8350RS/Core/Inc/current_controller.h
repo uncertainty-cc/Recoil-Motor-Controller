@@ -10,17 +10,18 @@
 
 #include <stdint.h>
 
-#include "motor_controller_conf.h"
+#include "stm32g4xx_hal.h"
+
 #include "foc_math.h"
+#include "motor_controller_conf.h"
 
 typedef struct {
   // parameters
-  float i_filter_alpha;
+  float i_bandwidth;
+  float i_limit;
 
   float i_kp;
   float i_ki;
-
-  float i_limit;
 
   // variables
   float i_a_measured;
@@ -47,13 +48,15 @@ typedef struct {
   float i_q_setpoint;
   float i_d_setpoint;
 
-
   float i_q_integrator;
   float i_d_integrator;
 } CurrentController;
 
-void CurrentController_init(CurrentController *controller);
+HAL_StatusTypeDef CurrentController_init(CurrentController *controller);
 
-void CurrentController_update(CurrentController *controller, Mode mode, float sin_theta, float cos_theta, float v_bus);
+void CurrentController_setPIGain(CurrentController *controller, float phase_resistance, float phase_inductance);
+
+void CurrentController_update(CurrentController *controller, Mode mode,
+                              float sin_theta, float cos_theta, float v_bus);
 
 #endif /* INC_COMMUTATION_CONTROLLER_H_ */

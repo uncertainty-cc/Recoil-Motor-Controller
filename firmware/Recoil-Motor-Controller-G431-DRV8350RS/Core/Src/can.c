@@ -8,7 +8,6 @@
 #include "can.h"
 
 HAL_StatusTypeDef CAN_init(FDCAN_HandleTypeDef *hfdcan, uint32_t id_filter, uint32_t id_mask) {
-
   FDCAN_FilterTypeDef filter_config;
   filter_config.IdType = FDCAN_STANDARD_ID;
   filter_config.FilterIndex = 0;
