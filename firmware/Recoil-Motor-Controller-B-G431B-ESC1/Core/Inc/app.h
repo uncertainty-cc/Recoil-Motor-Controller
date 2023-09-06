@@ -16,6 +16,7 @@
 #include "motor_controller.h"
 #include "main.h"
 
+
 /**
  * @brief Initialize Flash Option Bytes to always boot from Flash.
  *

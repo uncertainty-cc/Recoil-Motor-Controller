@@ -18,6 +18,21 @@
 #include "motor_controller_conf.h"
 
 
+#define AS5600_I2C_ADDR             0x36U
+
+#define AS5600_ZMCO_ADDR            0x00U
+#define AS5600_ZPOS_ADDR            0x01U
+#define AS5600_MPOS_ADDR            0x03U
+#define AS5600_MANG_ADDR            0x05U
+#define AS5600_CONF_ADDR            0x07U
+#define AS5600_RAW_ANGLE_ADDR       0x0CU
+#define AS5600_ANGLE_ADDR           0x0EU
+#define AS5600_STATUS_ADDR          0x0BU
+#define AS5600_AGC_ADDR             0x1AU
+#define AS5600_MAGNITUDE_ADDR       0x1BU
+#define AS5600_BURN_ADDR            0xFFU
+
+
 /**
  * @brief Encoder object.
  */

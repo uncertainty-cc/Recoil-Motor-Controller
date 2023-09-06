@@ -25,10 +25,17 @@ HAL_StatusTypeDef Encoder_init(Encoder *encoder, I2C_HandleTypeDef *hi2c) {
 
   Encoder_resetFluxOffset(encoder);
 
-  // wait for I2C device to power up
-  HAL_Delay(100);
+  HAL_StatusTypeDef status = HAL_ERROR;
+  while (status) {
+    HAL_I2C_Init(encoder->hi2c);
 
-  return HAL_I2C_Mem_Read(encoder->hi2c, 0b0110110<<1, 0x0E, I2C_MEMADD_SIZE_8BIT, encoder->i2c_buffer, 2, 100);
+    // wait for I2C device to power up
+    HAL_Delay(100);
+
+    status = HAL_I2C_Mem_Read(encoder->hi2c, AS5600_I2C_ADDR << 1, AS5600_ANGLE_ADDR, I2C_MEMADD_SIZE_8BIT, encoder->i2c_buffer, 2, 100);
+  }
+
+  return status;
 }
 
 void Encoder_setFilterGain(Encoder *encoder, float bandwitdth) {
@@ -38,7 +45,7 @@ void Encoder_setFilterGain(Encoder *encoder, float bandwitdth) {
 void Encoder_resetFluxOffset(Encoder *encoder) {
   encoder->n_rotations = 0;
   encoder->flux_offset = 0.f;
-  memset((uint8_t *)encoder->flux_offset_table, 0, 128*sizeof(float));
+  memset((uint8_t *)encoder->flux_offset_table, 0, ENCODER_LUT_ENTRIES*sizeof(float));
 }
 
 void Encoder_update(Encoder *encoder) {
@@ -47,7 +54,7 @@ void Encoder_update(Encoder *encoder) {
 
   if (encoder->i2c_update_counter == (COMMUTATION_FREQ / ENCODER_UPDATE_FREQ)) {
     encoder->i2c_update_counter = 0;
-    HAL_I2C_Master_Receive_IT(encoder->hi2c, 0b0110110<<1, encoder->i2c_buffer, 2);
+    HAL_I2C_Master_Receive_IT(encoder->hi2c, AS5600_I2C_ADDR << 1, encoder->i2c_buffer, 2);
   }
 
   // Read the raw reading from the I2C sensor and center-align it within the range [-cpr/2, cpr/2).

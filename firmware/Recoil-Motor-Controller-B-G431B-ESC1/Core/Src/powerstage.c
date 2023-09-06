@@ -74,6 +74,8 @@ void PowerStage_calibratePhaseCurrentOffset(PowerStage *powerstage) {
   int32_t adc_reading_0 = 0;
   int32_t adc_reading_1 = 0;
   int32_t adc_reading_2 = 0;
+
+  // sample for 100 ms
   for (uint16_t i=0; i<10; i+=1) {
     adc_reading_0 += HAL_ADCEx_InjectedGetValue(powerstage->hadc1, ADC_INJECTED_RANK_1);
     adc_reading_1 += HAL_ADCEx_InjectedGetValue(powerstage->hadc2, ADC_INJECTED_RANK_1);

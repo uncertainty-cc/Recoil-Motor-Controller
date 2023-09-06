@@ -30,6 +30,9 @@
  * @brief MotorController object.
  */
 typedef struct {
+  uint8_t             device_id;
+  uint32_t            firmware_version;
+
   Encoder             encoder;
   PowerStage          powerstage;
   Motor               motor;
@@ -39,9 +42,6 @@ typedef struct {
 
   Mode                mode;
   ErrorCode           error;
-
-  uint32_t            firmware_version;
-  uint8_t             device_id;
 } MotorController;
 
 
