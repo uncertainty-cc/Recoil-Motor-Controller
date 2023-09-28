@@ -1,0 +1,4 @@
+../Core/Src/encoder.c:11:19:Encoder_init	16	static
+../Core/Src/encoder.c:30:6:Encoder_setFilterGain	8	static
+../Core/Src/encoder.c:34:6:Encoder_resetFluxOffset	0	static
+../Core/Src/encoder.c:40:6:Encoder_update	16	static
