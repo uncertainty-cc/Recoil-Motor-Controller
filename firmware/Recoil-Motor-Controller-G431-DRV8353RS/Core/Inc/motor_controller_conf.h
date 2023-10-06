@@ -19,7 +19,7 @@
 
 #define LOAD_ID_FROM_FLASH              0             // load ID config from Flash
 #define LOAD_CONFIG_FROM_FLASH          0             // load config settings from Flash (everything except motor flux offset and can id)
-#define LOAD_CALIBRATION_FROM_FLASH     0             // load encoder flux offset settings from Flash
+#define LOAD_CALIBRATION_FROM_FLASH     1             // load encoder flux offset settings from Flash
 #define SAFETY_WATCHDOG_ENABLED         0             // timeout
 
 
@@ -32,7 +32,8 @@
 
 /** ======== Motor Calibration Phase Current Configuration ======== **/
 #ifdef MOTORPROFILE_MAD_M6C12_150KV
-#define CALIBRATION_CURRENT             5
+#define CALIBRATION_CURRENT             3
+//#define CALIBRATION_CURRENT             5
 #endif
 #ifdef MOTORPROFILE_MAD_5010_110KV
 #define CALIBRATION_CURRENT             3
@@ -80,7 +81,7 @@
 
 // convert ADC bits to Amps (A / bits)
 // = ((3V3 / ADC_RESOLUTION) / opamp_factor) / R
-#define ADC_OPAMP_CURRENT_COEFFICIENT   ((ADC_READING_COEFFICIENT / 16.f) / 0.003f)
+#define ADC_OPAMP_CURRENT_COEFFICIENT   ((ADC_READING_COEFFICIENT / 20.f) / 0.001f)
 
 
 /** ======== Controller State Definitions ======== **/

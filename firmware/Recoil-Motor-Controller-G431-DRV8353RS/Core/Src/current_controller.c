@@ -2,7 +2,7 @@
 #include "current_controller.h"
 
 HAL_StatusTypeDef CurrentController_init(CurrentController *controller) {
-  controller->i_limit = 10.f;
+  controller->i_limit = 2.f;
 
   controller->i_a_measured = 0.f;
   controller->i_b_measured = 0.f;

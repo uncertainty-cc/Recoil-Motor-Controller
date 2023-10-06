@@ -47,21 +47,15 @@ void MotorController_init(MotorController *controller) {
 
   MotorController_reset(controller);
 
-  status |= HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);       // LED PWM timer, RED
-  status |= HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);       // LED PWM timer, BLUE
-//  status |= HAL_TIM_PWM_Start(&htim15, TIM_CHANNEL_1);      // LED PWM timer, GREEN
+  status |= HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);       // LED PWM timer, blue
+  status |= HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);       // LED PWM timer, green
+  status |= HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);       // LED PWM timer, red
 
 
   __HAL_TIM_SET_AUTORELOAD(&htim3, 9999);
-//  __HAL_TIM_SET_AUTORELOAD(&htim15, 9999);
-  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, __HAL_TIM_GET_AUTORELOAD(&htim3));   // red
   __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, __HAL_TIM_GET_AUTORELOAD(&htim3));   // blue
-//  __HAL_TIM_SET_COMPARE(&htim15, TIM_CHANNEL_1, __HAL_TIM_GET_AUTORELOAD(&htim15)); // green
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, GPIO_PIN_SET);
-
-//  status |= HAL_OPAMP_Start(&hopamp1);
-//  status |= HAL_OPAMP_Start(&hopamp2);
-//  status |= HAL_OPAMP_Start(&hopamp3);
+  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, __HAL_TIM_GET_AUTORELOAD(&htim3));   // green
+  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, __HAL_TIM_GET_AUTORELOAD(&htim3));   // red
 
   status |= HAL_ADCEx_InjectedStart(&hadc1);
   status |= HAL_ADCEx_InjectedStart(&hadc2);
@@ -76,7 +70,9 @@ void MotorController_init(MotorController *controller) {
     MotorController_setMode(controller, MODE_DISABLED);
 
     __HAL_TIM_SET_AUTORELOAD(&htim3, 999);
-    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, __HAL_TIM_GET_AUTORELOAD(&htim3) / 2);
+    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 0);
+    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, 0);
+    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, __HAL_TIM_GET_AUTORELOAD(&htim3) / 2);
     while (1) {
       // error loop
     }
@@ -86,13 +82,13 @@ void MotorController_init(MotorController *controller) {
     MotorController_storeConfig(controller);
   #endif
 
-  // wait ADC and opamp to settle.
-  HAL_Delay(100);
-  PowerStage_calibratePhaseCurrentOffset(&controller->powerstage);
-
   // force mode change update.
   MotorController_clearError(controller);
   MotorController_setMode(controller, MODE_IDLE);
+
+  // wait ADC and opamp to settle.
+  HAL_Delay(100);
+  PowerStage_calibratePhaseCurrentOffset(&controller->powerstage);
 }
 
 void MotorController_reset(MotorController *controller) {
@@ -129,7 +125,9 @@ void MotorController_setMode(MotorController *controller, Mode mode) {
   switch (mode) {
     case MODE_DISABLED:
       __HAL_TIM_SET_AUTORELOAD(&htim3, 9999);
-      __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, __HAL_TIM_GET_AUTORELOAD(&htim3) / 8);
+      __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, __HAL_TIM_GET_AUTORELOAD(&htim3) / 8);
+      __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, 0);
+      __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, 0);
       __HAL_TIM_SET_COUNTER(&htim3, 0);
       // sleep
       PowerStage_disableGateDriver(&controller->powerstage);
@@ -137,14 +135,18 @@ void MotorController_setMode(MotorController *controller, Mode mode) {
 
     case MODE_IDLE:
       __HAL_TIM_SET_AUTORELOAD(&htim3, 9999);
-      __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, __HAL_TIM_GET_AUTORELOAD(&htim3) / 2);
+      __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, __HAL_TIM_GET_AUTORELOAD(&htim3) / 2);
+      __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, 0);
+      __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, 0);
       __HAL_TIM_SET_COUNTER(&htim3, 0);
       PowerStage_enableGateDriver(&controller->powerstage);
       break;
 
     case MODE_CALIBRATION:
       __HAL_TIM_SET_AUTORELOAD(&htim3, 1999);
-      __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, __HAL_TIM_GET_AUTORELOAD(&htim3) / 4);
+      __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, __HAL_TIM_GET_AUTORELOAD(&htim3) / 4);
+      __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, 0);
+      __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, 0);
       __HAL_TIM_SET_COUNTER(&htim3, 0);
       MotorController_reset(controller);
       PowerStage_enablePWM(&controller->powerstage);
@@ -160,7 +162,9 @@ void MotorController_setMode(MotorController *controller, Mode mode) {
     case MODE_VALPHABETA_OVERRIDE:
     case MODE_VABC_OVERRIDE:
       __HAL_TIM_SET_AUTORELOAD(&htim3, 1999);
-      __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, __HAL_TIM_GET_AUTORELOAD(&htim3) / 2);
+      __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, __HAL_TIM_GET_AUTORELOAD(&htim3) / 2);
+      __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, 0);
+      __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, 0);
       __HAL_TIM_SET_COUNTER(&htim3, 0);
       if (controller->mode == MODE_IDLE
         || controller->mode == MODE_DAMPING
@@ -336,9 +340,12 @@ HAL_StatusTypeDef MotorController_storeConfig(MotorController *controller) {
 
 void MotorController_updateSafety(MotorController *controller) {
   if (PowerStage_updateErrorStatus(&controller->powerstage)) {
+
+    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, __HAL_TIM_GET_AUTORELOAD(&htim3));
     SET_BITS(controller->error, ERROR_POWERSTAGE_ERROR);
   }
   else {
+    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, 0);
     CLEAR_BITS(controller->error, ERROR_POWERSTAGE_ERROR);
   }
 
@@ -478,6 +485,7 @@ void MotorController_runCalibrationSequence(MotorController *controller) {
   MotorController_setFluxAngle(controller, flux_angle_setpoint, voltage_setpoint);
 
   HAL_Delay(500);
+  PowerStage_calibratePhaseCurrentOffset(&controller->powerstage);
 
   float phase_current = 0;
 

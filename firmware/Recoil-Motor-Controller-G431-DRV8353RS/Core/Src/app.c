@@ -25,6 +25,7 @@ extern UART_HandleTypeDef huart3;
 
 MotorController controller;
 
+
 void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs) {
   CAN_Frame rx_frame;
   CAN_getRxFrame(&hfdcan1, &rx_frame);
@@ -98,35 +99,27 @@ void APP_init() {
 
   MotorController_init(&controller);
 
-//  uint16_t tx_buffer[2];
-//  uint16_t rx_buffer[2];
-//  PowerStage_enableGateDriver(&controller.powerstage);
-//
-//  tx_buffer[0] = (1 << 15) | (0x00 << 11);
-//
-//  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 0);
-//  HAL_SPI_TransmitReceive(&hspi1, (uint8_t *)tx_buffer, (uint8_t *)rx_buffer, 1, 100);
-//  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 1);
-//
-//  tx_buffer[0] = (1 << 15) | (0x03 << 11);
-//
-//  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 0);
-//  HAL_SPI_TransmitReceive(&hspi1, (uint8_t *)tx_buffer, (uint8_t *)rx_buffer, 1, 100);
-//  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 1);
-//
-//  tx_buffer[0] = (1 << 15) | (0x04 << 11);
-//
-//  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 0);
-//  HAL_SPI_TransmitReceive(&hspi1, (uint8_t *)tx_buffer, (uint8_t *)rx_buffer, 1, 100);
-//  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 1);
-
-//  HAL_Delay(1000);
-//  MotorController_setMode(&controller, MODE_CALIBRATION);
-//  MotorController_updateService(&controller);
 
   HAL_Delay(1000);
 
-//  controller.position_controller.torque_target = 0.04;
+
+//    MotorController_setMode(&controller, MODE_CALIBRATION);
+//    MotorController_updateService(&controller);
+//
+//  MotorController_setMode(&controller, MODE_VQD_OVERRIDE);
+//  controller.current_controller.v_q_target = 2;
+//  controller.current_controller.v_d_target = 0;
+
+
+//  MotorController_setMode(&controller, MODE_DAMPING);
+//  HAL_Delay(1000);
+//
+
+  MotorController_setMode(&controller, MODE_CURRENT);
+  controller.current_controller.i_q_target = 1.5f;
+  controller.current_controller.i_d_target = 0.;
+
+//  controller.position_controller.torque_target = 0.001;
 //  MotorController_setMode(&controller, MODE_TORQUE);
 //
 //  controller.position_controller.position_target = 0;
@@ -143,18 +136,19 @@ void APP_main() {
 //    sprintf(str, "mode:%d\r\n", controller.mode);
 
 //   initial status logging
-  sprintf(str, "p:%f\tv:%f\tvoltage:%f\r\n",
-      controller.position_controller.position_measured,
-      controller.position_controller.velocity_measured,
-      controller.powerstage.bus_voltage_measured);
+//  sprintf(str, "p:%f\tv:%f\tvoltage:%f\r\n",
+//      controller.position_controller.position_measured,
+//      controller.position_controller.velocity_measured,
+//      controller.powerstage.bus_voltage_measured);
 
 //   current loop logging
-//  sprintf(str, "iq_mea:%f\tiq_set:%f\tiq_tar:%f\ttor:%f\tvel:%f\r\n",
-//      controller.current_controller.i_q_measured * 100,
-//      controller.current_controller.i_q_setpoint * 100,
-//      controller.current_controller.i_q_target * 100,
-//      controller.position_controller.torque_setpoint * 50,
-//      controller.position_controller.velocity_measured * 100);
+//  sprintf(str, "iq_mea:%f\tid_mea:%f\tiq_set:%f\tiq_tar:%f\vq_set:%f\tvel:%f\r\n",
+//      controller.current_controller.i_q_measured,
+//      controller.current_controller.i_d_measured,
+//      controller.current_controller.i_q_setpoint,
+//      controller.current_controller.i_q_target,
+//      controller.current_controller.v_q_setpoint,
+//      controller.position_controller.velocity_measured);
 
 
 //  // position loop logging
@@ -184,8 +178,15 @@ void APP_main() {
 //      controller.current_controller.v_b_setpoint,
 //      controller.current_controller.v_c_setpoint);
 
+    sprintf(str, "pos:%f\tia:%f\tib:%f\tic:%f\tvbus:%f\r\n",
+        controller.position_controller.position_measured,
+        controller.current_controller.i_a_measured,
+        controller.current_controller.i_b_measured,
+        controller.current_controller.i_c_measured,
+        controller.powerstage.bus_voltage_measured);
+
 
   HAL_UART_Transmit(&huart3, (uint8_t *)str, strlen(str), 1000);
-  HAL_Delay(1);
+//  HAL_Delay(10);
 }
 
