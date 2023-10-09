@@ -26,7 +26,6 @@ void MotorController_init(MotorController *controller) {
   controller->mode = MODE_DISABLED;
   controller->error = ERROR_NO_ERROR;
 
-  controller->gear_ratio = 15.f;
   controller->watchdog_timeout = 1000;  // in milliseconds (ms)
   controller->communication_frequency = 100;  // in hertz (Hz)
 
@@ -92,21 +91,8 @@ void MotorController_init(MotorController *controller) {
 
 void MotorController_reset(MotorController *controller) {
   // clear all intermediate states
-  controller->position_controller.position_setpoint = controller->position_controller.position_measured;
-  controller->position_controller.position_integrator = 0.f;
-  controller->position_controller.velocity_setpoint = controller->position_controller.velocity_measured;
-  controller->position_controller.velocity_integrator = 0.f;
-
-  controller->current_controller.i_q_integrator = 0.f;
-  controller->current_controller.i_d_integrator = 0.f;
-  controller->current_controller.v_q_setpoint = 0.f;
-  controller->current_controller.v_d_setpoint = 0.f;
-  controller->current_controller.v_alpha_setpoint = 0.f;
-  controller->current_controller.v_beta_setpoint = 0.f;
-  controller->current_controller.v_a_setpoint = 0.f;
-  controller->current_controller.v_b_setpoint = 0.f;
-  controller->current_controller.v_c_setpoint = 0.f;
-
+  PositionController_reset(&controller->position_controller);
+  CurrentController_reset(&controller->current_controller);
   PowerStage_setOutputVoltage(&controller->powerstage, 0.f, 0.f, 0.f, controller->motor.phase_order);
 }
 
@@ -346,12 +332,13 @@ void MotorController_update(MotorController *controller) {
   Encoder_update(&controller->encoder);
 
   // this block takes 0.5 us to run (1%)
-  controller->position_controller.position_measured = Encoder_getPosition(&controller->encoder);
-  controller->position_controller.velocity_measured = Encoder_getVelocity(&controller->encoder);
+  controller->position_controller.position_measured = Encoder_getPosition(&controller->encoder) / controller->position_controller.gear_ratio;
+  controller->position_controller.velocity_measured = Encoder_getVelocity(&controller->encoder) / controller->position_controller.gear_ratio;
   // 1.75 is a magic number.... need to find out why it's different from the theoretical value
   // need to make sure all numbers are float32
   controller->position_controller.torque_measured = (1.75f * 8.3f)
       * controller->current_controller.i_q_measured
+      * controller->position_controller.gear_ratio
       / (float)controller->motor.kv_rating;
 
   // takes 1.3 us to run (3%)
@@ -364,6 +351,7 @@ void MotorController_update(MotorController *controller) {
     // same here, the 1.75 magic number...
     controller->current_controller.i_q_target = controller->position_controller.torque_setpoint
         * (float)controller->motor.kv_rating
+        / controller->position_controller.gear_ratio
         / (1.75f * 8.3f);
     controller->current_controller.i_d_target = 0.f;
   }

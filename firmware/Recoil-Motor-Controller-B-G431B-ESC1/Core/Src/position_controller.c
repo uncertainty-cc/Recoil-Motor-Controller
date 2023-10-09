@@ -9,6 +9,7 @@
 
 HAL_StatusTypeDef PositionController_init(PositionController *controller) {
   controller->update_counter = 0;
+  controller->gear_ratio = -15.f;
 
   controller->position_kp = 1.f;
   controller->position_ki = 0.0f;

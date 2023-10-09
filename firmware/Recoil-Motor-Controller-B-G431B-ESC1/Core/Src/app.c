@@ -108,8 +108,8 @@ void APP_init() {
 //  controller.current_controller.i_d_target = 0;
 //  MotorController_setMode(&controller, MODE_CURRENT);
 //
-//  controller.position_controller.position_target = 0;
-//  MotorController_setMode(&controller, MODE_POSITION);
+  controller.position_controller.position_target = 0;
+  MotorController_setMode(&controller, MODE_POSITION);
 
 }
 

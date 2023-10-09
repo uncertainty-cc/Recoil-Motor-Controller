@@ -17,7 +17,7 @@
  * For example, 0x00010005 represents version 1.0.5 of the firmware.
  */
 //                                           M m p
-#define FIRMWARE_VERSION                0x00010100
+#define FIRMWARE_VERSION                0x00010101
 
 /**
  * Device CAN ID:
@@ -25,7 +25,7 @@
  * The CAN ID is a unique identifier for the device on the CAN bus.
  * The value should be set in range [1, 63].
  */
-#define DEVICE_CAN_ID                   3
+#define DEVICE_CAN_ID                   2
 
 /**
  * First Time Bootup Flag:
@@ -68,10 +68,10 @@
 
 /** ======== Motor Selection ======== **/
 
-#define MOTORPROFILE_MAD_M6C12_150KV
+//#define MOTORPROFILE_MAD_M6C12_150KV
 //#define MOTORPROFILE_MAD_5010_110KV
 //#define MOTORPROFILE_MAD_5010_310KV
-//#define MOTORPROFILE_MAD_5010_370KV
+#define MOTORPROFILE_MAD_5010_370KV
 
 // phase order
 #define MOTOR_PHASE_ORDER               -1

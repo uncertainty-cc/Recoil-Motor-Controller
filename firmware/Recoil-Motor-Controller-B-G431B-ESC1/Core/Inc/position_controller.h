@@ -20,6 +20,7 @@
  */
 typedef struct {
   uint8_t update_counter;
+  float gear_ratio;
 
   float position_kp;
   float position_ki;
@@ -47,6 +48,55 @@ typedef struct {
   float velocity_integrator;
 } PositionController;
 
+
+static inline void PositionController_reset(PositionController *controller) {
+  controller->position_setpoint = controller->position_measured;
+  controller->position_integrator = 0.f;
+  controller->velocity_setpoint = controller->velocity_measured;
+  controller->velocity_integrator = 0.f;
+}
+
+/**
+ * @brief Get the measured torque.
+ *
+ * @param controller Pointer to the PositionController struct.
+ * @return The measured torque in Newton-meter (Nm).
+ */
+static inline float PositionController_getTorque(PositionController *controller) {
+  return controller->torque_measured;
+}
+
+/**
+ * @brief Get the measured velocity.
+ *
+ * @param controller Pointer to the PositionController struct.
+ * @return The measured velocity in radian per second (rad/s).
+ */
+static inline float PositionController_getVelocity(PositionController *controller) {
+  return controller->velocity_measured;
+}
+
+/**
+ * @brief Get the measured position.
+ *
+ * @param controller Pointer to the PositionController struct.
+ * @return The measured position in radians (rad).
+ */
+static inline float PositionController_getPosition(PositionController *controller) {
+  return controller->position_measured;
+}
+
+static inline void PositionController_setTorqueTarget(PositionController *controller, float target) {
+  controller->torque_target = target;
+}
+
+static inline void PositionController_setVelocityTarget(PositionController *controller, float target) {
+  controller->velocity_target = target;
+}
+
+static inline void PositionController_setPositionTarget(PositionController *controller, float target) {
+  controller->position_target = target;
+}
 
 /**
  * @brief Initialize the PositionController instance with default values.

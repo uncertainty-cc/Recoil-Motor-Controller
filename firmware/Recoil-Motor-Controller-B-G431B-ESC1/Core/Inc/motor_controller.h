@@ -33,7 +33,6 @@ typedef struct {
   uint8_t             device_id;
   uint32_t            firmware_version;
 
-  float               gear_ratio;
   uint16_t            watchdog_timeout;
   uint16_t            communication_frequency;
 
@@ -85,48 +84,6 @@ typedef struct {
   __IO  float     position_controller_position_limit_lower;
 } EEPROMConfig;
 
-
-/**
- * @brief Get the measured torque.
- *
- * @param controller Pointer to the MotorController struct.
- * @return The measured torque in Newton-meter (Nm).
- */
-static inline float MotorController_getTorque(MotorController *controller) {
-  return controller->position_controller.torque_measured / controller->reduction_ratio;
-}
-
-/**
- * @brief Get the measured velocity.
- *
- * @param controller Pointer to the MotorController struct.
- * @return The measured velocity in radian per second (rad/s).
- */
-static inline float MotorController_getVelocity(MotorController *controller) {
-  return controller->position_controller.velocity_measured / controller->reduction_ratio;
-}
-
-/**
- * @brief Get the measured position.
- *
- * @param controller Pointer to the MotorController struct.
- * @return The measured position in radians (rad).
- */
-static inline float MotorController_getPosition(MotorController *controller) {
-  return controller->position_controller.position_measured / controller->reduction_ratio;
-}
-
-static inline void MotorController_setTorqueTarget(MotorController *controller, float target) {
-  controller->position_controller.torque_target = target * controller->reduction_ratio;
-}
-
-static inline void MotorController_setVelocityTarget(MotorController *controller, float target) {
-  controller->position_controller.velocity_target = target * controller->reduction_ratio;
-}
-
-static inline void MotorController_setPositionTarget(MotorController *controller, float target) {
-  controller->position_controller.position_target = target * controller->reduction_ratio;
-}
 
 /**
  * @brief Get the error status.
