@@ -25,6 +25,11 @@ extern UART_HandleTypeDef huart2;
 void MotorController_init(MotorController *controller) {
   controller->mode = MODE_DISABLED;
   controller->error = ERROR_NO_ERROR;
+
+  controller->gear_ratio = 15.f;
+  controller->watchdog_timeout = 1000;  // in milliseconds (ms)
+  controller->communication_frequency = 100;  // in hertz (Hz)
+
   controller->device_id = DEVICE_CAN_ID;
   controller->firmware_version = FIRMWARE_VERSION;
 
