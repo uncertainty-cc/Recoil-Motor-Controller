@@ -86,14 +86,32 @@ static inline float PositionController_getPosition(PositionController *controlle
   return controller->position_measured;
 }
 
+/**
+ * @brief Set the target torque.
+ *
+ * @param controller Pointer to the PositionController struct.
+ * @param target The target torque in Newton-meter (Nm).
+ */
 static inline void PositionController_setTorqueTarget(PositionController *controller, float target) {
   controller->torque_target = target;
 }
 
+/**
+ * @brief Set the target velocity.
+ *
+ * @param controller Pointer to the PositionController struct.
+ * @param target The target velocity in radian per second (rad/s).
+ */
 static inline void PositionController_setVelocityTarget(PositionController *controller, float target) {
   controller->velocity_target = target;
 }
 
+/**
+ * @brief Set the target position.
+ *
+ * @param controller Pointer to the PositionController struct.
+ * @param target The target position in radians (rad).
+ */
 static inline void PositionController_setPositionTarget(PositionController *controller, float target) {
   controller->position_target = target;
 }

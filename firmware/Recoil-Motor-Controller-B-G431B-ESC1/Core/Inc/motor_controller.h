@@ -34,7 +34,7 @@ typedef struct {
   uint32_t            firmware_version;
 
   uint16_t            watchdog_timeout;
-  uint16_t            communication_frequency;
+  uint16_t            fast_frame_frequency;
 
   Encoder             encoder;
   PowerStage          powerstage;
@@ -54,6 +54,8 @@ typedef struct {
 typedef struct {
   __IO  uint32_t  device_id;
   __IO  uint32_t  firmware_version;
+  __IO  uint16_t  watchdog_timeout;
+  __IO  uint16_t  fast_frame_frequency;
 
   __IO  int32_t   encoder_cpr;
   __IO  float     encoder_position_offset;
@@ -74,6 +76,7 @@ typedef struct {
   __IO  float     current_controller_i_bandwidth;
   __IO  float     current_controller_i_limit;
 
+  __IO  float     position_controller_gear_ratio;
   __IO  float     position_controller_position_kp;
   __IO  float     position_controller_position_ki;
   __IO  float     position_controller_velocity_kp;

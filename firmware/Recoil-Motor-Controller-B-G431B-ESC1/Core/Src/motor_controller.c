@@ -27,7 +27,7 @@ void MotorController_init(MotorController *controller) {
   controller->error = ERROR_NO_ERROR;
 
   controller->watchdog_timeout = 1000;  // in milliseconds (ms)
-  controller->communication_frequency = 100;  // in hertz (Hz)
+  controller->fast_frame_frequency = 100;  // in hertz (Hz)
 
   controller->device_id = DEVICE_CAN_ID;
   controller->firmware_version = FIRMWARE_VERSION;
@@ -91,6 +91,7 @@ void MotorController_init(MotorController *controller) {
 
 void MotorController_reset(MotorController *controller) {
   // clear all intermediate states
+  // order of the functions here does matter
   PositionController_reset(&controller->position_controller);
   CurrentController_reset(&controller->current_controller);
   PowerStage_setOutputVoltage(&controller->powerstage, 0.f, 0.f, 0.f, controller->motor.phase_order);
@@ -219,6 +220,8 @@ HAL_StatusTypeDef MotorController_loadConfig(MotorController *controller) {
     controller->current_controller.i_bandwidth                  = config->current_controller_i_bandwidth;
     if (isnan(config->current_controller_i_limit))                return HAL_ERROR;
     controller->current_controller.i_limit                      = config->current_controller_i_limit;
+    if (isnan(config->position_controller_gear_ratio))            return HAL_ERROR;
+    controller->position_controller.gear_ratio                  = config->position_controller_gear_ratio;
     if (isnan(config->position_controller_position_kp))           return HAL_ERROR;
     controller->position_controller.position_kp                 = config->position_controller_position_kp;
     if (isnan(config->position_controller_position_ki))           return HAL_ERROR;
@@ -251,6 +254,8 @@ HAL_StatusTypeDef MotorController_storeConfig(MotorController *controller) {
 
   config.device_id                                      = (uint32_t)controller->device_id;
   config.firmware_version                               = controller->firmware_version;
+  config.watchdog_timeout                               = controller->watchdog_timeout;
+  config.fast_frame_frequency                           = controller->fast_frame_frequency;
   config.encoder_cpr                                    = controller->encoder.cpr;
   config.encoder_position_offset                        = controller->encoder.position_offset;
   config.encoder_filter_bandwidth                       = controller->encoder.filter_bandwidth;
@@ -266,6 +271,7 @@ HAL_StatusTypeDef MotorController_storeConfig(MotorController *controller) {
   config.motor_max_calibration_current                  = controller->motor.max_calibration_current;
   config.current_controller_i_bandwidth                 = controller->current_controller.i_bandwidth;
   config.current_controller_i_limit                     = controller->current_controller.i_limit;
+  config.position_controller_gear_ratio                 = controller->position_controller.gear_ratio;
   config.position_controller_position_kp                = controller->position_controller.position_kp;
   config.position_controller_position_ki                = controller->position_controller.position_ki;
   config.position_controller_velocity_kp                = controller->position_controller.velocity_kp;
