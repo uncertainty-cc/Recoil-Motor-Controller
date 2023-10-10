@@ -40,21 +40,25 @@ typedef struct {
   I2C_HandleTypeDef *hi2c;
 
   uint8_t   i2c_buffer[2];
-  uint8_t   i2c_update_counter;
+  uint8_t   UNUSED_0[2];
+  uint16_t  i2c_update_counter;
+  uint8_t   UNUSED_1[2];
 
   int32_t   cpr;
   float     position_offset;      // in range (-inf, inf)
   float     filter_bandwidth;
-  float     flux_offset;
-  float     flux_offset_table[128];
 
   float     filter_alpha;
 
   int16_t   position_raw;         // in range [-cpr/2, cpr/2)
+  uint8_t   UNUSED_2[2];
   int32_t   n_rotations;
 
   float     position;             // in range (-inf, inf), with offset
   float     velocity;
+
+  float     flux_offset;
+  float     flux_offset_table[128];
 } Encoder;
 
 

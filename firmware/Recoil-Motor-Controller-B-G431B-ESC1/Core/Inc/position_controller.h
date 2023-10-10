@@ -19,7 +19,7 @@
  * @brief PositionController object.
  */
 typedef struct {
-  uint8_t update_counter;
+  uint32_t update_counter;
   float gear_ratio;
 
   float position_kp;
@@ -29,8 +29,8 @@ typedef struct {
 
   float torque_limit;
   float velocity_limit;
-  float position_limit_upper;
   float position_limit_lower;
+  float position_limit_upper;
 
   float torque_target;
   float torque_measured;
@@ -44,8 +44,8 @@ typedef struct {
   float position_measured;
   float position_setpoint;
 
-  float position_integrator;
   float velocity_integrator;
+  float position_integrator;
 } PositionController;
 
 
@@ -62,7 +62,7 @@ static inline void PositionController_reset(PositionController *controller) {
  * @param controller Pointer to the PositionController struct.
  * @return The measured torque in Newton-meter (Nm).
  */
-static inline float PositionController_getTorque(PositionController *controller) {
+static inline float PositionController_getTorqueMeasured(PositionController *controller) {
   return controller->torque_measured;
 }
 
@@ -72,7 +72,7 @@ static inline float PositionController_getTorque(PositionController *controller)
  * @param controller Pointer to the PositionController struct.
  * @return The measured velocity in radian per second (rad/s).
  */
-static inline float PositionController_getVelocity(PositionController *controller) {
+static inline float PositionController_getVelocityMeasured(PositionController *controller) {
   return controller->velocity_measured;
 }
 
@@ -82,7 +82,7 @@ static inline float PositionController_getVelocity(PositionController *controlle
  * @param controller Pointer to the PositionController struct.
  * @return The measured position in radians (rad).
  */
-static inline float PositionController_getPosition(PositionController *controller) {
+static inline float PositionController_getPositionMeasured(PositionController *controller) {
   return controller->position_measured;
 }
 

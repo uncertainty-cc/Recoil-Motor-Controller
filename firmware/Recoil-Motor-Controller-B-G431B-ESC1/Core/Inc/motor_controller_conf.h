@@ -51,7 +51,6 @@
  * Load Calibration from Flash Flag:
  * This flag indicates whether the device should load the encoder flux offset settings from Flash memory.
  */
-
 #define LOAD_CALIBRATION_FROM_FLASH     1             // Set to 1 to load calibration settings, 0 to load default values
 
 /**
@@ -162,8 +161,9 @@ typedef enum {
   ERROR_OVER_VOLTAGE              = 0b0000000010000000U,
   ERROR_OVER_CURRENT              = 0b0000000100000000U,
   ERROR_OVER_TEMPERATURE          = 0b0000001000000000U,
-  ERROR_CAN_TX_FAULT              = 0b0000010000000000U,
-  ERROR_I2C_FAULT                 = 0b0000100000000000U,
+  ERROR_CAN_RX_FAULT              = 0b0000010000000000U,
+  ERROR_CAN_TX_FAULT              = 0b0000100000000000U,
+  ERROR_I2C_FAULT                 = 0b0001000000000000U,
 } ErrorCode;
 
 /** ======== CAN Packet Definitions ======== **/

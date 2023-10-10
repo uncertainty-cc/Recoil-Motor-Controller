@@ -19,8 +19,8 @@ extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim6;
+extern TIM_HandleTypeDef htim8;
 extern UART_HandleTypeDef huart2;
-
 
 void MotorController_init(MotorController *controller) {
   controller->mode = MODE_DISABLED;
@@ -52,6 +52,9 @@ void MotorController_init(MotorController *controller) {
 
   __HAL_TIM_SET_AUTORELOAD(&htim3, 9999);
   __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0);
+  __HAL_TIM_SET_AUTORELOAD(&htim2, (controller->watchdog_timeout * 10) - 1);
+  __HAL_TIM_SET_AUTORELOAD(&htim8, (10000 / (controller->fast_frame_frequency+1)) - 1);
+
 
   status |= HAL_OPAMP_Start(&hopamp1);
   status |= HAL_OPAMP_Start(&hopamp2);
@@ -62,6 +65,7 @@ void MotorController_init(MotorController *controller) {
 
   status |= HAL_TIM_Base_Start_IT(&htim2);    // safety watchdog timer
   status |= HAL_TIM_Base_Start(&htim6);       // time keeper timer
+  status |= HAL_TIM_Base_Start_IT(&htim8);    // fast frame timer
 
   PowerStage_start(&controller->powerstage);
 
@@ -186,101 +190,73 @@ void MotorController_setFluxAngle(MotorController *controller, float angle_setpo
 }
 
 HAL_StatusTypeDef MotorController_loadConfig(MotorController *controller) {
-  EEPROMConfig *config = (EEPROMConfig *)FLASH_CONFIG_ADDRESS;
+  MotorController *controller_config = (MotorController *)FLASH_CONFIG_ADDRESS;
+
   #if LOAD_CALIBRATION_FROM_FLASH
-    if (isnan(config->encoder_flux_offset)) return HAL_ERROR;
-    controller->encoder.flux_offset                             = config->encoder_flux_offset;
+    if (isnan(controller_config->encoder.flux_offset)) return HAL_ERROR;
+    controller->encoder.flux_offset                             = controller_config->encoder.flux_offset;
   #endif
   #if LOAD_ID_FROM_FLASH
-    controller->device_id                                       = (uint8_t)config->device_id;
+    controller->device_id                                       = (uint8_t)controller_config->device_id;
   #endif
   #if LOAD_CONFIG_FROM_FLASH
-    controller->firmware_version                                = config->firmware_version;
-    controller->encoder.cpr                                     = config->encoder_cpr;
-    if (isnan(config->encoder_position_offset))                   return HAL_ERROR;
-    controller->encoder.position_offset                         = config->encoder_position_offset;
-    if (isnan(config->encoder_filter_bandwidth))                  return HAL_ERROR;
-    controller->encoder.filter_bandwidth                        = config->encoder_filter_bandwidth;
-    if (isnan(config->powerstage_undervoltage_threshold))         return HAL_ERROR;
-    controller->powerstage.undervoltage_threshold               = config->powerstage_undervoltage_threshold;
-    if (isnan(config->powerstage_overvoltage_threshold))          return HAL_ERROR;
-    controller->powerstage.overvoltage_threshold                = config->powerstage_overvoltage_threshold;
-    if (isnan(config->powerstage_bus_voltage_filter_alpha))       return HAL_ERROR;
-    controller->powerstage.bus_voltage_filter_alpha             = config->powerstage_bus_voltage_filter_alpha;
-    controller->motor.pole_pairs                                = config->motor_pole_pairs;
-    controller->motor.kv_rating                                 = config->motor_kv_rating;
-    controller->motor.phase_order                               = (int8_t)config->motor_phase_order;
-    if (isnan(config->motor_phase_resistance))                    return HAL_ERROR;
-    controller->motor.phase_resistance                          = config->motor_phase_resistance;
-    if (isnan(config->motor_phase_inductance))                    return HAL_ERROR;
-    controller->motor.phase_inductance                          = config->motor_phase_inductance;
-    if (isnan(config->motor_max_calibration_current))             return HAL_ERROR;
-    controller->motor.max_calibration_current                   = config->motor_max_calibration_current;
-    if (isnan(config->current_controller_i_bandwidth))            return HAL_ERROR;
-    controller->current_controller.i_bandwidth                  = config->current_controller_i_bandwidth;
-    if (isnan(config->current_controller_i_limit))                return HAL_ERROR;
-    controller->current_controller.i_limit                      = config->current_controller_i_limit;
-    if (isnan(config->position_controller_gear_ratio))            return HAL_ERROR;
-    controller->position_controller.gear_ratio                  = config->position_controller_gear_ratio;
-    if (isnan(config->position_controller_position_kp))           return HAL_ERROR;
-    controller->position_controller.position_kp                 = config->position_controller_position_kp;
-    if (isnan(config->position_controller_position_ki))           return HAL_ERROR;
-    controller->position_controller.position_ki                 = config->position_controller_position_ki;
-    if (isnan(config->position_controller_velocity_kp))           return HAL_ERROR;
-    controller->position_controller.velocity_kp                 = config->position_controller_velocity_kp;
-    if (isnan(config->position_controller_velocity_ki))           return HAL_ERROR;
-    controller->position_controller.velocity_ki                 = config->position_controller_velocity_ki;
-    if (isnan(config->position_controller_torque_limit))          return HAL_ERROR;
-    controller->position_controller.torque_limit                = config->position_controller_torque_limit;
-    if (isnan(config->position_controller_velocity_limit))        return HAL_ERROR;
-    controller->position_controller.velocity_limit              = config->position_controller_velocity_limit;
-    if (isnan(config->position_controller_position_limit_upper))  return HAL_ERROR;
-    controller->position_controller.position_limit_upper        = config->position_controller_position_limit_upper;
-    if (isnan(config->position_controller_position_limit_lower))  return HAL_ERROR;
-    controller->position_controller.position_limit_lower        = config->position_controller_position_limit_lower;
+    controller->firmware_version                                = controller_config->firmware_version;
+    controller->watchdog_timeout                                = controller_config->watchdog_timeout;
+    controller->fast_frame_frequency                            = controller_config->fast_frame_frequency;
+    controller->encoder.cpr                                     = controller_config->encoder.cpr;
+    if (isnan(controller_config->encoder.position_offset))                   return HAL_ERROR;
+    controller->encoder.position_offset                         = controller_config->encoder.position_offset;
+    if (isnan(controller_config->encoder.filter_bandwidth))                  return HAL_ERROR;
+    controller->encoder.filter_bandwidth                        = controller_config->encoder.filter_bandwidth;
+    if (isnan(controller_config->powerstage.undervoltage_threshold))         return HAL_ERROR;
+    controller->powerstage.undervoltage_threshold               = controller_config->powerstage.undervoltage_threshold;
+    if (isnan(controller_config->powerstage.overvoltage_threshold))          return HAL_ERROR;
+    controller->powerstage.overvoltage_threshold                = controller_config->powerstage.overvoltage_threshold;
+    if (isnan(controller_config->powerstage.bus_voltage_filter_alpha))       return HAL_ERROR;
+    controller->powerstage.bus_voltage_filter_alpha             = controller_config->powerstage.bus_voltage_filter_alpha;
+    controller->motor.pole_pairs                                = controller_config->motor.pole_pairs;
+    controller->motor.kv_rating                                 = controller_config->motor.kv_rating;
+    controller->motor.phase_order                               = (int8_t)controller_config->motor.phase_order;
+    if (isnan(controller_config->motor.phase_resistance))                    return HAL_ERROR;
+    controller->motor.phase_resistance                          = controller_config->motor.phase_resistance;
+    if (isnan(controller_config->motor.phase_inductance))                    return HAL_ERROR;
+    controller->motor.phase_inductance                          = controller_config->motor.phase_inductance;
+    if (isnan(controller_config->motor.max_calibration_current))             return HAL_ERROR;
+    controller->motor.max_calibration_current                   = controller_config->motor.max_calibration_current;
+    if (isnan(controller_config->current_controller.i_bandwidth))            return HAL_ERROR;
+    controller->current_controller.i_bandwidth                  = controller_config->current_controller.i_bandwidth;
+    if (isnan(controller_config->current_controller.i_limit))                return HAL_ERROR;
+    controller->current_controller.i_limit                      = controller_config->current_controller.i_limit;
+    if (isnan(controller_config->position_controller.gear_ratio))            return HAL_ERROR;
+    controller->position_controller.gear_ratio                  = controller_config->position_controller.gear_ratio;
+    if (isnan(controller_config->position_controller.position_kp))           return HAL_ERROR;
+    controller->position_controller.position_kp                 = controller_config->position_controller.position_kp;
+    if (isnan(controller_config->position_controller.position_ki))           return HAL_ERROR;
+    controller->position_controller.position_ki                 = controller_config->position_controller.position_ki;
+    if (isnan(controller_config->position_controller.velocity_kp))           return HAL_ERROR;
+    controller->position_controller.velocity_kp                 = controller_config->position_controller.velocity_kp;
+    if (isnan(controller_config->position_controller.velocity_ki))           return HAL_ERROR;
+    controller->position_controller.velocity_ki                 = controller_config->position_controller.velocity_ki;
+    if (isnan(controller_config->position_controller.torque_limit))          return HAL_ERROR;
+    controller->position_controller.torque_limit                = controller_config->position_controller.torque_limit;
+    if (isnan(controller_config->position_controller.velocity_limit))        return HAL_ERROR;
+    controller->position_controller.velocity_limit              = controller_config->position_controller.velocity_limit;
+    if (isnan(controller_config->position_controller.position_limit_upper))  return HAL_ERROR;
+    controller->position_controller.position_limit_upper        = controller_config->position_controller.position_limit_upper;
+    if (isnan(controller_config->position_controller.position_limit_lower))  return HAL_ERROR;
+    controller->position_controller.position_limit_lower        = controller_config->position_controller.position_limit_lower;
   #endif
+
+  Encoder_setFilterGain(&controller->encoder, controller->encoder.filter_bandwidth);
 
   CurrentController_setPIGain(&controller->current_controller,
       controller->motor.phase_resistance,
       controller->motor.phase_inductance);
 
-  Encoder_setFilterGain(&controller->encoder, controller->encoder.filter_bandwidth);
-
   return HAL_OK;
 }
 
 HAL_StatusTypeDef MotorController_storeConfig(MotorController *controller) {
-  EEPROMConfig config;
-
-  config.device_id                                      = (uint32_t)controller->device_id;
-  config.firmware_version                               = controller->firmware_version;
-  config.watchdog_timeout                               = controller->watchdog_timeout;
-  config.fast_frame_frequency                           = controller->fast_frame_frequency;
-  config.encoder_cpr                                    = controller->encoder.cpr;
-  config.encoder_position_offset                        = controller->encoder.position_offset;
-  config.encoder_filter_bandwidth                       = controller->encoder.filter_bandwidth;
-  config.encoder_flux_offset                            = controller->encoder.flux_offset;
-  config.powerstage_undervoltage_threshold              = controller->powerstage.undervoltage_threshold;
-  config.powerstage_overvoltage_threshold               = controller->powerstage.overvoltage_threshold;
-  config.powerstage_bus_voltage_filter_alpha            = controller->powerstage.bus_voltage_filter_alpha;
-  config.motor_pole_pairs                               = controller->motor.pole_pairs;
-  config.motor_kv_rating                                = controller->motor.kv_rating;
-  config.motor_phase_order                              = (int32_t)controller->motor.phase_order;
-  config.motor_phase_resistance                         = controller->motor.phase_resistance;
-  config.motor_phase_inductance                         = controller->motor.phase_inductance;
-  config.motor_max_calibration_current                  = controller->motor.max_calibration_current;
-  config.current_controller_i_bandwidth                 = controller->current_controller.i_bandwidth;
-  config.current_controller_i_limit                     = controller->current_controller.i_limit;
-  config.position_controller_gear_ratio                 = controller->position_controller.gear_ratio;
-  config.position_controller_position_kp                = controller->position_controller.position_kp;
-  config.position_controller_position_ki                = controller->position_controller.position_ki;
-  config.position_controller_velocity_kp                = controller->position_controller.velocity_kp;
-  config.position_controller_velocity_ki                = controller->position_controller.velocity_ki;
-  config.position_controller_torque_limit               = controller->position_controller.torque_limit;
-  config.position_controller_velocity_limit             = controller->position_controller.velocity_limit;
-  config.position_controller_position_limit_upper       = controller->position_controller.position_limit_upper;
-  config.position_controller_position_limit_lower       = controller->position_controller.position_limit_lower;
-
   FLASH_EraseInitTypeDef erase_init_struct;
   uint32_t page_error;
 
@@ -299,11 +275,11 @@ HAL_StatusTypeDef MotorController_storeConfig(MotorController *controller) {
     return HAL_ERROR;
   }
 
-  /* Program the user Flash area word by word*/
-  for (uint16_t i=0; i<FLASH_CONFIG_SIZE; i+=1) {
-    uint64_t buf = (uint64_t)*(((uint64_t *)(&config)) + i);
+  /* Program the user Flash area word (uint64_t) by word*/
+  for (uint16_t i=0; i<FLASH_PAGE_SIZE; i+=sizeof(uint64_t)) {
+    volatile uint64_t buf = *((uint64_t *)((uint8_t *)controller + i));
 
-    uint32_t target_address = FLASH_CONFIG_ADDRESS + i*8;
+    uint32_t target_address = FLASH_CONFIG_ADDRESS + i;
     if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, target_address, buf) != HAL_OK) {
       HAL_FLASH_Lock();
       return HAL_ERROR;
@@ -327,9 +303,9 @@ void MotorController_update(MotorController *controller) {
   // this is the most time-sensitive
   // takes 1.5 us to run (3%)
   PowerStage_updatePhaseCurrent(&controller->powerstage,
-      &controller->current_controller.i_a_measured,
-      &controller->current_controller.i_b_measured,
-      &controller->current_controller.i_c_measured,
+      (float *)(&controller->current_controller.i_a_measured),
+      (float *)(&controller->current_controller.i_b_measured),
+      (float *)(&controller->current_controller.i_c_measured),
       controller->motor.phase_order);
 
   // this is also quite time-sensitive
@@ -649,23 +625,23 @@ void MotorController_handleCANMessage(MotorController *controller, CAN_Frame *rx
       break;
 
     case CAN_ID_USR_PARAM_READ:   // 0x10
-      MotorController_handleCANRead(controller, *((uint8_t *)rx_frame->data), &tx_frame);
+      tx_frame.size = 8;
+      *((uint16_t *)tx_frame.data) = *((uint16_t *)rx_frame->data);
+      MotorController_handleCANRead(controller, rx_frame, &tx_frame);
       break;
 
     case CAN_ID_USR_PARAM_WRITE:  // 0x11
-      MotorController_handleCANWrite(controller, *((uint8_t *)rx_frame->data), (uint8_t *)rx_frame->data + 4);
+      MotorController_handleCANWrite(controller, rx_frame);
       break;
 
     case CAN_ID_USR_FAST_FRAME_0: // 0x12 [position_kp, position_ki]
       controller->position_controller.position_target = *((float *)rx_frame->data);
       controller->position_controller.torque_target = *((float *)rx_frame->data + 1);
-      *((float *)tx_frame.data) = controller->position_controller.position_measured;
-      *((float *)(tx_frame.data + 4)) = controller->position_controller.torque_measured;
+      __HAL_TIM_SET_COUNTER(&htim2, 0);
       break;
 
     case CAN_ID_USR_FAST_FRAME_1: // 0x13 [position_kp, position_ki]
-      controller->position_controller.position_kp = *((float *)rx_frame->data);
-      controller->position_controller.position_ki = *((float *)(rx_frame->data + 4));
+      __HAL_TIM_SET_COUNTER(&htim2, 0);
       break;
 
     case CAN_ID_PING:             // 0x1F
@@ -676,388 +652,6 @@ void MotorController_handleCANMessage(MotorController *controller, CAN_Frame *rx
 
   if (tx_frame.size) {
     CAN_putTxFrame(&hfdcan1, &tx_frame);
-  }
-}
-
-void MotorController_handleCANRead(MotorController *controller, Command command, CAN_Frame *tx_frame) {
-  tx_frame->size = 8;
-  *((uint8_t *)tx_frame->data) = command;
-  switch (command) {
-    case CMD_ENCODER_CPR:
-      *((int32_t *)(tx_frame->data + 4)) = controller->encoder.cpr;
-      break;
-    case CMD_ENCODER_OFFSET:
-      *((float *)(tx_frame->data + 4)) = controller->encoder.position_offset;
-      break;
-    case CMD_ENCODER_FILTER_BANDWIDTH:
-      *((float *)(tx_frame->data + 4)) = controller->encoder.filter_bandwidth;
-      break;
-    case CMD_ENCODER_FLUX_OFFSET:
-      *((float *)(tx_frame->data + 4)) = controller->encoder.flux_offset;
-      break;
-    case CMD_ENCODER_POSITION_RAW:
-      *((int32_t *)(tx_frame->data + 4)) = (int32_t)controller->encoder.position_raw;
-      break;
-    case CMD_ENCODER_N_ROTATIONS:
-      *((int32_t *)(tx_frame->data + 4)) = controller->encoder.n_rotations;
-      break;
-    case CMD_POWERSTAGE_VOLTAGE_THRESHOLD_LOW:
-      *((float *)(tx_frame->data + 4)) = controller->powerstage.undervoltage_threshold;
-      break;
-    case CMD_POWERSTAGE_VOLTAGE_THRESHOLD_HIGH:
-      *((float *)(tx_frame->data + 4)) = controller->powerstage.overvoltage_threshold;
-      break;
-    case CMD_POWERSTAGE_FILTER:
-      *((float *)(tx_frame->data + 4)) = controller->powerstage.bus_voltage_filter_alpha;
-      break;
-    case CMD_POWERSTAGE_BUS_VOLTAGE_MEASURED:
-      *((float *)(tx_frame->data + 4)) = controller->powerstage.bus_voltage_measured;
-      break;
-    case CMD_MOTOR_POLE_PAIR:
-      *((uint32_t *)(tx_frame->data + 4)) = controller->motor.pole_pairs;
-      break;
-    case CMD_MOTOR_KV:
-      *((uint32_t *)(tx_frame->data + 4)) = controller->motor.kv_rating;
-      break;
-    case CMD_MOTOR_PHASE_ORDER:
-      *((int32_t *)(tx_frame->data + 4)) = (int32_t)controller->motor.phase_order;
-      break;
-    case CMD_MOTOR_PHASE_RESISTANCE:
-      *((float *)(tx_frame->data + 4)) = controller->motor.phase_resistance;
-      break;
-    case CMD_MOTOR_PHASE_INDUCTANCE:
-      *((float *)(tx_frame->data + 4)) = controller->motor.phase_inductance;
-      break;
-    case CMD_MOTOR_MAX_CALIBRATION_CURRENT:
-      *((float *)(tx_frame->data + 4)) = controller->motor.max_calibration_current;
-      break;
-    case CMD_CURRENT_KP:
-      *((float *)(tx_frame->data + 4)) = controller->current_controller.i_kp;
-      break;
-    case CMD_CURRENT_KI:
-      *((float *)(tx_frame->data + 4)) = controller->current_controller.i_ki;
-      break;
-    case CMD_CURRENT_BANDWIDTH:
-      *((float *)(tx_frame->data + 4)) = controller->current_controller.i_bandwidth;
-      break;
-    case CMD_CURRENT_LIMIT:
-      *((float *)(tx_frame->data + 4)) = controller->current_controller.i_limit;
-      break;
-    case CMD_CURRENT_IA_MEASURED:
-      *((float *)(tx_frame->data + 4)) = controller->current_controller.i_a_measured;
-      break;
-    case CMD_CURRENT_IB_MEASURED:
-      *((float *)(tx_frame->data + 4)) = controller->current_controller.i_b_measured;
-      break;
-    case CMD_CURRENT_IC_MEASURED:
-      *((float *)(tx_frame->data + 4)) = controller->current_controller.i_c_measured;
-      break;
-    case CMD_CURRENT_VA_SETPOINT:
-      *((float *)(tx_frame->data + 4)) = controller->current_controller.v_a_setpoint;
-      break;
-    case CMD_CURRENT_VB_SETPOINT:
-      *((float *)(tx_frame->data + 4)) = controller->current_controller.v_b_setpoint;
-      break;
-    case CMD_CURRENT_VC_SETPOINT:
-      *((float *)(tx_frame->data + 4)) = controller->current_controller.v_c_setpoint;
-      break;
-    case CMD_CURRENT_IALPHA_MEASURED:
-      *((float *)(tx_frame->data + 4)) = controller->current_controller.i_alpha_measured;
-      break;
-    case CMD_CURRENT_IBETA_MEASURED:
-      *((float *)(tx_frame->data + 4)) = controller->current_controller.i_beta_measured;
-      break;
-    case CMD_CURRENT_VALPHA_SETPOINT:
-      *((float *)(tx_frame->data + 4)) = controller->current_controller.v_alpha_setpoint;
-      break;
-    case CMD_CURRENT_VBETA_SETPOINT:
-      *((float *)(tx_frame->data + 4)) = controller->current_controller.v_beta_setpoint;
-      break;
-    case CMD_CURRENT_VQ_TARGET:
-      *((float *)(tx_frame->data + 4)) = controller->current_controller.v_q_target;
-      break;
-    case CMD_CURRENT_VD_TARGET:
-      *((float *)(tx_frame->data + 4)) = controller->current_controller.v_d_target;
-      break;
-    case CMD_CURRENT_VQ_SETPOINT:
-      *((float *)(tx_frame->data + 4)) = controller->current_controller.v_q_setpoint;
-      break;
-    case CMD_CURRENT_VD_SETPOINT:
-      *((float *)(tx_frame->data + 4)) = controller->current_controller.v_d_setpoint;
-      break;
-    case CMD_CURRENT_IQ_TARGET:
-      *((float *)(tx_frame->data + 4)) = controller->current_controller.i_q_target;
-      break;
-    case CMD_CURRENT_ID_TARGET:
-      *((float *)(tx_frame->data + 4)) = controller->current_controller.i_d_target;
-      break;
-    case CMD_CURRENT_IQ_MEASURED:
-      *((float *)(tx_frame->data + 4)) = controller->current_controller.i_q_measured;
-      break;
-    case CMD_CURRENT_ID_MEASURED:
-      *((float *)(tx_frame->data + 4)) = controller->current_controller.i_d_measured;
-      break;
-    case CMD_CURRENT_IQ_SETPOINT:
-      *((float *)(tx_frame->data + 4)) = controller->current_controller.i_q_setpoint;
-      break;
-    case CMD_CURRENT_ID_SETPOINT:
-      *((float *)(tx_frame->data + 4)) = controller->current_controller.i_d_setpoint;
-      break;
-    case CMD_CURRENT_IQ_INTEGRATOR:
-      *((float *)(tx_frame->data + 4)) = controller->current_controller.i_q_integrator;
-      break;
-    case CMD_CURRENT_ID_INTEGRATOR:
-      *((float *)(tx_frame->data + 4)) = controller->current_controller.i_d_integrator;
-      break;
-    case CMD_POSITION_KP:
-      *((float *)(tx_frame->data + 4)) = controller->position_controller.position_kp;
-      break;
-    case CMD_POSITION_KI:
-      *((float *)(tx_frame->data + 4)) = controller->position_controller.position_ki;
-      break;
-    case CMD_VELOCITY_KP:
-      *((float *)(tx_frame->data + 4)) = controller->position_controller.velocity_kp;
-      break;
-    case CMD_VELOCITY_KI:
-      *((float *)(tx_frame->data + 4)) = controller->position_controller.velocity_ki;
-      break;
-    case CMD_TORQUE_LIMIT:
-      *((float *)(tx_frame->data + 4)) = controller->position_controller.torque_limit;
-      break;
-    case CMD_VELOCITY_LIMIT:
-      *((float *)(tx_frame->data + 4)) = controller->position_controller.velocity_limit;
-      break;
-    case CMD_POSITION_LIMIT_LOW:
-      *((float *)(tx_frame->data + 4)) = controller->position_controller.position_limit_lower;
-      break;
-    case CMD_POSITION_LIMIT_HIGH:
-      *((float *)(tx_frame->data + 4)) = controller->position_controller.position_limit_upper;
-      break;
-    case CMD_TORQUE_TARGET:
-      *((float *)(tx_frame->data + 4)) = controller->position_controller.torque_target;
-      break;
-    case CMD_TORQUE_MEASURED:
-      *((float *)(tx_frame->data + 4)) = controller->position_controller.torque_measured;
-      break;
-    case CMD_TORQUE_SETPOINT:
-      *((float *)(tx_frame->data + 4)) = controller->position_controller.torque_setpoint;
-      break;
-    case CMD_VELOCITY_TARGET:
-      *((float *)(tx_frame->data + 4)) = controller->position_controller.velocity_target;
-      break;
-    case CMD_VELOCITY_MEASURED:
-      *((float *)(tx_frame->data + 4)) = controller->position_controller.velocity_measured;
-      break;
-    case CMD_VELOCITY_SETPOINT:
-      *((float *)(tx_frame->data + 4)) = controller->position_controller.velocity_setpoint;
-      break;
-    case CMD_POSITION_TARGET:
-      *((float *)(tx_frame->data + 4)) = controller->position_controller.position_target;
-      break;
-    case CMD_POSITION_MEASURED:
-      *((float *)(tx_frame->data + 4)) = controller->position_controller.position_measured;
-      break;
-    case CMD_POSITION_SETPOINT:
-      *((float *)(tx_frame->data + 4)) = controller->position_controller.position_setpoint;
-      break;
-    case CMD_VELOCITY_INTEGRATOR:
-      *((float *)(tx_frame->data + 4)) = controller->position_controller.velocity_integrator;
-      break;
-    case CMD_POSITION_INTEGRATOR:
-      *((float *)(tx_frame->data + 4)) = controller->position_controller.position_integrator;
-      break;
-    default:
-      break;
-  }
-}
-
-void MotorController_handleCANWrite(MotorController *controller, Command command, uint8_t *rx_data) {
-  switch (command) {
-    case CMD_ENCODER_CPR:
-      controller->encoder.cpr = *((int32_t *)rx_data);
-      break;
-    case CMD_ENCODER_OFFSET:
-      controller->encoder.position_offset = *((float *)rx_data);
-      break;
-    case CMD_ENCODER_FILTER_BANDWIDTH:
-      controller->encoder.filter_bandwidth = *((float *)rx_data);
-      break;
-    case CMD_ENCODER_FLUX_OFFSET:
-      controller->encoder.flux_offset = *((float *)rx_data);
-      break;
-    case CMD_ENCODER_POSITION_RAW:
-      controller->encoder.position_raw = (int16_t)*((int32_t *)rx_data);
-      break;
-    case CMD_ENCODER_N_ROTATIONS:
-      controller->encoder.n_rotations = *((int32_t *)rx_data);
-      break;
-    case CMD_POWERSTAGE_VOLTAGE_THRESHOLD_LOW:
-      controller->powerstage.undervoltage_threshold = *((float *)rx_data);
-      break;
-    case CMD_POWERSTAGE_VOLTAGE_THRESHOLD_HIGH:
-      controller->powerstage.overvoltage_threshold = *((float *)rx_data);
-      break;
-    case CMD_POWERSTAGE_FILTER:
-      controller->powerstage.bus_voltage_filter_alpha = *((float *)rx_data);
-      break;
-    case CMD_POWERSTAGE_BUS_VOLTAGE_MEASURED:
-//      controller->powerstage.bus_voltage_measured = *((float *)rx_data);
-      break;
-    case CMD_MOTOR_POLE_PAIR:
-      controller->motor.pole_pairs = *((uint32_t *)rx_data);
-      break;
-    case CMD_MOTOR_KV:
-      controller->motor.kv_rating = *((uint32_t *)rx_data);
-      break;
-    case CMD_MOTOR_PHASE_ORDER:
-      controller->motor.phase_order = (int8_t)*((int32_t *)rx_data);
-      break;
-    case CMD_MOTOR_PHASE_RESISTANCE:
-      controller->motor.phase_resistance = *((float *)rx_data);
-      break;
-    case CMD_MOTOR_PHASE_INDUCTANCE:
-      controller->motor.phase_inductance = *((float *)rx_data);
-      break;
-    case CMD_MOTOR_MAX_CALIBRATION_CURRENT:
-      controller->motor.max_calibration_current = *((float *)rx_data);
-      break;
-    case CMD_CURRENT_KP:
-      controller->current_controller.i_kp = *((float *)rx_data);
-      break;
-    case CMD_CURRENT_KI:
-      controller->current_controller.i_ki = *((float *)rx_data);
-      break;
-    case CMD_CURRENT_BANDWIDTH:
-      controller->current_controller.i_bandwidth = *((float *)rx_data);
-      break;
-    case CMD_CURRENT_LIMIT:
-      controller->current_controller.i_limit = *((float *)rx_data);
-      break;
-    case CMD_CURRENT_IA_MEASURED:
-      // this is a read-only term
-      break;
-    case CMD_CURRENT_IB_MEASURED:
-      // this is a read-only term
-      break;
-    case CMD_CURRENT_IC_MEASURED:
-      // this is a read-only term
-      break;
-    case CMD_CURRENT_VA_SETPOINT:
-      controller->current_controller.v_a_setpoint = *((float *)rx_data);
-      break;
-    case CMD_CURRENT_VB_SETPOINT:
-      controller->current_controller.v_b_setpoint = *((float *)rx_data);
-      break;
-    case CMD_CURRENT_VC_SETPOINT:
-      controller->current_controller.v_c_setpoint = *((float *)rx_data);
-      break;
-    case CMD_CURRENT_IALPHA_MEASURED:
-      // this is a read-only term
-      break;
-    case CMD_CURRENT_IBETA_MEASURED:
-      // this is a read-only term
-      break;
-    case CMD_CURRENT_VALPHA_SETPOINT:
-      controller->current_controller.v_alpha_setpoint = *((float *)rx_data);
-      break;
-    case CMD_CURRENT_VBETA_SETPOINT:
-      controller->current_controller.v_beta_setpoint = *((float *)rx_data);
-      break;
-    case CMD_CURRENT_VQ_TARGET:
-      controller->current_controller.v_q_target = *((float *)rx_data);
-      break;
-    case CMD_CURRENT_VD_TARGET:
-      controller->current_controller.v_d_target = *((float *)rx_data);
-      break;
-    case CMD_CURRENT_VQ_SETPOINT:
-      controller->current_controller.v_q_setpoint = *((float *)rx_data);
-      break;
-    case CMD_CURRENT_VD_SETPOINT:
-      controller->current_controller.v_d_setpoint = *((float *)rx_data);
-      break;
-    case CMD_CURRENT_IQ_TARGET:
-      controller->current_controller.i_q_target = *((float *)rx_data);
-      break;
-    case CMD_CURRENT_ID_TARGET:
-      controller->current_controller.i_d_target = *((float *)rx_data);
-      break;
-    case CMD_CURRENT_IQ_MEASURED:
-      // this is a read-only term
-      break;
-    case CMD_CURRENT_ID_MEASURED:
-      // this is a read-only term
-      break;
-    case CMD_CURRENT_IQ_SETPOINT:
-      controller->current_controller.i_q_setpoint = *((float *)rx_data);
-      break;
-    case CMD_CURRENT_ID_SETPOINT:
-      controller->current_controller.i_d_setpoint = *((float *)rx_data);
-      break;
-    case CMD_CURRENT_IQ_INTEGRATOR:
-      controller->current_controller.i_q_integrator = *((float *)rx_data);
-      break;
-    case CMD_CURRENT_ID_INTEGRATOR:
-      controller->current_controller.i_d_integrator = *((float *)rx_data);
-      break;
-    case CMD_POSITION_KP:
-      controller->position_controller.position_kp = *((float *)rx_data);
-      break;
-    case CMD_POSITION_KI:
-      controller->position_controller.position_ki = *((float *)rx_data);
-      break;
-    case CMD_VELOCITY_KP:
-      controller->position_controller.velocity_kp = *((float *)rx_data);
-      break;
-    case CMD_VELOCITY_KI:
-      controller->position_controller.velocity_ki = *((float *)rx_data);
-      break;
-    case CMD_TORQUE_LIMIT:
-      controller->position_controller.torque_limit = *((float *)rx_data);
-      break;
-    case CMD_VELOCITY_LIMIT:
-      controller->position_controller.velocity_limit = *((float *)rx_data);
-      break;
-    case CMD_POSITION_LIMIT_LOW:
-      controller->position_controller.position_limit_lower = *((float *)rx_data);
-      break;
-    case CMD_POSITION_LIMIT_HIGH:
-      controller->position_controller.position_limit_upper = *((float *)rx_data);
-      break;
-    case CMD_TORQUE_TARGET:
-      controller->position_controller.torque_target = *((float *)rx_data);
-      break;
-    case CMD_TORQUE_MEASURED:
-      // this is a read-only term
-      break;
-    case CMD_TORQUE_SETPOINT:
-      controller->position_controller.torque_setpoint = *((float *)rx_data);
-      break;
-    case CMD_VELOCITY_TARGET:
-      controller->position_controller.velocity_target = *((float *)rx_data);
-      break;
-    case CMD_VELOCITY_MEASURED:
-      // this is a read-only term
-      break;
-    case CMD_VELOCITY_SETPOINT:
-      controller->position_controller.velocity_setpoint = *((float *)rx_data);
-      break;
-    case CMD_POSITION_TARGET:
-      controller->position_controller.position_target = *((float *)rx_data);
-      break;
-    case CMD_POSITION_MEASURED:
-      // this is a read-only term
-      break;
-    case CMD_POSITION_SETPOINT:
-      controller->position_controller.position_setpoint = *((float *)rx_data);
-      break;
-    case CMD_VELOCITY_INTEGRATOR:
-      controller->position_controller.velocity_integrator = *((float *)rx_data);
-      break;
-    case CMD_POSITION_INTEGRATOR:
-      controller->position_controller.position_integrator = *((float *)rx_data);
-      break;
-    default:
-      break;
   }
 }
 

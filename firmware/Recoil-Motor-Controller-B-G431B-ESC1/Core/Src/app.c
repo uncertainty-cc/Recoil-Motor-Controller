@@ -18,6 +18,7 @@ extern OPAMP_HandleTypeDef hopamp3;
 extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim6;
+extern TIM_HandleTypeDef htim8;
 extern UART_HandleTypeDef huart2;
 
 MotorController controller;
@@ -45,6 +46,20 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
       SET_BITS(controller.error, ERROR_WATCHDOG_TIMEOUT);
     }
     #endif
+  }
+  else if (htim == &htim8) {
+    if (controller.fast_frame_frequency != 0) {
+      uint32_t func_id = CAN_ID_USR_FAST_FRAME_1;
+      CAN_Frame tx_frame;
+      tx_frame.id = (func_id << 6) | controller.device_id;
+      tx_frame.id_type = CAN_ID_STANDARD;
+      tx_frame.frame_type = CAN_FRAME_DATA;
+      tx_frame.size = 8;
+      *((float *)((uint8_t *)tx_frame.data + 0)) = PositionController_getPositionMeasured(&controller.position_controller);
+      *((float *)((uint8_t *)tx_frame.data + 4)) = PositionController_getTorqueMeasured(&controller.position_controller);
+      CAN_putTxFrame(&hfdcan1, &tx_frame);
+    }
+    __HAL_TIM_SET_AUTORELOAD(&htim8, (10000 / (controller.fast_frame_frequency + 1)) - 1);
   }
 }
 
@@ -108,8 +123,8 @@ void APP_init() {
 //  controller.current_controller.i_d_target = 0;
 //  MotorController_setMode(&controller, MODE_CURRENT);
 //
-  controller.position_controller.position_target = 0;
-  MotorController_setMode(&controller, MODE_POSITION);
+//  controller.position_controller.position_target = 0;
+//  MotorController_setMode(&controller, MODE_POSITION);
 
 }
 
@@ -134,11 +149,11 @@ void APP_main() {
 //    sprintf(str, "mode:%d\r\n", controller.mode);
 
 //   initial status logging
-  sprintf(str, "p:%f\tv:%f\tvoltage:%f\tpot:%f\r\n",
-      controller.position_controller.position_measured,
-      controller.position_controller.velocity_measured,
-      controller.powerstage.bus_voltage_measured,
-      APP_getUserPot());
+//  sprintf(str, "p:%f\tv:%f\tvoltage:%f\tpot:%f\r\n",
+//      controller.position_controller.position_measured,
+//      controller.position_controller.velocity_measured,
+//      controller.powerstage.bus_voltage_measured,
+//      APP_getUserPot());
 
 //   current loop logging
 //  sprintf(str, "iq_mea:%f\tiq_set:%f\tiq_tar:%f\ttor:%f\tvel:%f\r\n",
@@ -170,11 +185,11 @@ void APP_main() {
 //        controller.current_controller.v_q_setpoint * 10,
 //        controller.current_controller.v_d_setpoint * 10);
 
-//  sprintf(str, "pos:%f\tva:%f\tvb:%f\tvc:%f\r\n",
-//      controller.position_controller.position_measured,
-//      controller.current_controller.v_a_setpoint,
-//      controller.current_controller.v_b_setpoint,
-//      controller.current_controller.v_c_setpoint);
+  sprintf(str, "pos:%f\tia:%f\tib:%f\tic:%f\r\n",
+      controller.position_controller.position_measured,
+      controller.current_controller.i_a_measured,
+      controller.current_controller.i_b_measured,
+      controller.current_controller.i_c_measured);
 
 
   HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 1000);

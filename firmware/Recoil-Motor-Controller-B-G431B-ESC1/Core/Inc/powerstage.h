@@ -24,7 +24,9 @@ typedef struct {
   ADC_HandleTypeDef *hadc2;
 
   uint16_t adc_reading_raw[3];
+  uint8_t UNUSED_0[1];
   int16_t adc_reading_offset[3];
+  uint8_t UNUSED_1[1];
 
   float undervoltage_threshold;
   float overvoltage_threshold;
