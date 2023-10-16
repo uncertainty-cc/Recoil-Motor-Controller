@@ -7,16 +7,20 @@
 
 #include "powerstage.h"
 
-void PowerStage_init(PowerStage *powerstage, TIM_HandleTypeDef *htim, ADC_HandleTypeDef *hadc1, ADC_HandleTypeDef *hadc2, SPI_HandleTypeDef *hspi) {
+
+HAL_StatusTypeDef PowerStage_init(PowerStage *powerstage, TIM_HandleTypeDef *htim, ADC_HandleTypeDef *hadc1, ADC_HandleTypeDef *hadc2, SPI_HandleTypeDef *hspi) {
   powerstage->htim = htim;
   powerstage->hadc1 = hadc1;
   powerstage->hadc2 = hadc2;
   powerstage->hspi = hspi;
 
-  powerstage->bus_voltage_measured = 24.;
+  powerstage->bus_voltage_filter_alpha = .5f;
+
+  powerstage->bus_voltage_measured = 12.f;
 
   PowerStage_disablePWM(powerstage);
   PowerStage_disableGateDriver(powerstage);
+  return HAL_OK;
 }
 
 void PowerStage_reset(PowerStage *powerstage) {
@@ -26,34 +30,13 @@ void PowerStage_reset(PowerStage *powerstage) {
 }
 
 void PowerStage_start(PowerStage *powerstage) {
-  PowerStage_reset(powerstage);
+  HAL_TIM_Base_Start_IT(powerstage->htim);
   HAL_TIM_PWM_Start(powerstage->htim, TIM_CHANNEL_1);
   HAL_TIMEx_PWMN_Start(powerstage->htim, TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(powerstage->htim, TIM_CHANNEL_2);
   HAL_TIMEx_PWMN_Start(powerstage->htim, TIM_CHANNEL_2);
   HAL_TIM_PWM_Start(powerstage->htim, TIM_CHANNEL_3);
   HAL_TIMEx_PWMN_Start(powerstage->htim, TIM_CHANNEL_3);
-  HAL_TIM_Base_Start_IT(powerstage->htim);
-}
-
-void PowerStage_disableGateDriver(PowerStage *powerstage) {
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, 0);
-}
-
-void PowerStage_enableGateDriver(PowerStage *powerstage) {
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, 1);
-}
-
-uint8_t PowerStage_isPWMEnabled(PowerStage *powerstage) {
-  return READ_BITS(powerstage->htim->Instance->BDTR, TIM_BDTR_MOE) ? 1 : 0;
-}
-
-void PowerStage_disablePWM(PowerStage *powerstage) {
-  __HAL_TIM_MOE_DISABLE_UNCONDITIONALLY(powerstage->htim);
-}
-
-void PowerStage_enablePWM(PowerStage *powerstage) {
-  __HAL_TIM_MOE_ENABLE(powerstage->htim);
 }
 
 ErrorCode PowerStage_updateErrorStatus(PowerStage *powerstage) {
@@ -78,7 +61,20 @@ ErrorCode PowerStage_updateErrorStatus(PowerStage *powerstage) {
   return ERROR_NO_ERROR;
 }
 
-void PowerStage_setBridgeOutput(PowerStage *powerstage, float v_a, float v_b, float v_c) {
+void PowerStage_setOutputPWM(PowerStage *powerstage, uint16_t ccr_a, uint16_t ccr_b, uint16_t ccr_c, int8_t phase_order) {
+  if (phase_order == 1) {
+    __HAL_TIM_SET_COMPARE(powerstage->htim, TIM_CHANNEL_1, ccr_a);
+    __HAL_TIM_SET_COMPARE(powerstage->htim, TIM_CHANNEL_2, ccr_b);
+    __HAL_TIM_SET_COMPARE(powerstage->htim, TIM_CHANNEL_3, ccr_c);
+  }
+  else {
+    __HAL_TIM_SET_COMPARE(powerstage->htim, TIM_CHANNEL_1, ccr_c);
+    __HAL_TIM_SET_COMPARE(powerstage->htim, TIM_CHANNEL_2, ccr_b);
+    __HAL_TIM_SET_COMPARE(powerstage->htim, TIM_CHANNEL_3, ccr_a);
+  }
+}
+
+void PowerStage_setOutputVoltage(PowerStage *powerstage, float v_a, float v_b, float v_c, int8_t phase_order) {
   v_a = .5f * ((v_a / powerstage->bus_voltage_measured) + 1.f);  // normalize voltage to range 0 ~ 1
   v_b = .5f * ((v_b / powerstage->bus_voltage_measured) + 1.f);  // i.e. convert to PWM duty cycle.
   v_c = .5f * ((v_c / powerstage->bus_voltage_measured) + 1.f);
@@ -91,9 +87,7 @@ void PowerStage_setBridgeOutput(PowerStage *powerstage, float v_a, float v_b, fl
   uint16_t ccr_b = (uint16_t)((float)(__HAL_TIM_GET_AUTORELOAD(powerstage->htim)+1) * v_b);
   uint16_t ccr_c = (uint16_t)((float)(__HAL_TIM_GET_AUTORELOAD(powerstage->htim)+1) * v_c);
 
-  __HAL_TIM_SET_COMPARE(powerstage->htim, TIM_CHANNEL_1, ccr_a);
-  __HAL_TIM_SET_COMPARE(powerstage->htim, TIM_CHANNEL_2, ccr_b);
-  __HAL_TIM_SET_COMPARE(powerstage->htim, TIM_CHANNEL_3, ccr_c);
+  PowerStage_setOutputPWM(powerstage, ccr_a, ccr_b, ccr_c, phase_order);
 }
 
 void PowerStage_calibratePhaseCurrentOffset(PowerStage *powerstage) {
@@ -111,18 +105,29 @@ void PowerStage_calibratePhaseCurrentOffset(PowerStage *powerstage) {
   powerstage->adc_reading_offset[2] = adc_reading_2 / 10;
 }
 
-void PowerStage_updatePhaseCurrent(PowerStage *powerstage, float *i_a, float *i_b, float *i_c) {
+void PowerStage_updateBusVoltage(PowerStage *powerstage) {
+  powerstage->bus_voltage_measured += powerstage->bus_voltage_filter_alpha * ((HAL_ADCEx_InjectedGetValue(powerstage->hadc1, ADC_INJECTED_RANK_2) * ADC_BUS_VOLTAGE_COEFFICIENT) - powerstage->bus_voltage_measured);
+}
+
+void PowerStage_updatePhaseCurrent(PowerStage *powerstage, float *i_a, float *i_b, float *i_c, int8_t phase_order) {
   powerstage->adc_reading_raw[0] = HAL_ADCEx_InjectedGetValue(powerstage->hadc1, ADC_INJECTED_RANK_1);
   powerstage->adc_reading_raw[1] = HAL_ADCEx_InjectedGetValue(powerstage->hadc2, ADC_INJECTED_RANK_1);
   powerstage->adc_reading_raw[2] = HAL_ADCEx_InjectedGetValue(powerstage->hadc2, ADC_INJECTED_RANK_2);
+  float phase_current_measured_0 = -(float)(powerstage->adc_reading_raw[0] - powerstage->adc_reading_offset[0]) * ADC_OPAMP_CURRENT_COEFFICIENT;
+  float phase_current_measured_1 = -(float)(powerstage->adc_reading_raw[1] - powerstage->adc_reading_offset[1]) * ADC_OPAMP_CURRENT_COEFFICIENT;
+  float phase_current_measured_2 = -(float)(powerstage->adc_reading_raw[2] - powerstage->adc_reading_offset[2]) * ADC_OPAMP_CURRENT_COEFFICIENT;
 
   // positive is flow into phase
   // negative is flow out of phase
-  *i_a = -(float)(powerstage->adc_reading_raw[0] - powerstage->adc_reading_offset[0]) * ADC_OPAMP_CURRENT_COEFFICIENT;
-  *i_b = -(float)(powerstage->adc_reading_raw[1] - powerstage->adc_reading_offset[1]) * ADC_OPAMP_CURRENT_COEFFICIENT;
-  *i_c = -(float)(powerstage->adc_reading_raw[2] - powerstage->adc_reading_offset[2]) * ADC_OPAMP_CURRENT_COEFFICIENT;
+  if (phase_order == 1) {
+    *i_a = phase_current_measured_0;
+    *i_b = phase_current_measured_1;
+    *i_c = phase_current_measured_2;
+  }
+  else {
+    *i_c = phase_current_measured_0;
+    *i_b = phase_current_measured_1;
+    *i_a = phase_current_measured_2;
+  }
 }
 
-void PowerStage_updateBusVoltage(PowerStage *powerstage) {
-  powerstage->bus_voltage_measured += 0.1f * ((HAL_ADCEx_InjectedGetValue(powerstage->hadc1, ADC_INJECTED_RANK_2) * ADC_BUS_VOLTAGE_COEFFICIENT) - powerstage->bus_voltage_measured);
-}

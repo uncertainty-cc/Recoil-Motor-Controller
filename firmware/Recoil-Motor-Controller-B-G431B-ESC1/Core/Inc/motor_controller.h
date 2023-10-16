@@ -23,94 +23,28 @@
 #define FLASH_CONFIG_ADDRESS    0x0801F800U  // Bank 1, Page 63
 #define FLASH_CONFIG_BANK       FLASH_BANK_1
 #define FLASH_CONFIG_PAGE       63
-#define FLASH_CONFIG_SIZE       32
 
 
 /**
  * @brief MotorController object.
  */
 typedef struct {
-  uint8_t             device_id;
-  uint32_t            firmware_version;
+  uint32_t       device_id;
+  uint32_t       firmware_version;
 
-  Encoder             encoder;
+  uint32_t       watchdog_timeout;
+  uint32_t       fast_frame_frequency;
+
+  Mode           mode;
+  uint32_t       error;
+
+  PositionController  position_controller;
+  CurrentController   current_controller;
+
   PowerStage          powerstage;
   Motor               motor;
-
-  CurrentController   current_controller;
-  PositionController  position_controller;
-
-  Mode                mode;
-  ErrorCode           error;
+  Encoder             encoder;
 } MotorController;
-
-
-/**
- * @brief EEPROMConfig structure.
- */
-typedef struct {
-  __IO  uint32_t  device_id;
-  __IO  uint32_t  firmware_version;
-
-  __IO  int32_t   encoder_cpr;
-  __IO  float     encoder_position_offset;
-  __IO  float     encoder_filter_bandwidth;
-  __IO  float     encoder_flux_offset;
-
-  __IO  float     powerstage_undervoltage_threshold;
-  __IO  float     powerstage_overvoltage_threshold;
-  __IO  float     powerstage_bus_voltage_filter_alpha;
-
-  __IO  uint32_t  motor_pole_pairs;
-  __IO  uint32_t  motor_kv_rating;
-  __IO  int32_t   motor_phase_order;
-  __IO  float     motor_phase_resistance;
-  __IO  float     motor_phase_inductance;
-  __IO  float     motor_max_calibration_current;
-
-  __IO  float     current_controller_i_bandwidth;
-  __IO  float     current_controller_i_limit;
-
-  __IO  float     position_controller_position_kp;
-  __IO  float     position_controller_position_ki;
-  __IO  float     position_controller_velocity_kp;
-  __IO  float     position_controller_velocity_ki;
-  __IO  float     position_controller_torque_limit;
-  __IO  float     position_controller_velocity_limit;
-  __IO  float     position_controller_position_limit_upper;
-  __IO  float     position_controller_position_limit_lower;
-} EEPROMConfig;
-
-
-/**
- * @brief Get the measured torque.
- *
- * @param controller Pointer to the MotorController struct.
- * @return The measured torque in Newton-meter (Nm).
- */
-static inline float MotorController_getTorque(MotorController *controller) {
-  return controller->position_controller.torque_measured;
-}
-
-/**
- * @brief Get the measured velocity.
- *
- * @param controller Pointer to the MotorController struct.
- * @return The measured velocity in radian per second (rad/s).
- */
-static inline float MotorController_getVelocity(MotorController *controller) {
-  return controller->position_controller.velocity_measured;
-}
-
-/**
- * @brief Get the measured position.
- *
- * @param controller Pointer to the MotorController struct.
- * @return The measured position in radians (rad).
- */
-static inline float MotorController_getPosition(MotorController *controller) {
-  return controller->position_controller.position_measured;
-}
 
 /**
  * @brief Get the error status.
@@ -139,6 +73,24 @@ static inline void MotorController_clearError(MotorController *controller) {
  */
 static inline Mode MotorController_getMode(MotorController *controller) {
   return controller->mode;
+}
+
+static inline void MotorController_handleCANRead(MotorController *controller, CAN_Frame *rx_frame, CAN_Frame *tx_frame) {
+  uint16_t parameter_id = *((uint16_t *)rx_frame->data);
+  if (parameter_id >= sizeof(MotorController)) {
+    controller->error |= ERROR_CAN_RX_FAULT;
+    return;
+  }
+  *((uint32_t *)tx_frame->data + 1) = *((uint32_t *)((uint8_t *)controller + parameter_id));
+}
+
+static inline void MotorController_handleCANWrite(MotorController *controller, CAN_Frame *rx_frame) {
+  uint16_t parameter_id = *((uint16_t *)rx_frame->data);
+  if (parameter_id >= sizeof(MotorController)) {
+    controller->error |= ERROR_CAN_RX_FAULT;
+    return;
+  }
+  *((uint32_t *)((uint8_t *)controller + parameter_id)) = *((uint32_t *)rx_frame->data + 1);
 }
 
 /**
@@ -174,9 +126,5 @@ void MotorController_updateService(MotorController *controller);
 void MotorController_runCalibrationSequence(MotorController *controller);
 
 void MotorController_handleCANMessage(MotorController *controller, CAN_Frame *rx_frame);
-
-void MotorController_handleCANRead(MotorController *controller, Command command, CAN_Frame *tx_frame);
-
-void MotorController_handleCANWrite(MotorController *controller, Command command, uint8_t *rx_data);
 
 #endif /* INC_MOTOR_CONTROLLER_H_ */

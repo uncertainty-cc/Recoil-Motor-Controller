@@ -18,17 +18,21 @@ HAL_StatusTypeDef PowerStage_init(PowerStage *powerstage, TIM_HandleTypeDef *hti
   powerstage->bus_voltage_measured = NOMINAL_BUS_VOLTAGE;
 
   PowerStage_disablePWM(powerstage);
+
   return HAL_OK;
 }
 
-void PowerStage_start(PowerStage *powerstage) {
-  HAL_TIM_Base_Start_IT(powerstage->htim);
-  HAL_TIM_PWM_Start(powerstage->htim, TIM_CHANNEL_1);
-  HAL_TIMEx_PWMN_Start(powerstage->htim, TIM_CHANNEL_1);
-  HAL_TIM_PWM_Start(powerstage->htim, TIM_CHANNEL_2);
-  HAL_TIMEx_PWMN_Start(powerstage->htim, TIM_CHANNEL_2);
-  HAL_TIM_PWM_Start(powerstage->htim, TIM_CHANNEL_3);
-  HAL_TIMEx_PWMN_Start(powerstage->htim, TIM_CHANNEL_3);
+HAL_StatusTypeDef PowerStage_start(PowerStage *powerstage) {
+  HAL_StatusTypeDef status = HAL_OK;
+  status |= HAL_TIM_Base_Start_IT(powerstage->htim);
+  status |= HAL_TIM_PWM_Start(powerstage->htim, TIM_CHANNEL_1);
+  status |= HAL_TIMEx_PWMN_Start(powerstage->htim, TIM_CHANNEL_1);
+  status |= HAL_TIM_PWM_Start(powerstage->htim, TIM_CHANNEL_2);
+  status |= HAL_TIMEx_PWMN_Start(powerstage->htim, TIM_CHANNEL_2);
+  status |= HAL_TIM_PWM_Start(powerstage->htim, TIM_CHANNEL_3);
+  status |= HAL_TIMEx_PWMN_Start(powerstage->htim, TIM_CHANNEL_3);
+
+  return status;
 }
 
 void PowerStage_setOutputPWM(PowerStage *powerstage, uint16_t ccr_a, uint16_t ccr_b, uint16_t ccr_c, int8_t phase_order) {

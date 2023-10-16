@@ -1,0 +1,13 @@
+../Core/Src/motor_controller.c:94:6:MotorController_reset	0	static
+../Core/Src/motor_controller.c:114:6:MotorController_setMode	16	static
+../Core/Src/motor_controller.c:203:6:MotorController_setFluxAngle	24	static
+../Core/Src/motor_controller.c:215:19:MotorController_loadConfig	8	static
+../Core/Src/motor_controller.c:275:19:MotorController_storeConfig	144	static
+../Core/Src/motor_controller.c:29:6:MotorController_init	32	static
+../Core/Src/motor_controller.c:341:6:MotorController_updateSafety	8	static
+../Core/Src/motor_controller.c:357:6:MotorController_update	32	static
+../Core/Src/motor_controller.c:457:6:MotorController_runCalibrationSequence	16592	static
+../Core/Src/motor_controller.c:450:6:MotorController_updateService	0	static
+../Core/Src/motor_controller.c:715:6:MotorController_handleCANRead	0	static
+../Core/Src/motor_controller.c:904:6:MotorController_handleCANWrite	0	static
+../Core/Src/motor_controller.c:626:6:MotorController_handleCANMessage	32	static

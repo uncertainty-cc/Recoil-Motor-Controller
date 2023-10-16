@@ -17,7 +17,7 @@
  * For example, 0x00010005 represents version 1.0.5 of the firmware.
  */
 //                                           M m p
-#define FIRMWARE_VERSION                0x00010100
+#define FIRMWARE_VERSION                0x00010101
 
 /**
  * Device CAN ID:
@@ -51,7 +51,6 @@
  * Load Calibration from Flash Flag:
  * This flag indicates whether the device should load the encoder flux offset settings from Flash memory.
  */
-
 #define LOAD_CALIBRATION_FROM_FLASH     1             // Set to 1 to load calibration settings, 0 to load default values
 
 /**
@@ -74,7 +73,7 @@
 #define MOTORPROFILE_MAD_5010_370KV
 
 // phase order
-#define MOTOR_PHASE_ORDER               -1
+#define MOTOR_PHASE_ORDER               +1
 
 // nominal bus voltage (V)
 #define NOMINAL_BUS_VOLTAGE             12.f
@@ -162,98 +161,118 @@ typedef enum {
   ERROR_OVER_VOLTAGE              = 0b0000000010000000U,
   ERROR_OVER_CURRENT              = 0b0000000100000000U,
   ERROR_OVER_TEMPERATURE          = 0b0000001000000000U,
-  ERROR_CAN_TX_FAULT              = 0b0000010000000000U,
-  ERROR_I2C_FAULT                 = 0b0000100000000000U,
+  ERROR_CAN_RX_FAULT              = 0b0000010000000000U,
+  ERROR_CAN_TX_FAULT              = 0b0000100000000000U,
+  ERROR_I2C_FAULT                 = 0b0001000000000000U,
 } ErrorCode;
 
 /** ======== CAN Packet Definitions ======== **/
 /**
- * @brief CAN IDType definition.
+ * @brief CAN FrameFunction definition.
  */
 typedef enum {
-  CAN_ID_ESTOP                    = 0x00U,
-  CAN_ID_INFO                     = 0x01U,
-  CAN_ID_SAFETY_WATCHDOG          = 0x02U,
-  CAN_ID_MODE                     = 0x05U,
-  CAN_ID_FLASH                    = 0x0EU,
-
-  CAN_ID_USR_PARAM_READ           = 0x10U,
-  CAN_ID_USR_PARAM_WRITE          = 0x11U,
-  CAN_ID_USR_FAST_FRAME_0         = 0x12U,
-  CAN_ID_USR_FAST_FRAME_1         = 0x13U,
-  CAN_ID_USR_DEBUG_0              = 0x14U,
-  CAN_ID_USR_DEBUG_1              = 0x15U,
-  CAN_ID_USR_DEBUG_2              = 0x16U,
-
-  CAN_ID_PING                     = 0x1FU
-} IDType;
+  FUNC_ESTOP                    = 0x00U,
+  FUNC_INFO                     = 0x01U,
+  FUNC_SAFETY_WATCHDOG          = 0x02U,
+  FUNC_MODE                     = 0x05U,
+  FUNC_FLASH                    = 0x0EU,
+  FUNC_PARAM_READ               = 0x10U,
+  FUNC_PARAM_WRITE              = 0x11U,
+  FUNC_USR_FAST_FRAME_0         = 0x12U,
+  FUNC_USR_FAST_FRAME_1         = 0x13U,
+  FUNC_USR_FAST_FRAME_2         = 0x14U,
+  FUNC_USR_DEBUG_0              = 0x15U,
+  FUNC_USR_DEBUG_1              = 0x16U,
+  FUNC_USR_DEBUG_2              = 0x17U,
+  FUNC_PING                     = 0x1FU
+} FrameFunction;
 
 /**
- * @brief CAN Command definition.
+ * @brief CAN Parameter ID definition.
  */
 typedef enum {
-  CMD_ENCODER_CPR                       = 0x10U,
-  CMD_ENCODER_OFFSET                    = 0x11U,
-  CMD_ENCODER_FILTER_BANDWIDTH          = 0x12U,
-  CMD_ENCODER_FLUX_OFFSET               = 0x13U,
-  CMD_ENCODER_POSITION_RAW              = 0x14U,
-  CMD_ENCODER_N_ROTATIONS               = 0x15U,
-  CMD_POWERSTAGE_VOLTAGE_THRESHOLD_LOW  = 0x16U,
-  CMD_POWERSTAGE_VOLTAGE_THRESHOLD_HIGH = 0x17U,
-  CMD_POWERSTAGE_FILTER                 = 0x18U,
-  CMD_POWERSTAGE_BUS_VOLTAGE_MEASURED   = 0x19U,
-  CMD_MOTOR_POLE_PAIR                   = 0x1AU,
-  CMD_MOTOR_KV                          = 0x1BU,
-  CMD_MOTOR_PHASE_ORDER                 = 0x1CU,
-  CMD_MOTOR_PHASE_RESISTANCE            = 0x1DU,
-  CMD_MOTOR_PHASE_INDUCTANCE            = 0x1EU,
-  CMD_MOTOR_MAX_CALIBRATION_CURRENT     = 0x1FU,
-  CMD_CURRENT_BANDWIDTH                 = 0x20U,
-  CMD_CURRENT_LIMIT                     = 0x21U,
-  CMD_CURRENT_KP                        = 0x22U,
-  CMD_CURRENT_KI                        = 0x23U,
-  CMD_CURRENT_IA_MEASURED               = 0x24U,
-  CMD_CURRENT_IB_MEASURED               = 0x25U,
-  CMD_CURRENT_IC_MEASURED               = 0x26U,
-  CMD_CURRENT_VA_SETPOINT               = 0x27U,
-  CMD_CURRENT_VB_SETPOINT               = 0x28U,
-  CMD_CURRENT_VC_SETPOINT               = 0x29U,
-  CMD_CURRENT_IALPHA_MEASURED           = 0x2AU,
-  CMD_CURRENT_IBETA_MEASURED            = 0x2BU,
-  CMD_CURRENT_VALPHA_SETPOINT           = 0x2CU,
-  CMD_CURRENT_VBETA_SETPOINT            = 0x2DU,
-  CMD_CURRENT_VQ_TARGET                 = 0x2EU,
-  CMD_CURRENT_VD_TARGET                 = 0x2FU,
-  CMD_CURRENT_VQ_SETPOINT               = 0x30U,
-  CMD_CURRENT_VD_SETPOINT               = 0x31U,
-  CMD_CURRENT_IQ_TARGET                 = 0x32U,
-  CMD_CURRENT_ID_TARGET                 = 0x33U,
-  CMD_CURRENT_IQ_MEASURED               = 0x34U,
-  CMD_CURRENT_ID_MEASURED               = 0x35U,
-  CMD_CURRENT_IQ_SETPOINT               = 0x36U,
-  CMD_CURRENT_ID_SETPOINT               = 0x37U,
-  CMD_CURRENT_IQ_INTEGRATOR             = 0x38U,
-  CMD_CURRENT_ID_INTEGRATOR             = 0x39U,
-  CMD_POSITION_KP                       = 0x3AU,
-  CMD_POSITION_KI                       = 0x3BU,
-  CMD_VELOCITY_KP                       = 0x3CU,
-  CMD_VELOCITY_KI                       = 0x3DU,
-  CMD_TORQUE_LIMIT                      = 0x3EU,
-  CMD_VELOCITY_LIMIT                    = 0x3FU,
-  CMD_POSITION_LIMIT_LOW                = 0x40U,
-  CMD_POSITION_LIMIT_HIGH               = 0x41U,
-  CMD_TORQUE_TARGET                     = 0x42U,
-  CMD_TORQUE_MEASURED                   = 0x43U,
-  CMD_TORQUE_SETPOINT                   = 0x44U,
-  CMD_VELOCITY_TARGET                   = 0x45U,
-  CMD_VELOCITY_MEASURED                 = 0x46U,
-  CMD_VELOCITY_SETPOINT                 = 0x47U,
-  CMD_POSITION_TARGET                   = 0x48U,
-  CMD_POSITION_MEASURED                 = 0x49U,
-  CMD_POSITION_SETPOINT                 = 0x4AU,
-  CMD_VELOCITY_INTEGRATOR               = 0x4BU,
-  CMD_POSITION_INTEGRATOR               = 0x4CU,
-} Command;
+  PARAM_DEVICE_ID                                       = 0x000U,
+  PARAM_FIRMWARE_VERSION                                = 0x004U,
+  PARAM_WATCHDOG_TIMEOUT                                = 0x008U,
+  PARAM_FAST_FRAME_FREQUENCY                            = 0x00CU,
+  PARAM_MODE                                            = 0x010U,
+  PARAM_ERROR                                           = 0x014U,
+  PARAM_POSITION_CONTROLLER_UPDATE_COUNTER              = 0x018U,
+  PARAM_POSITION_CONTROLLER_GEAR_RATIO                  = 0x01CU,
+  PARAM_POSITION_CONTROLLER_POSITION_KP                 = 0x020U,
+  PARAM_POSITION_CONTROLLER_POSITION_KI                 = 0x024U,
+  PARAM_POSITION_CONTROLLER_VELOCITY_KP                 = 0x028U,
+  PARAM_POSITION_CONTROLLER_VELOCITY_KI                 = 0x02CU,
+  PARAM_POSITION_CONTROLLER_TORQUE_LIMIT                = 0x030U,
+  PARAM_POSITION_CONTROLLER_VELOCITY_LIMIT              = 0x034U,
+  PARAM_POSITION_CONTROLLER_POSITION_LIMIT_LOWER        = 0x038U,
+  PARAM_POSITION_CONTROLLER_POSITION_LIMIT_UPPER        = 0x03CU,
+  PARAM_POSITION_CONTROLLER_TORQUE_TARGET               = 0x040U,
+  PARAM_POSITION_CONTROLLER_TORQUE_MEASURED             = 0x044U,
+  PARAM_POSITION_CONTROLLER_TORQUE_SETPOINT             = 0x048U,
+  PARAM_POSITION_CONTROLLER_VELOCITY_TARGET             = 0x04CU,
+  PARAM_POSITION_CONTROLLER_VELOCITY_MEASURED           = 0x050U,
+  PARAM_POSITION_CONTROLLER_VELOCITY_SETPOINT           = 0x054U,
+  PARAM_POSITION_CONTROLLER_POSITION_TARGET             = 0x058U,
+  PARAM_POSITION_CONTROLLER_POSITION_MEASURED           = 0x05CU,
+  PARAM_POSITION_CONTROLLER_POSITION_SETPOINT           = 0x060U,
+  PARAM_POSITION_CONTROLLER_VELOCITY_INTEGRATOR         = 0x064U,
+  PARAM_POSITION_CONTROLLER_POSITION_INTEGRATOR         = 0x068U,
+  PARAM_CURRENT_CONTROLLER_I_BANDWIDTH                  = 0x06CU,
+  PARAM_CURRENT_CONTROLLER_I_LIMIT                      = 0x070U,
+  PARAM_CURRENT_CONTROLLER_I_KP                         = 0x074U,
+  PARAM_CURRENT_CONTROLLER_I_KI                         = 0x078U,
+  PARAM_CURRENT_CONTROLLER_I_A_MEASURED                 = 0x07CU,
+  PARAM_CURRENT_CONTROLLER_I_B_MEASURED                 = 0x080U,
+  PARAM_CURRENT_CONTROLLER_I_C_MEASURED                 = 0x084U,
+  PARAM_CURRENT_CONTROLLER_V_A_SETPOINT                 = 0x088U,
+  PARAM_CURRENT_CONTROLLER_V_B_SETPOINT                 = 0x08CU,
+  PARAM_CURRENT_CONTROLLER_V_C_SETPOINT                 = 0x090U,
+  PARAM_CURRENT_CONTROLLER_I_ALPHA_MEASURED             = 0x094U,
+  PARAM_CURRENT_CONTROLLER_I_BETA_MEASURED              = 0x098U,
+  PARAM_CURRENT_CONTROLLER_V_ALPHA_SETPOINT             = 0x09CU,
+  PARAM_CURRENT_CONTROLLER_V_BETA_SETPOINT              = 0x0A0U,
+  PARAM_CURRENT_CONTROLLER_V_Q_TARGET                   = 0x0A4U,
+  PARAM_CURRENT_CONTROLLER_V_D_TARGET                   = 0x0A8U,
+  PARAM_CURRENT_CONTROLLER_V_Q_SETPOINT                 = 0x0ACU,
+  PARAM_CURRENT_CONTROLLER_V_D_SETPOINT                 = 0x0B0U,
+  PARAM_CURRENT_CONTROLLER_I_Q_TARGET                   = 0x0B4U,
+  PARAM_CURRENT_CONTROLLER_I_D_TARGET                   = 0x0B8U,
+  PARAM_CURRENT_CONTROLLER_I_Q_MEASURED                 = 0x0BCU,
+  PARAM_CURRENT_CONTROLLER_I_D_MEASURED                 = 0x0C0U,
+  PARAM_CURRENT_CONTROLLER_I_Q_SETPOINT                 = 0x0C4U,
+  PARAM_CURRENT_CONTROLLER_I_D_SETPOINT                 = 0x0C8U,
+  PARAM_CURRENT_CONTROLLER_I_Q_INTEGRATOR               = 0x0CCU,
+  PARAM_CURRENT_CONTROLLER_I_D_INTEGRATOR               = 0x0D0U,
+  PARAM_POWERSTAGE_HTIM                                 = 0x0D4U,
+  PARAM_POWERSTAGE_HADC1                                = 0x0D8U,
+  PARAM_POWERSTAGE_HADC2                                = 0x0DCU,
+  PARAM_POWERSTAGE_ADC_READING_RAW                      = 0x0E4U,
+  PARAM_POWERSTAGE_ADC_READING_OFFSET                   = 0x0ECU,
+  PARAM_POWERSTAGE_UNDERVOLTAGE_THRESHOLD               = 0x0F0U,
+  PARAM_POWERSTAGE_OVERVOLTAGE_THRESHOLD                = 0x0F4U,
+  PARAM_POWERSTAGE_BUS_VOLTAGE_FILTER_ALPHA             = 0x0F8U,
+  PARAM_POWERSTAGE_BUS_VOLTAGE_MEASURED                 = 0x0FCU,
+  PARAM_MOTOR_POLE_PAIRS                                = 0x100U,
+  PARAM_MOTOR_KV_RATING                                 = 0x104U,
+  PARAM_MOTOR_PHASE_ORDER                               = 0x108U,
+  PARAM_MOTOR_PHASE_RESISTANCE                          = 0x10CU,
+  PARAM_MOTOR_PHASE_INDUCTANCE                          = 0x110U,
+  PARAM_MOTOR_MAX_CALIBRATION_CURRENT                   = 0x114U,
+  PARAM_ENCODER_HI2C                                    = 0x118U,
+  PARAM_ENCODER_I2C_BUFFER                              = 0x11CU,
+  PARAM_ENCODER_I2C_UPDATE_COUNTER                      = 0x120U,
+  PARAM_ENCODER_CPR                                     = 0x124U,
+  PARAM_ENCODER_POSITION_OFFSET                         = 0x128U,
+  PARAM_ENCODER_FILTER_BANDWIDTH                        = 0x12CU,
+  PARAM_ENCODER_FILTER_ALPHA                            = 0x130U,
+  PARAM_ENCODER_POSITION_RAW                            = 0x134U,
+  PARAM_ENCODER_N_ROTATIONS                             = 0x138U,
+  PARAM_ENCODER_POSITION                                = 0x13CU,
+  PARAM_ENCODER_VELOCITY                                = 0x140U,
+  PARAM_ENCODER_FLUX_OFFSET                             = 0x144U,
+  PARAM_ENCODER_FLUX_OFFSET_TABLE                       = 0x148U,
+} Parameter;
 
 
 #endif /* INC_MOTOR_CONTROLLER_CONF_H_ */
