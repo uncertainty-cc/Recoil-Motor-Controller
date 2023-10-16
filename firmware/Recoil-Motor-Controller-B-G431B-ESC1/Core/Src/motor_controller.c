@@ -33,41 +33,57 @@ void MotorController_init(MotorController *controller) {
   controller->firmware_version = FIRMWARE_VERSION;
 
   HAL_StatusTypeDef status = HAL_OK;
+  uint32_t init_error_step = 0;
 
-//  status |= CAN_init(&hfdcan1, controller->device_id, 0b1111);
+//  status |= CAN_init(&hfdcan1, controller->device_id, 0b11111);
   status |= CAN_init(&hfdcan1, 0, 0);
+  if (status && !init_error_step) init_error_step = 1;
 
   status |= Encoder_init(&controller->encoder, &hi2c1);
+  if (status && !init_error_step) init_error_step = 2;
   status |= PowerStage_init(&controller->powerstage, &htim1, &hadc1, &hadc2);
+  if (status && !init_error_step) init_error_step = 3;
   status |= Motor_init(&controller->motor);
+  if (status && !init_error_step) init_error_step = 4;
 
   status |= CurrentController_init(&controller->current_controller);
+  if (status && !init_error_step) init_error_step = 5;
   status |= PositionController_init(&controller->position_controller);
+  if (status && !init_error_step) init_error_step = 6;
 
   status |= MotorController_loadConfig(controller);
-
-  MotorController_reset(controller);
+  if (status && !init_error_step) init_error_step = 7;
 
   status |= HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);       // LED PWM timer
+  if (status && !init_error_step) init_error_step = 8;
 
   __HAL_TIM_SET_AUTORELOAD(&htim3, 9999);
   __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0);
-  __HAL_TIM_SET_AUTORELOAD(&htim2, (controller->watchdog_timeout * 10) - 1);
-  __HAL_TIM_SET_AUTORELOAD(&htim8, (10000 / (controller->fast_frame_frequency+1)) - 1);
-
 
   status |= HAL_OPAMP_Start(&hopamp1);
   status |= HAL_OPAMP_Start(&hopamp2);
   status |= HAL_OPAMP_Start(&hopamp3);
+  if (status && !init_error_step) init_error_step = 9;
 
   status |= HAL_ADCEx_InjectedStart(&hadc1);
   status |= HAL_ADCEx_InjectedStart(&hadc2);
+  if (status && !init_error_step) init_error_step = 10;
 
   status |= HAL_TIM_Base_Start_IT(&htim2);    // safety watchdog timer
   status |= HAL_TIM_Base_Start(&htim6);       // time keeper timer
   status |= HAL_TIM_Base_Start_IT(&htim8);    // fast frame timer
+  if (status && !init_error_step) init_error_step = 11;
 
-  PowerStage_start(&controller->powerstage);
+  __HAL_TIM_SET_AUTORELOAD(&htim2, (controller->watchdog_timeout * 10) - 1);
+  if (controller->fast_frame_frequency) {
+    __HAL_TIM_SET_AUTORELOAD(&htim8, (10000 / (controller->fast_frame_frequency)) - 1);
+  }
+  else {
+    __HAL_TIM_SET_AUTORELOAD(&htim8, (10000 / 100) - 1);
+  }
+
+  status |= PowerStage_start(&controller->powerstage);
+  if (status && !init_error_step) init_error_step = 12;
 
   if (status != HAL_OK) {
     SET_BITS(controller->error, ERROR_INITIALIZATION_ERROR);
@@ -76,7 +92,14 @@ void MotorController_init(MotorController *controller) {
     __HAL_TIM_SET_AUTORELOAD(&htim3, 999);
     __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, __HAL_TIM_GET_AUTORELOAD(&htim3) / 2);
     while (1) {
-      // error loop
+      {
+        char str[64];
+        sprintf(str, "init error at %u\r\n", init_error_step);
+        HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 1000);
+
+        HAL_Delay(1000);
+        // error loop
+      }
     }
   }
 
@@ -253,6 +276,8 @@ HAL_StatusTypeDef MotorController_loadConfig(MotorController *controller) {
       controller->motor.phase_resistance,
       controller->motor.phase_inductance);
 
+  MotorController_reset(controller);
+
   return HAL_OK;
 }
 
@@ -350,7 +375,7 @@ void MotorController_update(MotorController *controller) {
   // this block takes 7.3 us maximum to run (15%)
   // 0.002f is kinda a magic number. Ideally this should be the delay, in seconds, of the encoder signal.
   float theta = wrapTo2Pi(
-      ((Encoder_getPositionMeasured(&controller->encoder) + 0.002f * controller->encoder.velocity) * (float)controller->motor.pole_pairs)
+      ((Encoder_getPositionMeasured(&controller->encoder) + 0.003f * Encoder_getVelocity(&controller->encoder)) * (float)controller->motor.pole_pairs)
       - controller->encoder.flux_offset
       );
 
@@ -581,70 +606,84 @@ void MotorController_handleCANMessage(MotorController *controller, CAN_Frame *rx
   tx_frame.size = 0;
 
   switch (func_id) {
-    case CAN_ID_ESTOP:            // 0x00
+    case FUNC_ESTOP:            // 0x00
       MotorController_setMode(controller, MODE_DISABLED);
       tx_frame.size = 2;
       *((uint16_t *)tx_frame.data) = 0xDEAD;
       break;
 
-    case CAN_ID_INFO:             // 0x01
+    case FUNC_INFO:             // 0x01
       if (rx_frame->size) {
         controller->device_id = *((uint8_t *)rx_frame->data);
       }
       tx_frame.size = 8;
       *((uint8_t *)(tx_frame.data)) = controller->device_id;
-      *((uint32_t *)(tx_frame.data + 4)) = controller->firmware_version;
+      *((uint32_t *)tx_frame.data + 1) = controller->firmware_version;
       break;
 
-    case CAN_ID_SAFETY_WATCHDOG:  // 0x02
+    case FUNC_SAFETY_WATCHDOG:  // 0x02
       __HAL_TIM_SET_COUNTER(&htim2, 0);
       break;
 
-    case CAN_ID_MODE:             // 0x05 [mode, error] -> [mode, clear_error?]
+    case FUNC_MODE:             // 0x05 [mode, error] -> [mode, clear_error?]
       if (rx_frame->size) {
         MotorController_setMode(controller, *((uint16_t *)rx_frame->data));
-        if (*((uint16_t *)(rx_frame->data + 2))) {
+        if (*((uint16_t *)rx_frame->data + 1)) {
           MotorController_clearError(controller);
         }
       }
       tx_frame.size = 4;
       *((uint16_t *)tx_frame.data) = (uint16_t)MotorController_getMode(controller);
-      *((uint16_t *)(tx_frame.data + 2)) = (uint16_t)MotorController_getError(controller);
+      *((uint16_t *)tx_frame.data + 1) = (uint16_t)MotorController_getError(controller);
       break;
 
-    case CAN_ID_FLASH:            // 0x0E [0/1]
-      if (rx_frame->size) {
-        tx_frame.size = 1;
-        if (*((uint8_t *)rx_frame->data)) {
-          *((uint8_t *)tx_frame.data) = (uint8_t)MotorController_storeConfig(controller);
-        }
-        else {
-          *((uint8_t *)tx_frame.data) = (uint8_t)MotorController_loadConfig(controller);
-        }
+    case FUNC_FLASH:            // 0x0E [0/1]
+      tx_frame.size = 1;
+      if (*((uint8_t *)rx_frame->data)) {
+        *((uint8_t *)tx_frame.data) = (uint8_t)MotorController_storeConfig(controller);
+      }
+      else {
+        *((uint8_t *)tx_frame.data) = (uint8_t)MotorController_loadConfig(controller);
       }
       break;
 
-    case CAN_ID_USR_PARAM_READ:   // 0x10
+    case FUNC_PARAM_READ:   // 0x10
       tx_frame.size = 8;
       *((uint16_t *)tx_frame.data) = *((uint16_t *)rx_frame->data);
       MotorController_handleCANRead(controller, rx_frame, &tx_frame);
       break;
 
-    case CAN_ID_USR_PARAM_WRITE:  // 0x11
+    case FUNC_PARAM_WRITE:  // 0x11
       MotorController_handleCANWrite(controller, rx_frame);
+
+      __HAL_TIM_SET_AUTORELOAD(&htim2, (controller->watchdog_timeout * 10) - 1);
+      if (controller->fast_frame_frequency)
+        __HAL_TIM_SET_AUTORELOAD(&htim8, (10000 / controller->fast_frame_frequency) - 1);
+      else {
+        // by default running at 100Hz
+        __HAL_TIM_SET_AUTORELOAD(&htim8, (10000 / 100) - 1);
+      }
       break;
 
-    case CAN_ID_USR_FAST_FRAME_0: // 0x12 [position_kp, position_ki]
-      controller->position_controller.position_target = *((float *)rx_frame->data);
-      controller->position_controller.torque_target = *((float *)rx_frame->data + 1);
+    case FUNC_USR_FAST_FRAME_0: // 0x12 [position_kp, position_ki]
+      PositionController_setPositionTarget(&controller->position_controller, *((float *)rx_frame->data));
+      PositionController_setTorqueTarget(&controller->position_controller, *((float *)rx_frame->data + 1));
       __HAL_TIM_SET_COUNTER(&htim2, 0);
       break;
 
-    case CAN_ID_USR_FAST_FRAME_1: // 0x13 [position_kp, position_ki]
+    case FUNC_USR_FAST_FRAME_1: // 0x13 [position_kp, position_ki]
+      tx_frame.size = 8;
+      PositionController_setPositionTarget(&controller->position_controller, *((float *)rx_frame->data));
+      PositionController_setTorqueTarget(&controller->position_controller, *((float *)rx_frame->data + 1));
+      *((float *)tx_frame.data + 0) = PositionController_getPositionMeasured(&controller->position_controller);
+      *((float *)tx_frame.data + 1) = PositionController_getTorqueMeasured(&controller->position_controller);
       __HAL_TIM_SET_COUNTER(&htim2, 0);
       break;
 
-    case CAN_ID_PING:             // 0x1F
+    case FUNC_USR_FAST_FRAME_2:
+      break;
+
+    case FUNC_PING:             // 0x1F
       tx_frame.size = 1;
       *((uint8_t *)tx_frame.data) = controller->device_id;
       break;

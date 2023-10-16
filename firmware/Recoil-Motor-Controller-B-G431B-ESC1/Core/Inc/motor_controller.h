@@ -36,7 +36,7 @@ typedef struct {
   uint32_t       fast_frame_frequency;
 
   Mode           mode;
-  ErrorCode      error;
+  uint32_t       error;
 
   PositionController  position_controller;
   CurrentController   current_controller;

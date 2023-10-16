@@ -1,7 +1,7 @@
 ../Core/Src/powerstage.c:11:19:PowerStage_init	4	static
-../Core/Src/powerstage.c:24:6:PowerStage_start	8	static
-../Core/Src/powerstage.c:34:6:PowerStage_setOutputPWM	0	static
-../Core/Src/powerstage.c:52:6:PowerStage_setOutputVoltage	4	static
-../Core/Src/powerstage.c:73:6:PowerStage_calibratePhaseCurrentOffset	24	static
-../Core/Src/powerstage.c:90:6:PowerStage_updateBusVoltage	16	static
-../Core/Src/powerstage.c:95:6:PowerStage_updatePhaseCurrent	24	static
+../Core/Src/powerstage.c:25:19:PowerStage_start	16	static
+../Core/Src/powerstage.c:38:6:PowerStage_setOutputPWM	0	static
+../Core/Src/powerstage.c:56:6:PowerStage_setOutputVoltage	4	static
+../Core/Src/powerstage.c:77:6:PowerStage_calibratePhaseCurrentOffset	24	static
+../Core/Src/powerstage.c:94:6:PowerStage_updateBusVoltage	16	static
+../Core/Src/powerstage.c:99:6:PowerStage_updatePhaseCurrent	24	static

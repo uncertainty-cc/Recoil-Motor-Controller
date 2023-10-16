@@ -57,6 +57,8 @@ typedef struct {
 
 
 static inline void CurrentController_reset(CurrentController *controller) {
+  controller->i_q_setpoint = 0.f;
+  controller->i_d_setpoint = 0.f;
   controller->i_q_integrator = 0.f;
   controller->i_d_integrator = 0.f;
   controller->v_q_setpoint = 0.f;

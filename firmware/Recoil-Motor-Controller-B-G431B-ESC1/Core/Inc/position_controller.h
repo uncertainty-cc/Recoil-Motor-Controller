@@ -54,6 +54,7 @@ static inline void PositionController_reset(PositionController *controller) {
   controller->position_integrator = 0.f;
   controller->velocity_setpoint = controller->velocity_measured;
   controller->velocity_integrator = 0.f;
+  controller->torque_setpoint = 0.f;
 }
 
 /**

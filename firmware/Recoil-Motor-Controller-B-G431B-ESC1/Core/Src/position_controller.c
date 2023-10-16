@@ -9,7 +9,7 @@
 
 HAL_StatusTypeDef PositionController_init(PositionController *controller) {
   controller->update_counter = 0;
-  controller->gear_ratio = -15.f;
+  controller->gear_ratio = 1.f;
 
   controller->position_kp = 1.f;
   controller->position_ki = 0.f;
@@ -17,7 +17,7 @@ HAL_StatusTypeDef PositionController_init(PositionController *controller) {
   controller->velocity_kp = .1f;
   controller->velocity_ki = 0.f;
 
-  controller->torque_limit = 1.f;
+  controller->torque_limit = .2f;
 
   controller->velocity_limit = 10.f;
 
@@ -52,7 +52,7 @@ void PositionController_update(PositionController *controller, Mode mode) {
   //           kd * kd_scale * velocity_error +
   //           command_torque
 
-
+  float torque_final = 0.f;
   if (mode == MODE_POSITION) {
     controller->position_setpoint = clampf(
         controller->position_target,
@@ -67,23 +67,27 @@ void PositionController_update(PositionController *controller, Mode mode) {
         -controller->torque_limit,
         controller->torque_limit);
 
-    controller->torque_target =
-        controller->position_kp * position_error +
-        controller->velocity_kp * velocity_error +
-        controller->position_integrator;
+    torque_final =
+        controller->position_kp * position_error
+        + controller->velocity_kp * velocity_error
+        + controller->position_integrator
+        // feed forward torque
+        + controller->torque_target;
   }
   else if (mode == MODE_VELOCITY) {
     // TODO: implement velocity controlled loop
+    torque_final = 0.f;
   }
   else {
     // MODE_TORQUE
     /*
      * user sets `controller->torque_target`
      */
+    torque_final = controller->torque_target;
   }
 
   controller->torque_setpoint = clampf(
-      controller->torque_target,
-      -controller->torque_limit,
-      controller->torque_limit);
+          torque_final,
+          -controller->torque_limit,
+          controller->torque_limit);
 }

@@ -82,7 +82,7 @@ HAL_StatusTypeDef PowerStage_init(PowerStage *powerstage, TIM_HandleTypeDef *hti
  *
  * @param controller Pointer to the PowerStage struct.
  */
-void PowerStage_start(PowerStage *powerstage);
+HAL_StatusTypeDef PowerStage_start(PowerStage *powerstage);
 
 /**
  * @brief Set the output PWM duty cycles.

@@ -49,17 +49,18 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
   }
   else if (htim == &htim8) {
     if (controller.fast_frame_frequency != 0) {
-      uint32_t func_id = CAN_ID_USR_FAST_FRAME_1;
+      uint32_t func_id = FUNC_USR_FAST_FRAME_2;
       CAN_Frame tx_frame;
       tx_frame.id = (func_id << 6) | controller.device_id;
       tx_frame.id_type = CAN_ID_STANDARD;
       tx_frame.frame_type = CAN_FRAME_DATA;
       tx_frame.size = 8;
-      *((float *)((uint8_t *)tx_frame.data + 0)) = PositionController_getPositionMeasured(&controller.position_controller);
-      *((float *)((uint8_t *)tx_frame.data + 4)) = PositionController_getTorqueMeasured(&controller.position_controller);
-      CAN_putTxFrame(&hfdcan1, &tx_frame);
+      *((float *)tx_frame.data + 0) = PositionController_getPositionMeasured(&controller.position_controller);
+      *((float *)tx_frame.data + 1) = PositionController_getTorqueMeasured(&controller.position_controller);
+      if (HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1) >= 2) {
+        CAN_putTxFrame(&hfdcan1, &tx_frame);
+      }
     }
-    __HAL_TIM_SET_AUTORELOAD(&htim8, (10000 / (controller.fast_frame_frequency + 1)) - 1);
   }
 }
 
@@ -116,13 +117,14 @@ void APP_init() {
 
 
   HAL_Delay(1000);
-
+//
 //  MotorController_setMode(&controller, MODE_DAMPING);
-
 //  controller.current_controller.i_q_target = 0;
 //  controller.current_controller.i_d_target = 0;
 //  MotorController_setMode(&controller, MODE_CURRENT);
 //
+////
+//  MotorController_setMode(&controller, MODE_VALPHABETA_OVERRIDE);
 //  controller.position_controller.position_target = 0;
 //  MotorController_setMode(&controller, MODE_POSITION);
 
@@ -136,12 +138,12 @@ float APP_getUserPot() {
   return HAL_ADCEx_InjectedGetValue(&hadc1, ADC_INJECTED_RANK_3) * ADC_READING_COEFFICIENT / 3.3;
 }
 
+float theta = 0;
+
 void APP_main() {
   MotorController_updateService(&controller);
 
-
   char str[128];
-
   if (APP_getUserButton()) {
     MotorController_setMode(&controller, MODE_CALIBRATION);
   }
@@ -156,26 +158,27 @@ void APP_main() {
 //      APP_getUserPot());
 
 //   current loop logging
-//  sprintf(str, "iq_mea:%f\tiq_set:%f\tiq_tar:%f\ttor:%f\tvel:%f\r\n",
+//  sprintf(str, "iq_tar:%f\tiq_mea:%f\tiq_set:%f\ttor:%f\tvel:%f\r\n",
+//      controller.current_controller.i_q_target * 100,
 //      controller.current_controller.i_q_measured * 100,
 //      controller.current_controller.i_q_setpoint * 100,
-//      controller.current_controller.i_q_target * 100,
 //      controller.position_controller.torque_setpoint * 50,
 //      controller.position_controller.velocity_measured * 100);
 
 
 //  // position loop logging
-//  sprintf(str, "p_mea:%f\tp_tar:%f\tiq_set:%f\tvel_mea:%f\r\n",
-//      controller.position_controller.position_measured,
-//      controller.position_controller.position_target,
-//	  controller.current_controller.i_q_setpoint * 10,
-//	  controller.position_controller.velocity_measured * 10);
+  sprintf(str, "p_mea:%f\tp_tar:%f\tiq_set:%f\tvel_mea:%f\r\n",
+      controller.position_controller.position_measured,
+      controller.position_controller.position_target,
+      controller.current_controller.i_q_setpoint * 10,
+      controller.position_controller.velocity_measured * 10);
 
   // torque testing
-//  sprintf(str, "pos:%f\tiq_mea:%f\tiq_tar:%f\ttorque:%f\r\n",
+//  sprintf(str, "t_mea:%f\tiq_mea:%f\tiq_tar:%f\tt_tar:%f\tt_set:%f\r\n",
 //        controller.position_controller.torque_measured,
 //        controller.current_controller.i_q_measured * 100,
 //        controller.current_controller.i_q_target * 100,
+//        controller.position_controller.torque_target,
 //        controller.position_controller.torque_setpoint);
 
 
@@ -185,14 +188,16 @@ void APP_main() {
 //        controller.current_controller.v_q_setpoint * 10,
 //        controller.current_controller.v_d_setpoint * 10);
 
-  sprintf(str, "pos:%f\tia:%f\tib:%f\tic:%f\r\n",
-      controller.position_controller.position_measured,
-      controller.current_controller.i_a_measured,
-      controller.current_controller.i_b_measured,
-      controller.current_controller.i_c_measured);
+//  sprintf(str, "pos:%f\tia:%f\tib:%f\tic:%f\r\n",
+//      Encoder_getPosition(&controller.encoder),
+//      controller.current_controller.i_a_measured,
+//      controller.current_controller.i_b_measured,
+//      controller.current_controller.i_c_measured);
+
+//    sprintf(str, "sizeof motorcontroller: %u\r\n", sizeof(MotorController));
 
 
   HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 1000);
-  HAL_Delay(10);
+//  HAL_Delay(10);
 }
 
