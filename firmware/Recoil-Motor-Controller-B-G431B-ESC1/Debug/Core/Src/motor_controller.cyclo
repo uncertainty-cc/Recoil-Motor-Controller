@@ -5,6 +5,6 @@
 ../Core/Src/motor_controller.c:25:6:MotorController_init	15
 ../Core/Src/motor_controller.c:284:19:MotorController_storeConfig	4
 ../Core/Src/motor_controller.c:321:6:MotorController_update	6
-../Core/Src/motor_controller.c:423:6:MotorController_runCalibrationSequence	17
-../Core/Src/motor_controller.c:416:6:MotorController_updateService	2
-../Core/Src/motor_controller.c:594:6:MotorController_handleCANMessage	22
+../Core/Src/motor_controller.c:424:6:MotorController_runCalibrationSequence	17
+../Core/Src/motor_controller.c:417:6:MotorController_updateService	2
+../Core/Src/motor_controller.c:595:6:MotorController_handleCANMessage	22

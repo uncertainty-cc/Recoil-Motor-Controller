@@ -86,6 +86,17 @@ void MotorController_init(MotorController *controller) {
   MotorController_clearError(controller);
   MotorController_setMode(controller, MODE_IDLE);
 
+
+  // if controller is only powered with VDD, wait for motor power
+  while (controller->powerstage.bus_voltage_measured < 9) {
+    {
+      char str[128];
+      sprintf(str, "waiting for bus voltage: %f\r\n", controller->powerstage.bus_voltage_measured);
+      HAL_UART_Transmit(&huart3, (uint8_t *)str, strlen(str), 10);
+    }
+  }
+
+
   // wait ADC and opamp to settle.
   HAL_Delay(100);
   PowerStage_calibratePhaseCurrentOffset(&controller->powerstage);

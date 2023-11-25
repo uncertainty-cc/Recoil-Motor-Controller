@@ -5,6 +5,6 @@
 ../Core/Src/motor_controller.c:25:6:MotorController_init	96	static
 ../Core/Src/motor_controller.c:284:19:MotorController_storeConfig	56	static
 ../Core/Src/motor_controller.c:321:6:MotorController_update	32	static
-../Core/Src/motor_controller.c:423:6:MotorController_runCalibrationSequence	16592	static
-../Core/Src/motor_controller.c:416:6:MotorController_updateService	0	static
-../Core/Src/motor_controller.c:594:6:MotorController_handleCANMessage	32	static
+../Core/Src/motor_controller.c:424:6:MotorController_runCalibrationSequence	16592	static
+../Core/Src/motor_controller.c:417:6:MotorController_updateService	0	static
+../Core/Src/motor_controller.c:595:6:MotorController_handleCANMessage	32	static

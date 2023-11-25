@@ -5,5 +5,5 @@
 ../Core/Src/powerstage.c:64:6:PowerStage_setOutputPWM	2
 ../Core/Src/powerstage.c:77:6:PowerStage_setOutputVoltage	5
 ../Core/Src/powerstage.c:93:6:PowerStage_calibratePhaseCurrentOffset	2
-../Core/Src/powerstage.c:108:6:PowerStage_updateBusVoltage	1
-../Core/Src/powerstage.c:112:6:PowerStage_updatePhaseCurrent	2
+../Core/Src/powerstage.c:109:6:PowerStage_updateBusVoltage	1
+../Core/Src/powerstage.c:113:6:PowerStage_updatePhaseCurrent	2

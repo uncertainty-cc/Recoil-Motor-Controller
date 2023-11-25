@@ -142,13 +142,14 @@ void APP_main() {
 //      controller.powerstage.bus_voltage_measured);
 
 //   current loop logging
-//  sprintf(str, "iq_mea:%f\tid_mea:%f\tiq_set:%f\tiq_tar:%f\vq_set:%f\tvel:%f\r\n",
-//      controller.current_controller.i_q_measured,
-//      controller.current_controller.i_d_measured,
-//      controller.current_controller.i_q_setpoint,
-//      controller.current_controller.i_q_target,
-//      controller.current_controller.v_q_setpoint,
-//      controller.position_controller.velocity_measured);
+  sprintf(str, "iq_mea:%f\tid_mea:%f\tiq_set:%f\tiq_tar:%f\vq_set:%f\r\n",
+      controller.current_controller.i_q_measured,
+      controller.current_controller.i_d_measured,
+      controller.current_controller.i_q_setpoint,
+      controller.current_controller.i_q_target,
+      controller.current_controller.v_q_setpoint
+//      controller.position_controller.velocity_measured
+      );
 
 
 //  // position loop logging
@@ -178,15 +179,18 @@ void APP_main() {
 //      controller.current_controller.v_b_setpoint,
 //      controller.current_controller.v_c_setpoint);
 
-    sprintf(str, "pos:%f\tia:%f\tib:%f\tic:%f\tvbus:%f\r\n",
-        controller.position_controller.position_measured,
-        controller.current_controller.i_a_measured,
-        controller.current_controller.i_b_measured,
-        controller.current_controller.i_c_measured,
-        controller.powerstage.bus_voltage_measured);
+//    sprintf(str, "pos:%f\tia:%f\tib:%f\tic:%f\tvbus:%f\r\n",
+//        controller.position_controller.position_measured,
+////        controller.powerstage.adc_reading_raw[0],
+////        controller.powerstage.adc_reading_raw[1],
+////        controller.powerstage.adc_reading_raw[2],
+//        controller.current_controller.i_a_measured,
+//        controller.current_controller.i_b_measured,
+//        controller.current_controller.i_c_measured,
+//        controller.powerstage.bus_voltage_measured);
 
 
   HAL_UART_Transmit(&huart3, (uint8_t *)str, strlen(str), 1000);
-//  HAL_Delay(10);
+  HAL_Delay(1);
 }
 

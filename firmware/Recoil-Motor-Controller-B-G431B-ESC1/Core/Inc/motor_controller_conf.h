@@ -25,13 +25,14 @@
  * The CAN ID is a unique identifier for the device on the CAN bus.
  * The value should be set in range [1, 63].
  */
-#define DEVICE_CAN_ID                   2
+#define DEVICE_CAN_ID                   8
 
 /**
  * First Time Bootup Flag:
  * If this is the first time the device is programmed, set this flag to 1 to configure Flash option byte.
  */
 #define FIRST_TIME_BOOTUP               0             // Set to 1 for the first-time bootup routine, 0 for normal operation
+
 
 /**
  * Load ID from Flash Flag:
@@ -46,12 +47,12 @@
  */
 #define LOAD_CONFIG_FROM_FLASH          1             // Set to 1 to load config settings (everything except
                                                       // motor flux offset and can id) from Flash, 0 to load default values
-
 /**
  * Load Calibration from Flash Flag:
  * This flag indicates whether the device should load the encoder flux offset settings from Flash memory.
  */
 #define LOAD_CALIBRATION_FROM_FLASH     1             // Set to 1 to load calibration settings, 0 to load default values
+
 
 /**
  * Safety Watchdog Enabled Flag:
@@ -68,9 +69,9 @@
 /** ======== Motor Selection ======== **/
 
 //#define MOTORPROFILE_MAD_M6C12_150KV
-//#define MOTORPROFILE_MAD_5010_110KV
+#define MOTORPROFILE_MAD_5010_110KV
 //#define MOTORPROFILE_MAD_5010_310KV
-#define MOTORPROFILE_MAD_5010_370KV
+//#define MOTORPROFILE_MAD_5010_370KV
 
 // phase order
 #define MOTOR_PHASE_ORDER               +1
@@ -174,6 +175,7 @@ typedef enum {
   FUNC_ESTOP                    = 0x00U,
   FUNC_INFO                     = 0x01U,
   FUNC_SAFETY_WATCHDOG          = 0x02U,
+  FUNC_PING                     = 0x04U,
   FUNC_MODE                     = 0x05U,
   FUNC_FLASH                    = 0x0EU,
   FUNC_PARAM_READ               = 0x10U,
@@ -183,8 +185,7 @@ typedef enum {
   FUNC_USR_FAST_FRAME_2         = 0x14U,
   FUNC_USR_DEBUG_0              = 0x15U,
   FUNC_USR_DEBUG_1              = 0x16U,
-  FUNC_USR_DEBUG_2              = 0x17U,
-  FUNC_PING                     = 0x1FU
+  FUNC_USR_DEBUG_2              = 0x17U
 } FrameFunction;
 
 /**
