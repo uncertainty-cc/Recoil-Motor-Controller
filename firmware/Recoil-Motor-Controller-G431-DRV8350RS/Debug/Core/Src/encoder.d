@@ -37,7 +37,7 @@ Core/Src/encoder.o: ../Core/Src/encoder.c ../Core/Inc/encoder.h \
  ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_tim_ex.h \
  ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_uart.h \
  ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_uart_ex.h \
- ../Core/Inc/foc_math.h
+ ../Core/Inc/motor_controller_conf.h ../Core/Inc/foc_math.h
 ../Core/Inc/encoder.h:
 ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal.h:
 ../Core/Inc/stm32g4xx_hal_conf.h:
@@ -77,4 +77,5 @@ Core/Src/encoder.o: ../Core/Src/encoder.c ../Core/Inc/encoder.h \
 ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_tim_ex.h:
 ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_uart.h:
 ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_uart_ex.h:
+../Core/Inc/motor_controller_conf.h:
 ../Core/Inc/foc_math.h:

@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "app.h": "c",
+        "main.h": "c",
+        "position_controller.h": "c"
+    }
+}

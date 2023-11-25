@@ -56,6 +56,20 @@ typedef struct {
 } CurrentController;
 
 
+static inline void CurrentController_reset(CurrentController *controller) {
+  controller->i_q_setpoint = 0.f;
+  controller->i_d_setpoint = 0.f;
+  controller->i_q_integrator = 0.f;
+  controller->i_d_integrator = 0.f;
+  controller->v_q_setpoint = 0.f;
+  controller->v_d_setpoint = 0.f;
+  controller->v_alpha_setpoint = 0.f;
+  controller->v_beta_setpoint = 0.f;
+  controller->v_a_setpoint = 0.f;
+  controller->v_b_setpoint = 0.f;
+  controller->v_c_setpoint = 0.f;
+}
+
 /**
  * @brief Initialize the CurrentController instance with default values.
  *

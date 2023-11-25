@@ -3,7 +3,7 @@
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cordic.c:340:13:HAL_CORDIC_MspDeInit	0	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cordic.c:268:19:HAL_CORDIC_DeInit	8	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cordic.c:558:19:HAL_CORDIC_Configure	4	static
-../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cordic.c:605:19:HAL_CORDIC_Calculate	32	static
+../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cordic.c:605:19:HAL_CORDIC_Calculate	40	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cordic.c:699:19:HAL_CORDIC_CalculateZO	40	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cordic.c:792:19:HAL_CORDIC_Calculate_IT	4	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cordic.c:884:19:HAL_CORDIC_Calculate_DMA	24	static

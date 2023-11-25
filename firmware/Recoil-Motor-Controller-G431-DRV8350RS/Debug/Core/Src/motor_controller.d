@@ -38,7 +38,6 @@ Core/Src/motor_controller.o: ../Core/Src/motor_controller.c \
  ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_tim_ex.h \
  ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_uart.h \
  ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_uart_ex.h \
- ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_ll_cordic.h \
  ../Core/Inc/can.h ../Core/Inc/motor_controller_conf.h \
  ../Core/Inc/encoder.h ../Core/Inc/foc_math.h ../Core/Inc/powerstage.h \
  ../Core/Inc/motor.h ../Core/Inc/current_controller.h \
@@ -82,7 +81,6 @@ Core/Src/motor_controller.o: ../Core/Src/motor_controller.c \
 ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_tim_ex.h:
 ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_uart.h:
 ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_uart_ex.h:
-../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_ll_cordic.h:
 ../Core/Inc/can.h:
 ../Core/Inc/motor_controller_conf.h:
 ../Core/Inc/encoder.h:
