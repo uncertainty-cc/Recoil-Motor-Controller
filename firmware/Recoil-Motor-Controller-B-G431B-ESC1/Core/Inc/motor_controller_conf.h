@@ -25,7 +25,7 @@
  * The CAN ID is a unique identifier for the device on the CAN bus.
  * The value should be set in range [1, 63].
  */
-#define DEVICE_CAN_ID                   8
+#define DEVICE_CAN_ID                   4
 
 /**
  * First Time Bootup Flag:
@@ -68,13 +68,13 @@
 
 /** ======== Motor Selection ======== **/
 
-//#define MOTORPROFILE_MAD_M6C12_150KV
-#define MOTORPROFILE_MAD_5010_110KV
+#define MOTORPROFILE_MAD_M6C12_150KV
+//#define MOTORPROFILE_MAD_5010_110KV
 //#define MOTORPROFILE_MAD_5010_310KV
 //#define MOTORPROFILE_MAD_5010_370KV
 
 // phase order
-#define MOTOR_PHASE_ORDER               +1
+#define MOTOR_PHASE_ORDER               -1
 
 // nominal bus voltage (V)
 #define NOMINAL_BUS_VOLTAGE             12.f
@@ -95,7 +95,7 @@
 #define CURRENT_LOOP_BANDWIDTH                  1000.f
 
 // encoder position filter loop gain cutoff frequency (Hz)
-#define ENCODER_POSITION_FILTER_BANDWIDTH       1000.f
+#define ENCODER_FILTER_BANDWIDTH                100.f
 
 // powerstage bus voltage filter loop gain cutoff frequency (Hz)
 #define BUS_VOLTAGE_FILTER_BANDWIDTH            1000.f
