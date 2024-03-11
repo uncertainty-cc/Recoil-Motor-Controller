@@ -17,7 +17,7 @@
  * For example, 0x00010005 represents version 1.0.5 of the firmware.
  */
 //                                           M m p
-#define FIRMWARE_VERSION                0x00010101
+#define FIRMWARE_VERSION                0x00010201
 
 /**
  * Device CAN ID:
@@ -25,7 +25,7 @@
  * The CAN ID is a unique identifier for the device on the CAN bus.
  * The value should be set in range [1, 63].
  */
-#define DEVICE_CAN_ID                   4
+#define DEVICE_CAN_ID                   1
 
 /**
  * First Time Bootup Flag:
@@ -68,13 +68,13 @@
 
 /** ======== Motor Selection ======== **/
 
-#define MOTORPROFILE_MAD_M6C12_150KV
-//#define MOTORPROFILE_MAD_5010_110KV
+//#define MOTORPROFILE_MAD_M6C12_150KV
+#define MOTORPROFILE_MAD_5010_110KV
 //#define MOTORPROFILE_MAD_5010_310KV
 //#define MOTORPROFILE_MAD_5010_370KV
 
 // phase order
-#define MOTOR_PHASE_ORDER               -1
+#define MOTOR_PHASE_ORDER               +1
 
 // nominal bus voltage (V)
 #define NOMINAL_BUS_VOLTAGE             12.f
@@ -183,9 +183,11 @@ typedef enum {
   FUNC_USR_FAST_FRAME_0         = 0x12U,
   FUNC_USR_FAST_FRAME_1         = 0x13U,
   FUNC_USR_FAST_FRAME_2         = 0x14U,
-  FUNC_USR_DEBUG_0              = 0x15U,
-  FUNC_USR_DEBUG_1              = 0x16U,
-  FUNC_USR_DEBUG_2              = 0x17U
+  FUNC_USR_FAST_FRAME_3         = 0x15U,
+  FUNC_USR_FAST_FRAME_4         = 0x16U,
+  FUNC_USR_FAST_FRAME_5         = 0x17U,
+  FUNC_USR_FAST_FRAME_6         = 0x18U,
+  FUNC_USR_FAST_FRAME_7         = 0x19U,
 } FrameFunction;
 
 /**

@@ -49,14 +49,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
   }
   else if (htim == &htim8) {
     if (controller.fast_frame_frequency != 0) {
-      uint32_t func_id = FUNC_USR_FAST_FRAME_2;
+      uint32_t func_id = FUNC_USR_FAST_FRAME_0;
       CAN_Frame tx_frame;
       tx_frame.id = (func_id << 6) | controller.device_id;
       tx_frame.id_type = CAN_ID_STANDARD;
       tx_frame.frame_type = CAN_FRAME_DATA;
-      tx_frame.size = 8;
-      *((float *)tx_frame.data + 0) = PositionController_getPositionMeasured(&controller.position_controller);
-      *((float *)tx_frame.data + 1) = PositionController_getTorqueMeasured(&controller.position_controller);
+      tx_frame.size = 2;
+      *((fixed16 *)tx_frame.data + 0) = float32ToFixed16(PositionController_getPositionMeasured(&controller.position_controller));
+//      *((fixed16 *)tx_frame.data + 1) = float32ToFixed16(PositionController_getTorqueMeasured(&controller.position_controller));
       if (HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1) >= 2) {
         CAN_putTxFrame(&hfdcan1, &tx_frame);
       }

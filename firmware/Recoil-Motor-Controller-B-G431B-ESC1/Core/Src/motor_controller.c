@@ -667,9 +667,6 @@ void MotorController_handleCANMessage(MotorController *controller, CAN_Frame *rx
       break;
 
     case FUNC_USR_FAST_FRAME_0: // 0x12 [position_kp, position_ki]
-      PositionController_setPositionTarget(&controller->position_controller, *((float *)rx_frame->data));
-      PositionController_setTorqueTarget(&controller->position_controller, *((float *)rx_frame->data + 1));
-      __HAL_TIM_SET_COUNTER(&htim2, 0);
       break;
 
     case FUNC_USR_FAST_FRAME_1: // 0x13 [position_kp, position_ki]
@@ -681,7 +678,17 @@ void MotorController_handleCANMessage(MotorController *controller, CAN_Frame *rx
       __HAL_TIM_SET_COUNTER(&htim2, 0);
       break;
 
-    case FUNC_USR_FAST_FRAME_2:
+    case FUNC_USR_FAST_FRAME_2: // 0x13
+      tx_frame.size = 4;
+      PositionController_setPositionTarget(&controller->position_controller, fixed16ToFloat32(*((fixed16 *)rx_frame->data)));
+      *((fixed16 *)tx_frame.data + 0) = float32ToFixed16(PositionController_getPositionMeasured(&controller->position_controller));
+      *((fixed16 *)tx_frame.data + 1) = float32ToFixed16(PositionController_getVelocityMeasured(&controller->position_controller));
+      __HAL_TIM_SET_COUNTER(&htim2, 0);
+      break;
+
+    case FUNC_USR_FAST_FRAME_3: // 0x13
+      PositionController_setPositionTarget(&controller->position_controller, fixed16ToFloat32(*((fixed16 *)rx_frame->data)));
+      __HAL_TIM_SET_COUNTER(&htim2, 0);
       break;
 
     case FUNC_PING:             // 0x1F
