@@ -55,8 +55,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
       tx_frame.id_type = CAN_ID_STANDARD;
       tx_frame.frame_type = CAN_FRAME_DATA;
       tx_frame.size = 8;
-      *((float *)tx_frame.data + 0) = PositionController_getPositionMeasured(&controller.position_controller);
-      *((float *)tx_frame.data + 1) = PositionController_getTorqueMeasured(&controller.position_controller);
+      *((float *)tx_frame.data + 0) = PositionController_getPositionMeasured(&controller->position_controller);
+      *((float *)tx_frame.data + 1) = PositionController_getVelocityMeasured(&controller->position_controller);
       if (HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1) >= 2) {
         CAN_putTxFrame(&hfdcan1, &tx_frame);
       }
