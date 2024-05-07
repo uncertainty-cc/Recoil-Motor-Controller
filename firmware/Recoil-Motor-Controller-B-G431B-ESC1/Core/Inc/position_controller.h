@@ -31,6 +31,7 @@ typedef struct {
   float velocity_limit;
   float position_limit_lower;
   float position_limit_upper;
+  float position_offset;
 
   float torque_target;
   float torque_measured;
