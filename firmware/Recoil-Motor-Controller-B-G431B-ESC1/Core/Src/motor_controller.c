@@ -22,6 +22,7 @@ extern TIM_HandleTypeDef htim6;
 extern TIM_HandleTypeDef htim8;
 extern UART_HandleTypeDef huart2;
 
+
 void MotorController_init(MotorController *controller) {
   controller->mode = MODE_DISABLED;
   controller->error = ERROR_NO_ERROR;
@@ -626,6 +627,11 @@ void MotorController_handleCANMessage(MotorController *controller, CAN_Frame *rx
       __HAL_TIM_SET_COUNTER(&htim2, 0);
       break;
 
+    case FUNC_PING:             // 0x04
+      tx_frame.size = 1;
+      *((uint8_t *)tx_frame.data) = controller->device_id;
+      break;
+
     case FUNC_MODE:             // 0x05 [mode, error] -> [mode, clear_error?]
       if (rx_frame->size) {
         MotorController_setMode(controller, *((uint16_t *)rx_frame->data));
@@ -648,13 +654,13 @@ void MotorController_handleCANMessage(MotorController *controller, CAN_Frame *rx
       }
       break;
 
-    case FUNC_PARAM_READ:   // 0x10
+    case FUNC_PARAM_READ:       // 0x10
       tx_frame.size = 8;
       *((uint16_t *)tx_frame.data) = *((uint16_t *)rx_frame->data);
       MotorController_handleCANRead(controller, rx_frame, &tx_frame);
       break;
 
-    case FUNC_PARAM_WRITE:  // 0x11
+    case FUNC_PARAM_WRITE:      // 0x11
       MotorController_handleCANWrite(controller, rx_frame);
 
       __HAL_TIM_SET_AUTORELOAD(&htim2, (controller->watchdog_timeout * 10) - 1);
@@ -666,35 +672,55 @@ void MotorController_handleCANMessage(MotorController *controller, CAN_Frame *rx
       }
       break;
 
-    case FUNC_USR_FAST_FRAME_0: //
-      PositionController_setPositionTarget(&controller->position_controller, *((float *)rx_frame->data));
-      __HAL_TIM_SET_COUNTER(&htim2, 0);
-      break;
-
-    case FUNC_USR_FAST_FRAME_1: // 0x13 [position_kp, position_ki]
+    case FUNC_USR_FAST_FRAME_0: // 0x12
+      // receive [position_target, velocity_target]
+      // send [position_measured, velocity_measured]
       tx_frame.size = 8;
-      PositionController_setPositionTarget(&controller->position_controller, *((float *)rx_frame->data));
+      PositionController_setPositionTarget(&controller->position_controller, *((float *)rx_frame->data + 0));
+      PositionController_setVelocityTarget(&controller->position_controller, *((float *)rx_frame->data + 1));
       *((float *)tx_frame.data + 0) = PositionController_getPositionMeasured(&controller->position_controller);
       *((float *)tx_frame.data + 1) = PositionController_getVelocityMeasured(&controller->position_controller);
       __HAL_TIM_SET_COUNTER(&htim2, 0);
       break;
 
-    case FUNC_USR_FAST_FRAME_2: // 0x13
+    case FUNC_USR_FAST_FRAME_1: // 0x13
       tx_frame.size = 4;
       PositionController_setPositionTarget(&controller->position_controller, fixed16ToFloat32(*((fixed16 *)rx_frame->data)));
-      *((fixed16 *)tx_frame.data + 0) = float32ToFixed16(PositionController_getPositionMeasured(&controller->position_controller));
-      *((fixed16 *)tx_frame.data + 1) = float32ToFixed16(PositionController_getVelocityMeasured(&controller->position_controller));
       __HAL_TIM_SET_COUNTER(&htim2, 0);
       break;
 
-    case FUNC_USR_FAST_FRAME_3: // 0x13
-      PositionController_setPositionTarget(&controller->position_controller, fixed16ToFloat32(*((fixed16 *)rx_frame->data)));
+    case FUNC_USR_FAST_FRAME_2: // 0x14
+      // fast-frame transmit-only
+      break;
+
+    case FUNC_USR_FAST_FRAME_3: // 0x15
+      // receive [position_target, torque_target]
+      // send [position_measured, torque_measured]
+      tx_frame.size = 8;
+      PositionController_setPositionTarget(&controller->position_controller, *((float *)rx_frame->data + 0));
+      PositionController_setTorqueTarget(&controller->position_controller, *((float *)rx_frame->data + 1));
+      *((float *)tx_frame.data + 0) = PositionController_getPositionMeasured(&controller->position_controller);
+      *((float *)tx_frame.data + 1) = PositionController_getTorqueMeasured(&controller->position_controller);
       __HAL_TIM_SET_COUNTER(&htim2, 0);
       break;
 
-    case FUNC_PING:             // 0x1F
-      tx_frame.size = 1;
-      *((uint8_t *)tx_frame.data) = controller->device_id;
+    case FUNC_USR_FAST_FRAME_4: // 0x16
+      // receive [position_kp, position_kd]
+      PositionController_setPositionTarget(&controller->position_controller, *((float *)rx_frame->data + 0));
+      PositionController_setVelocityTarget(&controller->position_controller, *((float *)rx_frame->data + 1));
+      __HAL_TIM_SET_COUNTER(&htim2, 0);
+      break;
+
+    case FUNC_USR_FAST_FRAME_5: // 0x17
+      break;
+
+    case FUNC_USR_FAST_FRAME_6: // 0x18
+      // TODO: MIT-style frames
+//      *((fixed16 *)tx_frame.data + 0) = float32ToFixed16(PositionController_getPositionMeasured(&controller->position_controller));
+//      *((fixed16 *)tx_frame.data + 1) = float32ToFixed16(PositionController_getVelocityMeasured(&controller->position_controller));
+      break;
+
+    case FUNC_USR_FAST_FRAME_7: // 0x19
       break;
   }
 

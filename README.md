@@ -191,21 +191,37 @@ safety watchdog heartbeat message.
 
 #### `0x12 - CAN_ID_USR_FAST_FRAME_0`
 
-write: [torque_limit, position_target]
+write: [position_target, velocity_target]
 
-read: [torque_measured, position_measured]
+read: [position_measured, velocity_measured]
 
 #### `0x13 - CAN_ID_USR_FAST_FRAME_1`
 
-write: [position_ki, position_kp]
+write: [position_target, velocity_target]
 
-read: [0, velocity_measured]
+read: the controller will not respond
 
-#### `0x14 - CAN_ID_USR_DEBUG_0`
+#### `0x14 - CAN_ID_USR_FAST_FRAME_2`
 
-#### `0x15 - CAN_ID_USR_DEBUG_1`
+read: [position_measured, velocity_measured]
 
-#### `0x16 - CAN_ID_USR_DEBUG_2`
+the controller will transmit this frame at `fast_frame_frequency` frequency.
 
-#### `0x1F - CAN_ID_PING`
+#### `0x15 - CAN_ID_USR_FAST_FRAME_3`
+
+write: [position_target, torque_target]
+
+read: [position_measured, torque_measured]
+
+#### `0x16 - CAN_ID_USR_FAST_FRAME_4`
+
+write: [position_kp, velocity_kd]
+
+read: the controller will not respond
+
+#### `0x17 - CAN_ID_USR_FAST_FRAME_5`
+
+#### `0x18 - CAN_ID_USR_FAST_FRAME_6`
+
+#### `0x19 - CAN_ID_USR_FAST_FRAME_7`
 
