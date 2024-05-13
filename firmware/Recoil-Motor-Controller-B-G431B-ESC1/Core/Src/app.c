@@ -49,7 +49,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
   }
   else if (htim == &htim8) {
     if (controller.fast_frame_frequency != 0) {
-      uint32_t func_id = FUNC_USR_FAST_FRAME_2;
+      uint32_t func_id = FUNC_USR_FAST_FRAME_0;
       CAN_Frame tx_frame;
       tx_frame.id = (func_id << 6) | controller.device_id;
       tx_frame.id_type = CAN_ID_STANDARD;
@@ -198,6 +198,6 @@ void APP_main() {
 
 
   HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 1000);
-//  HAL_Delay(10);
+  HAL_Delay(10);
 }
 

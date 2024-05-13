@@ -17,7 +17,7 @@
  * For example, 0x00010005 represents version 1.0.5 of the firmware.
  */
 //                                           M m p
-#define FIRMWARE_VERSION                0x00010101
+#define FIRMWARE_VERSION                0x00010201
 
 /**
  * Device CAN ID:
@@ -25,7 +25,7 @@
  * The CAN ID is a unique identifier for the device on the CAN bus.
  * The value should be set in range [1, 63].
  */
-#define DEVICE_CAN_ID                   8
+#define DEVICE_CAN_ID                   1
 
 /**
  * First Time Bootup Flag:
@@ -95,7 +95,7 @@
 #define CURRENT_LOOP_BANDWIDTH                  1000.f
 
 // encoder position filter loop gain cutoff frequency (Hz)
-#define ENCODER_POSITION_FILTER_BANDWIDTH       1000.f
+#define ENCODER_FILTER_BANDWIDTH                100.f
 
 // powerstage bus voltage filter loop gain cutoff frequency (Hz)
 #define BUS_VOLTAGE_FILTER_BANDWIDTH            1000.f

@@ -29,6 +29,11 @@
 #define Q31_TO_FLOAT(x)                       ((float)(x) / (float)(0x80000000))
 #define FLOAT_TO_Q31(x)                       ((int32_t)((float)(x) * (float)0x7FFFFFFF))
 
+typedef struct {
+    int8_t integer;
+    uint8_t fractional;
+} fixed16;
+
 static inline int32_t max(int32_t a, int32_t b) {
   return a > b ? a : b;
 }
@@ -71,6 +76,20 @@ static inline float fast_fmaxf3(float a, float b, float c) {
 
 static inline float fast_fminf3(float a, float b, float c) {
   return (a < b ? (a < c ? a : c) : (b < c ? b : c));
+}
+
+static fixed16 float32ToFixed16(float val) {
+    val = (val > 127) ? 127 : ((val < -128) ? -128 : val);
+    float fractional = fmodf(val, 1);
+    fixed16 result;
+    result.integer = (int8_t)val;
+    result.fractional = (uint8_t)(fabs(fractional) * 0xFF);
+    return result;
+}
+
+static float fixed16ToFloat32(fixed16 val) {
+    float fractional = ((float)val.fractional) / (float)0xFF;
+    return val.integer > 0 ? val.integer + fractional : val.integer - fractional;
 }
 
 /**
