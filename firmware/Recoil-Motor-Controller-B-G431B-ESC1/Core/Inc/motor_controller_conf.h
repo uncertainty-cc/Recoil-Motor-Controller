@@ -16,8 +16,8 @@
  * It follows the format: (MAJOR [7:4]) . (MINOR [3:2]) . (PATCH [1:0]).
  * For example, 0x00010005 represents version 1.0.5 of the firmware.
  */
-//                                           M m p
-#define FIRMWARE_VERSION                0x00010201
+//                                        YYYYmmdd
+#define FIRMWARE_VERSION                0x20240516
 
 /**
  * Device CAN ID:

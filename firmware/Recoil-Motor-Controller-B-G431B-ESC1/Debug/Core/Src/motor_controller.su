@@ -3,8 +3,8 @@
 ../Core/Src/motor_controller.c:205:6:MotorController_setFluxAngle	24	static
 ../Core/Src/motor_controller.c:216:19:MotorController_loadConfig	8	static
 ../Core/Src/motor_controller.c:26:6:MotorController_init	96	static
-../Core/Src/motor_controller.c:287:19:MotorController_storeConfig	56	static
-../Core/Src/motor_controller.c:324:6:MotorController_update	32	static
-../Core/Src/motor_controller.c:427:6:MotorController_runCalibrationSequence	16592	static
-../Core/Src/motor_controller.c:420:6:MotorController_updateService	0	static
-../Core/Src/motor_controller.c:598:6:MotorController_handleCANMessage	32	static
+../Core/Src/motor_controller.c:288:19:MotorController_storeConfig	56	static
+../Core/Src/motor_controller.c:325:6:MotorController_update	32	static
+../Core/Src/motor_controller.c:428:6:MotorController_runCalibrationSequence	16592	static
+../Core/Src/motor_controller.c:421:6:MotorController_updateService	0	static
+../Core/Src/motor_controller.c:599:6:MotorController_handleCANMessage	32	static
