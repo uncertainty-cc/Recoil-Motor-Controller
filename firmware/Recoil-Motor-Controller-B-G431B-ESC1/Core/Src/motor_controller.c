@@ -269,6 +269,8 @@ HAL_StatusTypeDef MotorController_loadConfig(MotorController *controller) {
     controller->position_controller.position_limit_upper        = controller_config->position_controller.position_limit_upper;
     if (isnan(controller_config->position_controller.position_limit_lower))  return HAL_ERROR;
     controller->position_controller.position_limit_lower        = controller_config->position_controller.position_limit_lower;
+    if (isnan(controller_config->position_controller.position_offset))  return HAL_ERROR;
+    controller->position_controller.position_offset             = controller_config->position_controller.position_offset;
   #endif
 
   Encoder_setFilterGain(&controller->encoder, controller->encoder.filter_bandwidth);

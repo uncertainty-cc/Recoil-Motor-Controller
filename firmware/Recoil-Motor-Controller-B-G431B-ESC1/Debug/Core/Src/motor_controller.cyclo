@@ -1,10 +1,10 @@
 ../Core/Src/motor_controller.c:120:6:MotorController_reset	1
 ../Core/Src/motor_controller.c:128:6:MotorController_setMode	11
 ../Core/Src/motor_controller.c:205:6:MotorController_setFluxAngle	2
-../Core/Src/motor_controller.c:216:19:MotorController_loadConfig	21
+../Core/Src/motor_controller.c:216:19:MotorController_loadConfig	22
 ../Core/Src/motor_controller.c:26:6:MotorController_init	15
-../Core/Src/motor_controller.c:285:19:MotorController_storeConfig	4
-../Core/Src/motor_controller.c:322:6:MotorController_update	6
-../Core/Src/motor_controller.c:425:6:MotorController_runCalibrationSequence	17
-../Core/Src/motor_controller.c:418:6:MotorController_updateService	2
-../Core/Src/motor_controller.c:596:6:MotorController_handleCANMessage	25
+../Core/Src/motor_controller.c:287:19:MotorController_storeConfig	4
+../Core/Src/motor_controller.c:324:6:MotorController_update	6
+../Core/Src/motor_controller.c:427:6:MotorController_runCalibrationSequence	17
+../Core/Src/motor_controller.c:420:6:MotorController_updateService	2
+../Core/Src/motor_controller.c:598:6:MotorController_handleCANMessage	25
