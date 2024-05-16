@@ -216,6 +216,8 @@ void MotorController_setFluxAngle(MotorController *controller, float angle_setpo
 HAL_StatusTypeDef MotorController_loadConfig(MotorController *controller) {
   MotorController *controller_config = (MotorController *)FLASH_CONFIG_ADDRESS;
 
+  controller->firmware_version                                = FIRMWARE_VERSION;
+
   #if LOAD_CALIBRATION_FROM_FLASH
     if (isnan(controller_config->encoder.flux_offset)) return HAL_ERROR;
     controller->encoder.flux_offset                             = controller_config->encoder.flux_offset;
@@ -224,7 +226,6 @@ HAL_StatusTypeDef MotorController_loadConfig(MotorController *controller) {
     controller->device_id                                       = (uint8_t)controller_config->device_id;
   #endif
   #if LOAD_CONFIG_FROM_FLASH
-    controller->firmware_version                                = controller_config->firmware_version;
     controller->watchdog_timeout                                = controller_config->watchdog_timeout;
     controller->fast_frame_frequency                            = controller_config->fast_frame_frequency;
     controller->encoder.cpr                                     = controller_config->encoder.cpr;
