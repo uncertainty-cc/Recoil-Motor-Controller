@@ -31,6 +31,7 @@ typedef struct {
   float velocity_limit;
   float position_limit_lower;
   float position_limit_upper;
+  float position_offset;
 
   float torque_target;
   float torque_measured;
@@ -84,7 +85,7 @@ static inline float PositionController_getVelocityMeasured(PositionController *c
  * @return The measured position in radians (rad).
  */
 static inline float PositionController_getPositionMeasured(PositionController *controller) {
-  return controller->position_measured;
+  return controller->position_measured - controller->position_offset;
 }
 
 /**
@@ -114,7 +115,7 @@ static inline void PositionController_setVelocityTarget(PositionController *cont
  * @param target The target position in radians (rad).
  */
 static inline void PositionController_setPositionTarget(PositionController *controller, float target) {
-  controller->position_target = target;
+  controller->position_target = target + controller->position_offset;
 }
 
 /**

@@ -15,7 +15,7 @@ HAL_StatusTypeDef Encoder_init(Encoder *encoder, I2C_HandleTypeDef *hi2c) {
   encoder->cpr = ENCODER_DIRECTION * (1 << ENCODER_PRECISION_BITS);  // 12 bit precision
 
   encoder->position_offset = 0.f;
-  encoder->filter_bandwidth = ENCODER_POSITION_FILTER_BANDWIDTH;
+  encoder->filter_bandwidth = ENCODER_FILTER_BANDWIDTH;
 
   encoder->position_raw = 0;
   encoder->n_rotations = 0;
@@ -81,12 +81,11 @@ void Encoder_update(Encoder *encoder) {
   // TODO: implement encoder lut-table Linearization
 //                  + encoder->flux_offset_table[reading >> 5];
 
-  // Update the filtered position
-  float delta_position_filtered = encoder->filter_alpha * (position - encoder->position);
-  encoder->position += delta_position_filtered;
+  // Update the delta position
+  float delta_position = position - encoder->position;
+  encoder->position = position;
 
   // Update the filtered velocity
-  float velocity = delta_position_filtered * (float)ENCODER_UPDATE_FREQ;
-  float delta_velocity_filtered = encoder->filter_alpha * (velocity - encoder->velocity);
-  encoder->velocity += delta_velocity_filtered;
+  float velocity = delta_position * (float)ENCODER_UPDATE_FREQ;
+  encoder->velocity += encoder->filter_alpha * (velocity - encoder->velocity);
 }
