@@ -95,7 +95,7 @@
 #define CURRENT_LOOP_BANDWIDTH                  1000.f
 
 // encoder position filter loop gain cutoff frequency (Hz)
-#define ENCODER_FILTER_BANDWIDTH                100.f
+#define ENCODER_FILTER_BANDWIDTH                500.f
 
 // powerstage bus voltage filter loop gain cutoff frequency (Hz)
 #define BUS_VOLTAGE_FILTER_BANDWIDTH            1000.f

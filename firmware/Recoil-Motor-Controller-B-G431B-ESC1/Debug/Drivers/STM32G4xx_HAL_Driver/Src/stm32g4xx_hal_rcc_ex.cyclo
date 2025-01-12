@@ -11,7 +11,7 @@
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc_ex.c:1513:6:HAL_RCCEx_CRSConfig	1
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc_ex.c:1555:6:HAL_RCCEx_CRSSoftwareSynchronizationGenerate	1
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc_ex.c:1565:6:HAL_RCCEx_CRSGetSynchronizationInfo	1
-../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc_ex.c:1598:10:HAL_RCCEx_CRSWaitSynchronization	12
+../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc_ex.c:1598:10:HAL_RCCEx_CRSWaitSynchronization	11
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc_ex.c:1746:13:HAL_RCCEx_CRS_SyncOkCallback	1
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc_ex.c:1757:13:HAL_RCCEx_CRS_SyncWarnCallback	1
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc_ex.c:1768:13:HAL_RCCEx_CRS_ExpectedSyncCallback	1

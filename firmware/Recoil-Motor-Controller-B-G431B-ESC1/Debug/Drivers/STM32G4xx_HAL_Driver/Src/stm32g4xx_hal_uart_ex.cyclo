@@ -12,5 +12,5 @@
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart_ex.c:605:19:HAL_UARTEx_SetTxFifoThreshold	3
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart_ex.c:654:19:HAL_UARTEx_SetRxFifoThreshold	3
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart_ex.c:711:19:HAL_UARTEx_ReceiveToIdle	18
-../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart_ex.c:836:19:HAL_UARTEx_ReceiveToIdle_IT	8
-../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart_ex.c:898:19:HAL_UARTEx_ReceiveToIdle_DMA	8
+../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart_ex.c:836:19:HAL_UARTEx_ReceiveToIdle_IT	9
+../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_uart_ex.c:898:19:HAL_UARTEx_ReceiveToIdle_DMA	9

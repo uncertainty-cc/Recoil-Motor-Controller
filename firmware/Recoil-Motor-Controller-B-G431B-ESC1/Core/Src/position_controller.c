@@ -75,8 +75,13 @@ void PositionController_update(PositionController *controller, Mode mode) {
         + controller->torque_target;
   }
   else if (mode == MODE_VELOCITY) {
-    // TODO: implement velocity controlled loop
-    torque_final = 0.f;
+    controller->velocity_setpoint = clampf(
+        controller->velocity_target,
+        -controller->velocity_limit,
+        controller->velocity_limit);
+
+    float velocity_error = controller->velocity_setpoint - controller->velocity_measured;
+    torque_final = controller->velocity_kp * velocity_error;
   }
   else {
     // MODE_TORQUE

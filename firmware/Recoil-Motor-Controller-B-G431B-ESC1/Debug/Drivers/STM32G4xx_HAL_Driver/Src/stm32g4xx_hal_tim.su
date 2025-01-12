@@ -51,11 +51,11 @@
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c:3209:13:HAL_TIM_Encoder_MspDeInit	0	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c:3149:19:HAL_TIM_Encoder_DeInit	8	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c:3229:19:HAL_TIM_Encoder_Start	4	static
-../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c:3323:19:HAL_TIM_Encoder_Stop	4	static
+../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c:3323:19:HAL_TIM_Encoder_Stop	0	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c:3383:19:HAL_TIM_Encoder_Start_IT	4	static
-../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c:3483:19:HAL_TIM_Encoder_Stop_IT	4	static
+../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c:3483:19:HAL_TIM_Encoder_Stop_IT	0	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c:3548:19:HAL_TIM_Encoder_Start_DMA	32	static
-../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c:3761:19:HAL_TIM_Encoder_Stop_DMA	16	static
+../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c:3761:19:HAL_TIM_Encoder_Stop_DMA	8	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c:4686:19:HAL_TIM_DMABurst_MultiWriteStart	16	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c:4625:19:HAL_TIM_DMABurst_WriteStart	16	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c:4870:19:HAL_TIM_DMABurst_WriteStop	16	static
@@ -98,7 +98,7 @@
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c:6728:23:HAL_TIM_GetActiveChannel	0	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c:6746:29:HAL_TIM_GetChannelState	0	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c:6763:30:HAL_TIM_DMABurstState	0	static
-../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c:7106:6:TIM_Base_SetConfig	8	static
+../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c:7106:6:TIM_Base_SetConfig	12	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c:281:19:HAL_TIM_Base_Init	8	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c:664:19:HAL_TIM_OC_Init	8	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c:1331:19:HAL_TIM_PWM_Init	8	static
@@ -109,7 +109,7 @@
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c:4120:19:HAL_TIM_OC_ConfigChannel	8	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c:4320:19:HAL_TIM_PWM_ConfigChannel	16	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c:7712:6:TIM_TI1_SetConfig	12	static
-../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c:4219:19:HAL_TIM_IC_ConfigChannel	24	static
+../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c:4219:19:HAL_TIM_IC_ConfigChannel	16	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c:4468:19:HAL_TIM_OnePulse_ConfigChannel	48	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c:8017:6:TIM_ETR_SetConfig	4	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c:8049:6:TIM_CCxChannelCmd	0	static

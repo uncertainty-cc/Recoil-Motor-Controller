@@ -42,8 +42,8 @@
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_fdcan.c:2577:10:HAL_FDCAN_IsRestrictedOperationMode	1
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_fdcan.c:2593:19:HAL_FDCAN_ExitRestrictedOperationMode	2
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_fdcan.c:2645:19:HAL_FDCAN_ConfigInterruptLines	3
-../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_fdcan.c:2690:19:HAL_FDCAN_ActivateNotification	32
-../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_fdcan.c:2783:19:HAL_FDCAN_DeactivateNotification	34
+../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_fdcan.c:2690:19:HAL_FDCAN_ActivateNotification	33
+../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_fdcan.c:2783:19:HAL_FDCAN_DeactivateNotification	40
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_fdcan.c:3148:13:HAL_FDCAN_TxEventFifoCallback	1
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_fdcan.c:3167:13:HAL_FDCAN_RxFifo0Callback	1
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_fdcan.c:3186:13:HAL_FDCAN_RxFifo1Callback	1

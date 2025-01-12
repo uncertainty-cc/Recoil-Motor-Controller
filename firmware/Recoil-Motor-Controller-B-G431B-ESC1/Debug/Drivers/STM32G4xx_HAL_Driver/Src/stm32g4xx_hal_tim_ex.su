@@ -28,7 +28,7 @@
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.c:1838:19:HAL_TIMEx_OnePulseN_Stop_IT	8	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.c:1932:19:HAL_TIMEx_ConfigCommutEvent	4	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.c:2023:19:HAL_TIMEx_ConfigCommutEvent_IT	4	static
-../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.c:2115:19:HAL_TIMEx_ConfigCommutEvent_DMA	0	static
+../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.c:2115:19:HAL_TIMEx_ConfigCommutEvent_DMA	4	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.c:2188:19:HAL_TIMEx_MasterConfigSynchronization	12	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.c:2261:19:HAL_TIMEx_ConfigBreakDeadTime	4	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.c:2343:19:HAL_TIMEx_ConfigBreakInput	16	static

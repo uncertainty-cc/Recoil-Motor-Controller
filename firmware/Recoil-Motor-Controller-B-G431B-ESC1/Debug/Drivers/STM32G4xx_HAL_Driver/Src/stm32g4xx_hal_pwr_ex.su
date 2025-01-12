@@ -6,7 +6,7 @@
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.c:274:6:HAL_PWREx_DisableInternalWakeUpLine	0	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.c:302:19:HAL_PWREx_EnableGPIOPullUp	0	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.c:363:19:HAL_PWREx_DisableGPIOPullUp	0	static
-../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.c:424:19:HAL_PWREx_EnableGPIOPullDown	4	static
+../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.c:424:19:HAL_PWREx_EnableGPIOPullDown	0	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.c:485:19:HAL_PWREx_DisableGPIOPullDown	0	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.c:535:6:HAL_PWREx_EnablePullUpPullDownConfig	0	static
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.c:547:6:HAL_PWREx_DisablePullUpPullDownConfig	0	static

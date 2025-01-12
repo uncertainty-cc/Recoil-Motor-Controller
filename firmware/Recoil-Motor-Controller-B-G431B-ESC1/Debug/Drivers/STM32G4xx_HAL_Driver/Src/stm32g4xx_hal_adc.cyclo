@@ -14,11 +14,11 @@
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc.c:2288:6:HAL_ADC_IRQHandler	44
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc.c:3556:6:ADC_DMAConvCplt	9
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc.c:3652:6:ADC_DMAError	1
-../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc.c:2758:19:HAL_ADC_ConfigChannel	47
+../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc.c:2758:19:HAL_ADC_ConfigChannel	48
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc.c:2991:19:HAL_ADC_AnalogWDGConfig	31
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc.c:3246:10:HAL_ADC_GetState	1
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc.c:3260:10:HAL_ADC_GetError	1
-../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc.c:3290:19:ADC_ConversionStop	22
+../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc.c:3290:19:ADC_ConversionStop	23
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc.c:3422:19:ADC_Enable	8
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc.c:1220:19:HAL_ADC_Start	11
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc.c:1741:19:HAL_ADC_Start_IT	15
