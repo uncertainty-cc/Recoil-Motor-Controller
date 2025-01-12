@@ -379,10 +379,14 @@ void MotorController_update(MotorController *controller) {
   // this block takes 7.3 us maximum to run (15%)
   // 0.002f is kinda a magic number. Ideally this should be the delay, in seconds, of the encoder signal.
   float theta = wrapTo2Pi(
-      ((Encoder_getPositionMeasured(&controller->encoder) + 0.003f * Encoder_getVelocity(&controller->encoder))
+      ((Encoder_getPositionMeasured(&controller->encoder) + 0.00005f * Encoder_getVelocity(&controller->encoder))
           * (float)controller->motor.pole_pairs)
       - controller->encoder.flux_offset
       );
+//  float theta = wrapTo2Pi(
+//        (Encoder_getPositionMeasured(&controller->encoder) * (float)controller->motor.pole_pairs)
+//        - controller->encoder.flux_offset
+//        );
 
   float sin_theta = sinf(theta);
   float cos_theta = cosf(theta);
