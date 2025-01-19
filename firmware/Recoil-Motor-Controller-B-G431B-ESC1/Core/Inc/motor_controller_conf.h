@@ -59,7 +59,7 @@
  * This flag controls whether the safety watchdog feature is enabled or disabled.
  * The safety watchdog is used for timeout monitoring.
  */
-#define SAFETY_WATCHDOG_ENABLED         1             // Set to 1 to enable safety watchdog
+#define SAFETY_WATCHDOG_ENABLED         0             // Set to 1 to enable safety watchdog
 
 
 /** ======== Encoder Configuration ======== **/
