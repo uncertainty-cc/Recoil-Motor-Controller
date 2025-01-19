@@ -54,11 +54,11 @@ void Encoder_update(Encoder *encoder) {
 
   if (encoder->i2c_update_counter == (COMMUTATION_FREQ / ENCODER_UPDATE_FREQ)) {
     encoder->i2c_update_counter = 0;
-    HAL_I2C_Master_Receive_IT(encoder->hi2c, AS5600_I2C_ADDR << 1, encoder->i2c_buffer, 2);
-  }
-  else {
+
     // Read the raw reading from the I2C sensor and center-align it within the range [-cpr/2, cpr/2).
     int16_t reading = ((int16_t)((encoder->i2c_buffer[0]) << 8) | encoder->i2c_buffer[1]) - abs(encoder->cpr / 2);
+
+    HAL_I2C_Master_Receive_IT(encoder->hi2c, AS5600_I2C_ADDR << 1, encoder->i2c_buffer, 2);
 
     // TODO: implement encoder lut-table Linearization
   //  /* Linearization */

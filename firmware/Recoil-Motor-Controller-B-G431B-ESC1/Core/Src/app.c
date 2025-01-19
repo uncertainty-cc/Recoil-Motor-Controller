@@ -128,7 +128,7 @@ float APP_getUserPot() {
 void APP_main() {
   MotorController_updateService(&controller);
 
-  char str[128];
+//  char str[128];
 //  if (APP_getUserButton()) {
 //    MotorController_setMode(&controller, MODE_CALIBRATION);
 //  }

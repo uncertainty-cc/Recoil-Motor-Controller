@@ -17,7 +17,7 @@
  * For example, 0x00010005 represents version 1.0.5 of the firmware.
  */
 //                                        YYYYmmdd
-#define FIRMWARE_VERSION                0x20250112
+#define FIRMWARE_VERSION                0x20250118
 
 /**
  * Device CAN ID:
