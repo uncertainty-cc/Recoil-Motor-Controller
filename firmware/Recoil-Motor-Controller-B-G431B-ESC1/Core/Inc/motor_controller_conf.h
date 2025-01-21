@@ -17,7 +17,7 @@
  * For example, 0x00010005 represents version 1.0.5 of the firmware.
  */
 //                                        YYYYmmdd
-#define FIRMWARE_VERSION                0x20250118
+#define FIRMWARE_VERSION                0x20250120
 
 /**
  * Device CAN ID:
@@ -90,15 +90,6 @@
 
 // position control loop frequency (Hz)
 #define POSITION_UPDATE_FREQ                    2000.f
-
-// current PI loop gain cutoff frequency (Hz)
-#define CURRENT_LOOP_BANDWIDTH                  1000.f
-
-// encoder position filter loop gain cutoff frequency (Hz)
-#define ENCODER_FILTER_BANDWIDTH                500.f
-
-// powerstage bus voltage filter loop gain cutoff frequency (Hz)
-#define BUS_VOLTAGE_FILTER_BANDWIDTH            1000.f
 
 
 /** ======== Constants ======== **/
@@ -220,9 +211,9 @@ typedef enum {
   PARAM_POSITION_CONTROLLER_POSITION_TARGET             = 0x05CU,
   PARAM_POSITION_CONTROLLER_POSITION_MEASURED           = 0x060U,
   PARAM_POSITION_CONTROLLER_POSITION_SETPOINT           = 0x064U,
-  PARAM_POSITION_CONTROLLER_VELOCITY_INTEGRATOR         = 0x068U,
-  PARAM_POSITION_CONTROLLER_POSITION_INTEGRATOR         = 0x06CU,
-  PARAM_CURRENT_CONTROLLER_I_BANDWIDTH                  = 0x070U,
+  PARAM_POSITION_CONTROLLER_POSITION_INTEGRATOR         = 0x068U,
+  PARAM_POSITION_CONTROLLER_VELOCITY_INTEGRATOR         = 0x06CU,
+  PARAM_POSITION_CONTROLLER_TORQUE_FILTER_ALPHA         = 0x070U,
   PARAM_CURRENT_CONTROLLER_I_LIMIT                      = 0x074U,
   PARAM_CURRENT_CONTROLLER_I_KP                         = 0x078U,
   PARAM_CURRENT_CONTROLLER_I_KI                         = 0x07CU,
@@ -250,9 +241,9 @@ typedef enum {
   PARAM_CURRENT_CONTROLLER_I_D_INTEGRATOR               = 0x0D4U,
   PARAM_POWERSTAGE_HTIM                                 = 0x0D8U,
   PARAM_POWERSTAGE_HADC1                                = 0x0DCU,
-  PARAM_POWERSTAGE_HADC2                                = 0x0E4U,
-  PARAM_POWERSTAGE_ADC_READING_RAW                      = 0x0ECU,
-  PARAM_POWERSTAGE_ADC_READING_OFFSET                   = 0x0F0U,
+  PARAM_POWERSTAGE_HADC2                                = 0x0E0U,
+  PARAM_POWERSTAGE_ADC_READING_RAW                      = 0x0E4U,
+  PARAM_POWERSTAGE_ADC_READING_OFFSET                   = 0x0ECU,
   PARAM_POWERSTAGE_UNDERVOLTAGE_THRESHOLD               = 0x0F4U,
   PARAM_POWERSTAGE_OVERVOLTAGE_THRESHOLD                = 0x0F8U,
   PARAM_POWERSTAGE_BUS_VOLTAGE_FILTER_ALPHA             = 0x0FCU,
@@ -260,22 +251,19 @@ typedef enum {
   PARAM_MOTOR_POLE_PAIRS                                = 0x104U,
   PARAM_MOTOR_KV_RATING                                 = 0x108U,
   PARAM_MOTOR_PHASE_ORDER                               = 0x10CU,
-  PARAM_MOTOR_PHASE_RESISTANCE                          = 0x110U,
-  PARAM_MOTOR_PHASE_INDUCTANCE                          = 0x114U,
-  PARAM_MOTOR_MAX_CALIBRATION_CURRENT                   = 0x118U,
-  PARAM_ENCODER_HI2C                                    = 0x11CU,
-  PARAM_ENCODER_I2C_BUFFER                              = 0x120U,
-  PARAM_ENCODER_I2C_UPDATE_COUNTER                      = 0x124U,
-  PARAM_ENCODER_CPR                                     = 0x128U,
-  PARAM_ENCODER_POSITION_OFFSET                         = 0x12CU,
-  PARAM_ENCODER_FILTER_BANDWIDTH                        = 0x130U,
-  PARAM_ENCODER_FILTER_ALPHA                            = 0x134U,
-  PARAM_ENCODER_POSITION_RAW                            = 0x138U,
-  PARAM_ENCODER_N_ROTATIONS                             = 0x13CU,
-  PARAM_ENCODER_POSITION                                = 0x140U,
-  PARAM_ENCODER_VELOCITY                                = 0x144U,
-  PARAM_ENCODER_FLUX_OFFSET                             = 0x148U,
-  PARAM_ENCODER_FLUX_OFFSET_TABLE                       = 0x14CU,
+  PARAM_MOTOR_MAX_CALIBRATION_CURRENT                   = 0x110U,
+  PARAM_ENCODER_HI2C                                    = 0x114U,
+  PARAM_ENCODER_I2C_BUFFER                              = 0x118U,
+  PARAM_ENCODER_I2C_UPDATE_COUNTER                      = 0x11CU,
+  PARAM_ENCODER_CPR                                     = 0x120U,
+  PARAM_ENCODER_POSITION_OFFSET                         = 0x124U,
+  PARAM_ENCODER_VELOCITY_FILTER_ALPHA                   = 0x128U,
+  PARAM_ENCODER_POSITION_RAW                            = 0x12CU,
+  PARAM_ENCODER_N_ROTATIONS                             = 0x130U,
+  PARAM_ENCODER_POSITION                                = 0x134U,
+  PARAM_ENCODER_VELOCITY                                = 0x138U,
+  PARAM_ENCODER_FLUX_OFFSET                             = 0x13CU,
+  PARAM_ENCODER_FLUX_OFFSET_TABLE                       = 0x140U,
 } Parameter;
 
 

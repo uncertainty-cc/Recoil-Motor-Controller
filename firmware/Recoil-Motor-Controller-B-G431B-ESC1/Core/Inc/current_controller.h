@@ -13,6 +13,7 @@
 #include "stm32g4xx_hal.h"
 #include "foc_math.h"
 #include "motor_controller_conf.h"
+#include "motor_profiles.h"
 
 
 /**
@@ -20,7 +21,6 @@
  */
 typedef struct {
   // parameters
-  float i_bandwidth;
   float i_limit;
 
   float i_kp;
@@ -80,18 +80,6 @@ static inline void CurrentController_reset(CurrentController *controller) {
  * @return Status of the initialization process. HAL_OK if successful.
  */
 HAL_StatusTypeDef CurrentController_init(CurrentController *controller);
-
-/**
- * @brief Set the proportional-integral (PI) gains for the current controller.
- *
- * This function calculates and sets the proportional and integral gains (KP and KI)
- * for the current controller based on the provided phase resistance and inductance values.
- *
- * @param controller Pointer to the CurrentController struct.
- * @param phase_resistance Phase resistance value in Ohms (R).
- * @param phase_inductance Phase inductance value in Henry (H).
- */
-void CurrentController_setPIGain(CurrentController *controller, float phase_resistance, float phase_inductance);
 
 /**
  * @brief Update the CurrentController state based on the specified mode and inputs.

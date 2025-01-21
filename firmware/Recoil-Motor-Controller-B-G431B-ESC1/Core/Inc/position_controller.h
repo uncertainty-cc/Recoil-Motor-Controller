@@ -45,8 +45,10 @@ typedef struct {
   float position_measured;
   float position_setpoint;
 
-  float velocity_integrator;
   float position_integrator;
+  float velocity_integrator;
+  
+  float torque_filter_alpha;
 } PositionController;
 
 

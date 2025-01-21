@@ -228,32 +228,10 @@ HAL_StatusTypeDef MotorController_loadConfig(MotorController *controller) {
   #if LOAD_CONFIG_FROM_FLASH
     controller->watchdog_timeout                                = controller_config->watchdog_timeout;
     controller->fast_frame_frequency                            = controller_config->fast_frame_frequency;
-    controller->encoder.cpr                                     = controller_config->encoder.cpr;
-    if (isnan(controller_config->encoder.position_offset))                   return HAL_ERROR;
-    controller->encoder.position_offset                         = controller_config->encoder.position_offset;
-    if (isnan(controller_config->encoder.filter_bandwidth))                  return HAL_ERROR;
-    controller->encoder.filter_bandwidth                        = controller_config->encoder.filter_bandwidth;
-    if (isnan(controller_config->powerstage.undervoltage_threshold))         return HAL_ERROR;
-    controller->powerstage.undervoltage_threshold               = controller_config->powerstage.undervoltage_threshold;
-    if (isnan(controller_config->powerstage.overvoltage_threshold))          return HAL_ERROR;
-    controller->powerstage.overvoltage_threshold                = controller_config->powerstage.overvoltage_threshold;
-    if (isnan(controller_config->powerstage.bus_voltage_filter_alpha))       return HAL_ERROR;
-    controller->powerstage.bus_voltage_filter_alpha             = controller_config->powerstage.bus_voltage_filter_alpha;
-    controller->motor.pole_pairs                                = controller_config->motor.pole_pairs;
-    controller->motor.kv_rating                                 = controller_config->motor.kv_rating;
-    controller->motor.phase_order                               = (int8_t)controller_config->motor.phase_order;
-    if (isnan(controller_config->motor.phase_resistance))                    return HAL_ERROR;
-    controller->motor.phase_resistance                          = controller_config->motor.phase_resistance;
-    if (isnan(controller_config->motor.phase_inductance))                    return HAL_ERROR;
-    controller->motor.phase_inductance                          = controller_config->motor.phase_inductance;
-    if (isnan(controller_config->motor.max_calibration_current))             return HAL_ERROR;
-    controller->motor.max_calibration_current                   = controller_config->motor.max_calibration_current;
-    if (isnan(controller_config->current_controller.i_bandwidth))            return HAL_ERROR;
-    controller->current_controller.i_bandwidth                  = controller_config->current_controller.i_bandwidth;
-    if (isnan(controller_config->current_controller.i_limit))                return HAL_ERROR;
-    controller->current_controller.i_limit                      = controller_config->current_controller.i_limit;
     if (isnan(controller_config->position_controller.gear_ratio))            return HAL_ERROR;
     controller->position_controller.gear_ratio                  = controller_config->position_controller.gear_ratio;
+    if (isnan(controller_config->position_controller.torque_filter_alpha))   return HAL_ERROR;
+    controller->position_controller.torque_filter_alpha         = controller_config->position_controller.torque_filter_alpha;
     if (isnan(controller_config->position_controller.position_kp))           return HAL_ERROR;
     controller->position_controller.position_kp                 = controller_config->position_controller.position_kp;
     if (isnan(controller_config->position_controller.position_ki))           return HAL_ERROR;
@@ -266,19 +244,39 @@ HAL_StatusTypeDef MotorController_loadConfig(MotorController *controller) {
     controller->position_controller.torque_limit                = controller_config->position_controller.torque_limit;
     if (isnan(controller_config->position_controller.velocity_limit))        return HAL_ERROR;
     controller->position_controller.velocity_limit              = controller_config->position_controller.velocity_limit;
-    if (isnan(controller_config->position_controller.position_limit_upper))  return HAL_ERROR;
-    controller->position_controller.position_limit_upper        = controller_config->position_controller.position_limit_upper;
     if (isnan(controller_config->position_controller.position_limit_lower))  return HAL_ERROR;
     controller->position_controller.position_limit_lower        = controller_config->position_controller.position_limit_lower;
-    if (isnan(controller_config->position_controller.position_offset))  return HAL_ERROR;
+    if (isnan(controller_config->position_controller.position_limit_upper))  return HAL_ERROR;
+    controller->position_controller.position_limit_upper        = controller_config->position_controller.position_limit_upper;
+    if (isnan(controller_config->position_controller.position_offset))       return HAL_ERROR;
     controller->position_controller.position_offset             = controller_config->position_controller.position_offset;
+
+    if (isnan(controller_config->current_controller.i_limit))                return HAL_ERROR;
+    controller->current_controller.i_limit                      = controller_config->current_controller.i_limit;
+    if (isnan(controller_config->current_controller.i_kp))                   return HAL_ERROR;
+    controller->current_controller.i_kp                         = controller_config->current_controller.i_kp;
+    if (isnan(controller_config->current_controller.i_ki))                   return HAL_ERROR;
+    controller->current_controller.i_ki                         = controller_config->current_controller.i_ki;
+
+    if (isnan(controller_config->powerstage.undervoltage_threshold))         return HAL_ERROR;
+    controller->powerstage.undervoltage_threshold               = controller_config->powerstage.undervoltage_threshold;
+    if (isnan(controller_config->powerstage.overvoltage_threshold))          return HAL_ERROR;
+    controller->powerstage.overvoltage_threshold                = controller_config->powerstage.overvoltage_threshold;
+    if (isnan(controller_config->powerstage.bus_voltage_filter_alpha))       return HAL_ERROR;
+    controller->powerstage.bus_voltage_filter_alpha             = controller_config->powerstage.bus_voltage_filter_alpha;
+
+    controller->motor.pole_pairs                                = controller_config->motor.pole_pairs;
+    controller->motor.kv_rating                                 = controller_config->motor.kv_rating;
+    controller->motor.phase_order                               = (int8_t)controller_config->motor.phase_order;
+    if (isnan(controller_config->motor.max_calibration_current))             return HAL_ERROR;
+    controller->motor.max_calibration_current                   = controller_config->motor.max_calibration_current;
+
+    controller->encoder.cpr                                     = controller_config->encoder.cpr;
+    if (isnan(controller_config->encoder.position_offset))                   return HAL_ERROR;
+    controller->encoder.position_offset                         = controller_config->encoder.position_offset;
+    if (isnan(controller_config->encoder.position_offset))                   return HAL_ERROR;
+    controller->encoder.velocity_filter_alpha                   = controller_config->encoder.velocity_filter_alpha;
   #endif
-
-  Encoder_setFilterGain(&controller->encoder, controller->encoder.filter_bandwidth);
-
-  CurrentController_setPIGain(&controller->current_controller,
-      controller->motor.phase_resistance,
-      controller->motor.phase_inductance);
 
   MotorController_reset(controller);
 
@@ -573,11 +571,6 @@ void MotorController_runCalibrationSequence(MotorController *controller) {
       HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 10);
     }
   }
-
-
-  CurrentController_setPIGain(&controller->current_controller,
-      controller->motor.phase_resistance,
-      controller->motor.phase_inductance);
 
   {
     char str[128];

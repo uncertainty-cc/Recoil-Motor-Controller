@@ -11,6 +11,9 @@ HAL_StatusTypeDef PositionController_init(PositionController *controller) {
   controller->update_counter = 0;
   controller->gear_ratio = 1.f;
 
+  // defaults to 50 Hz cutoff frequency, out of 2000 Hz position control loop
+  controller->torque_filter_alpha = 0.145364f;
+
   controller->position_kp = 1.f;
   controller->position_ki = 0.f;
 
@@ -23,8 +26,13 @@ HAL_StatusTypeDef PositionController_init(PositionController *controller) {
 
   controller->position_limit_lower = -INFINITY;
   controller->position_limit_upper = INFINITY;
+  controller->position_offset = 0.f;
 
+  controller->torque_target = 0.f;
+  controller->torque_setpoint = 0.f;
+  controller->velocity_target = 0.f;
   controller->velocity_setpoint = 0.f;
+  controller->position_target = 0.f;
   controller->position_setpoint = 0.f;
 
   controller->position_integrator = 0.f;
@@ -35,7 +43,7 @@ HAL_StatusTypeDef PositionController_init(PositionController *controller) {
 
 void PositionController_update(PositionController *controller, Mode mode) {
   controller->update_counter += 1;
-  if (controller->update_counter == (COMMUTATION_FREQ / POSITION_UPDATE_FREQ)) {
+  if (controller->update_counter >= (COMMUTATION_FREQ / POSITION_UPDATE_FREQ)) {
     controller->update_counter = 0;
   }
   else {
@@ -52,7 +60,7 @@ void PositionController_update(PositionController *controller, Mode mode) {
   //           kd * kd_scale * velocity_error +
   //           command_torque
 
-  float torque_final = 0.f;
+  float torque_target = 0.f;
   if (mode == MODE_POSITION) {
     controller->position_setpoint = clampf(
         controller->position_target,
@@ -67,7 +75,7 @@ void PositionController_update(PositionController *controller, Mode mode) {
         -controller->torque_limit,
         controller->torque_limit);
 
-    torque_final =
+    torque_target =
         controller->position_kp * position_error
         + controller->velocity_kp * velocity_error
         + controller->position_integrator
@@ -81,18 +89,22 @@ void PositionController_update(PositionController *controller, Mode mode) {
         controller->velocity_limit);
 
     float velocity_error = controller->velocity_setpoint - controller->velocity_measured;
-    torque_final = controller->velocity_kp * velocity_error;
+    torque_target = controller->velocity_kp * velocity_error;
   }
   else {
     // MODE_TORQUE
     /*
      * user sets `controller->torque_target`
      */
-    torque_final = controller->torque_target;
+    torque_target = controller->torque_target;
   }
 
+  // apply EMA filter
+  float torque_target_filtered = controller->torque_filter_alpha * torque_target;
+  torque_target_filtered += (1.0 - controller->torque_filter_alpha) * controller->torque_setpoint;
+
   controller->torque_setpoint = clampf(
-          torque_final,
-          -controller->torque_limit,
-          controller->torque_limit);
+      torque_target_filtered,
+      -controller->torque_limit,
+      controller->torque_limit);
 }

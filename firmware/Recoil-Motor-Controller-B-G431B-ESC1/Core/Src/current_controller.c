@@ -1,32 +1,46 @@
 
 #include "current_controller.h"
 
+
 HAL_StatusTypeDef CurrentController_init(CurrentController *controller) {
   controller->i_limit = 20.f;
+
+  // kp ki should be set through CAN bus.
+  // kp = bandwidth * 2 * pi * phase_inductance
+  // ki = phase_resistance / phase_inductance
+  // for the derivation of equation,
+  // @see https://notes.tk233.xyz/motor-control/recoil-foc-motor-controller/0x00.-theory-of-operation#4.-dian-liu-huan-current-loop
+  controller->i_kp = (1000.f * 2 * M_PI * MOTOR_PHASE_INDUCTANCE);
+  controller->i_ki = MOTOR_PHASE_RESISTANCE / MOTOR_PHASE_INDUCTANCE;
 
   controller->i_a_measured = 0.f;
   controller->i_b_measured = 0.f;
   controller->i_c_measured = 0.f;
+  controller->v_a_setpoint = 0.f;
+  controller->v_b_setpoint = 0.f;
+  controller->v_c_setpoint = 0.f;
 
   controller->i_alpha_measured = 0.f;
   controller->i_beta_measured = 0.f;
+  controller->v_alpha_setpoint = 0.f;
+  controller->v_beta_setpoint = 0.f;
 
+  controller->v_q_target = 0.f;
+  controller->v_d_target = 0.f;
+  controller->v_q_setpoint = 0.f;
+  controller->v_d_setpoint = 0.f;
+
+  controller->i_q_target = 0.f;
+  controller->i_d_target = 0.f;
   controller->i_q_measured = 0.f;
   controller->i_d_measured = 0.f;
+  controller->i_q_setpoint = 0.f;
+  controller->i_d_setpoint = 0.f;
 
-  controller->i_bandwidth = CURRENT_LOOP_BANDWIDTH;
-
-  controller->i_kp = 0.f;
-  controller->i_ki = 0.f;
+  controller->i_q_integrator = 0.f;
+  controller->i_d_integrator = 0.f;
 
   return HAL_OK;
-}
-
-void CurrentController_setPIGain(CurrentController *controller, float phase_resistance, float phase_inductance) {
-  // for the derivation of equation,
-  // @see https://notes.tk233.xyz/motor-control/recoil-foc-motor-controller/0x00.-theory-of-operation#4.-dian-liu-huan-current-loop
-  controller->i_kp = controller->i_bandwidth * M_2_PI * phase_inductance;
-  controller->i_ki = phase_resistance / phase_inductance;
 }
 
 void CurrentController_update(CurrentController *controller, Mode mode, float sin_theta, float cos_theta, float v_bus) {

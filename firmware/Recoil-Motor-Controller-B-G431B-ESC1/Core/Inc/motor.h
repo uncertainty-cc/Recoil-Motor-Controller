@@ -22,8 +22,6 @@ typedef struct {
   uint32_t pole_pairs;
   uint32_t kv_rating;
   int32_t  phase_order;
-  float    phase_resistance;
-  float    phase_inductance;
   float    max_calibration_current;
 } Motor;
 

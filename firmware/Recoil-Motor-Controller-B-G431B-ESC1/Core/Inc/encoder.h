@@ -41,14 +41,14 @@ typedef struct {
 
   uint8_t   i2c_buffer[2];
   uint8_t   UNUSED_0[2];
+
   uint16_t  i2c_update_counter;
   uint8_t   UNUSED_1[2];
 
   int32_t   cpr;
   float     position_offset;      // in range (-inf, inf)
-  float     filter_bandwidth;
 
-  float     filter_alpha;
+  float     velocity_filter_alpha;
 
   int16_t   position_raw;         // in range [-cpr/2, cpr/2)
   uint8_t   UNUSED_2[2];
@@ -130,14 +130,6 @@ static inline float Encoder_getVelocity(Encoder *encoder) {
  * @return Status of the initialization process. HAL_OK if successful.
  */
 HAL_StatusTypeDef Encoder_init(Encoder *encoder, I2C_HandleTypeDef *hi2c);
-
-/**
- * Set the filter gain for the Encoder instance.
- *
- * @param encoder Pointer to the Encoder struct.
- * @param bandwidth The desired bandwidth for the filter in Hertz (Hz).
- */
-void Encoder_setFilterGain(Encoder *encoder, float bandwidth);
 
 /**
  * @brief Reset the flux offset and rotation count of the Encoder instance.

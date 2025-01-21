@@ -13,7 +13,8 @@ HAL_StatusTypeDef PowerStage_init(PowerStage *powerstage, TIM_HandleTypeDef *hti
   powerstage->hadc1 = hadc1;
   powerstage->hadc2 = hadc2;
 
-  powerstage->bus_voltage_filter_alpha = clampf(1.f - pow(M_E, -2.f * M_PI * (BUS_VOLTAGE_FILTER_BANDWIDTH / (float)COMMUTATION_FREQ)), 0.f, 1.f);
+  // defaults to be 1000 Hz cutoff, out of 20 kHz loop
+  powerstage->bus_voltage_filter_alpha = 0.2695973f;
 
   powerstage->bus_voltage_measured = NOMINAL_BUS_VOLTAGE;
 
