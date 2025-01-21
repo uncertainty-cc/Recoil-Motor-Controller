@@ -375,9 +375,11 @@ void MotorController_update(MotorController *controller) {
   PowerStage_updateBusVoltage(&controller->powerstage);
 
   // this block takes 7.3 us maximum to run (15%)
-  // 0.002f is kinda a magic number. Ideally this should be the delay, in seconds, of the encoder signal.
+  // 0.001f is kinda a magic number. Ideally this should be the delay, in seconds, of the encoder signal.
+  // if this value is too large, the motor will become stucky at high speed.
+  // if this value is too small, the motor cannot reach high speed.
   float theta = wrapTo2Pi(
-      ((Encoder_getPositionMeasured(&controller->encoder) + 0.0011f * Encoder_getVelocity(&controller->encoder))
+      ((Encoder_getPositionMeasured(&controller->encoder) + 0.001f * Encoder_getVelocity(&controller->encoder))
           * (float)controller->motor.pole_pairs)
       - controller->encoder.flux_offset
       );
