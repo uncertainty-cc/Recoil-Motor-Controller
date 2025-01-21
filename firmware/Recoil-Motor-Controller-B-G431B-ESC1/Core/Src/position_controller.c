@@ -101,7 +101,7 @@ void PositionController_update(PositionController *controller, Mode mode) {
 
   // apply EMA filter
   float torque_target_filtered = controller->torque_filter_alpha * torque_target;
-  torque_target_filtered += (1.0 - controller->torque_filter_alpha) * controller->torque_setpoint;
+  torque_target_filtered += (1.0f - controller->torque_filter_alpha) * controller->torque_setpoint;
 
   controller->torque_setpoint = clampf(
       torque_target_filtered,
