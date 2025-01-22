@@ -338,7 +338,11 @@ void MotorController_update(MotorController *controller) {
   // this is also quite time-sensitive
   // if issuing new I2C frame, takes 1.4 us to run (3%)
   // else takes 1.1 us to run (2%)
-  Encoder_update(&controller->encoder);
+  HAL_StatusTypeDef status = Encoder_update(&controller->encoder);
+  if (status != HAL_OK) {
+    controller->error |= ERROR_ENCODER_FAULT;
+    MotorController_setMode(&controller, MODE_DAMPING);
+  }
 
   // this block takes 0.5 us to run (1%)
   controller->position_controller.position_measured = Encoder_getPosition(&controller->encoder) / controller->position_controller.gear_ratio;

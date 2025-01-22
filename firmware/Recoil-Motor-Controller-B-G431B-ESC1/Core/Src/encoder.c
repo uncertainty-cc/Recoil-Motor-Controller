@@ -46,38 +46,36 @@ void Encoder_resetFluxOffset(Encoder *encoder) {
   memset((uint8_t *)encoder->flux_offset_table, 0, ENCODER_LUT_ENTRIES*sizeof(float));
 }
 
-void Encoder_update(Encoder *encoder) {
+HAL_StatusTypeDef Encoder_update(Encoder *encoder) {
   // 20 kHz commutation cycle is faster than I2C transfer speed (~13.44kHz), so we need to throttle here
   encoder->i2c_update_counter += 1;
 
   if (encoder->i2c_update_counter == (COMMUTATION_FREQ / ENCODER_UPDATE_FREQ)) {
     encoder->i2c_update_counter = 0;
 
-    // Read the raw reading from the I2C sensor and center-align it within the range [-cpr/2, cpr/2).
-    int16_t reading = ((int16_t)((encoder->i2c_buffer[0]) << 8) | encoder->i2c_buffer[1]) - abs(encoder->cpr / 2);
+
+    // Read the raw reading from the I2C sensor, the range should be [0, cpr-1].
+    // safety check to handle encoder data frame mismatch error
+    uint16_t raw_reading = (((uint16_t)encoder->i2c_buffer[0]) << 8) | encoder->i2c_buffer[1];
+    if (raw_reading >= abs(encoder->cpr)) {
+      return 0x04;
+    }
+    // TODO: implement encoder lut-table Linearization
 
     HAL_I2C_Master_Receive_IT(encoder->hi2c, AS5600_I2C_ADDR << 1, encoder->i2c_buffer, 2);
 
-    // TODO: implement encoder lut-table Linearization
-  //  /* Linearization */
-  //  int off_1 = encoder->offset_lut[(encoder->raw)>>9];       // lookup table lower entry
-  //  int off_2 = encoder->offset_lut[((encoder->raw>>9)+1)%128];   // lookup table higher entry
-  //  int off_interp = off_1 + ((off_2 - off_1)*(encoder->raw - ((encoder->raw>>9)<<9))>>9);     // Interpolate between lookup table entries
-  //  encoder->count = encoder->raw + off_interp;
 
     // Calculate the change in reading
-    int16_t reading_delta = encoder->position_raw - reading;
+    int16_t reading_delta = encoder->position_raw - raw_reading;
 
     // Handle multi-rotation crossing.
-    if (abs(reading_delta) > abs(encoder->cpr / 2)) {
+    if (abs(reading_delta) >= abs(encoder->cpr / 2)) {
       encoder->n_rotations += ((encoder->cpr * reading_delta) > 0) ? 1 : -1;
     }
-    encoder->position_raw = reading;
+    encoder->position_raw = raw_reading;
 
     // Convert the raw position to position in radians (rad)
-    float position = (((float)reading / (float)encoder->cpr) + encoder->n_rotations) * (M_2PI_F);
-    // TODO: implement encoder lut-table Linearization
-  //                  + encoder->flux_offset_table[reading >> 5];
+    float position = (((float)raw_reading / (float)encoder->cpr) + encoder->n_rotations) * (M_2PI_F);
 
     // Update the delta position
     float delta_position = position - encoder->position;
@@ -87,4 +85,6 @@ void Encoder_update(Encoder *encoder) {
     float velocity = delta_position * (float)ENCODER_UPDATE_FREQ;
     encoder->velocity += encoder->velocity_filter_alpha * (velocity - encoder->velocity);
   }
+
+  return HAL_OK;
 }

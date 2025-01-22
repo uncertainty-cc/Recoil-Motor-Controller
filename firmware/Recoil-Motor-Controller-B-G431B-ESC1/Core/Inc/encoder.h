@@ -50,7 +50,7 @@ typedef struct {
 
   float     velocity_filter_alpha;
 
-  int16_t   position_raw;         // in range [-cpr/2, cpr/2)
+  uint16_t  position_raw;         // in range [0, cpr-1]
   uint8_t   UNUSED_2[2];
   int32_t   n_rotations;
 
@@ -146,6 +146,6 @@ void Encoder_resetFluxOffset(Encoder *encoder);
  *
  * @param encoder Pointer to the Encoder struct.
  */
-void Encoder_update(Encoder *encoder);
+HAL_StatusTypeDef Encoder_update(Encoder *encoder);
 
 #endif /* INC_ENCODER_H_ */

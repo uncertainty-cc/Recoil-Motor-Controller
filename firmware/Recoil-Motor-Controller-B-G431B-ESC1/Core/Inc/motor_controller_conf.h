@@ -156,6 +156,7 @@ typedef enum {
   ERROR_CAN_RX_FAULT              = 0b0000010000000000U,
   ERROR_CAN_TX_FAULT              = 0b0000100000000000U,
   ERROR_I2C_FAULT                 = 0b0001000000000000U,
+  ERROR_ENCODER_FAULT             = 0b0010000000000000U,
 } ErrorCode;
 
 /** ======== CAN Packet Definitions ======== **/
