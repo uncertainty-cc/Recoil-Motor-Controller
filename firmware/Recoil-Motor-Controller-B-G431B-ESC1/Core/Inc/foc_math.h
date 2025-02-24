@@ -78,18 +78,18 @@ static inline float fast_fminf3(float a, float b, float c) {
   return (a < b ? (a < c ? a : c) : (b < c ? b : c));
 }
 
-static fixed16 float32ToFixed16(float val) {
-    val = (val > 127) ? 127 : ((val < -128) ? -128 : val);
-    float fractional = fmodf(val, 1);
-    fixed16 result;
-    result.integer = (int8_t)val;
-    result.fractional = (uint8_t)(fabs(fractional) * 0xFF);
-    return result;
+static inline fixed16 float32ToFixed16(float val) {
+  val = (val > 127) ? 127 : ((val < -128) ? -128 : val);
+  float fractional = fmodf(val, 1);
+  fixed16 result;
+  result.integer = (int8_t)val;
+  result.fractional = (uint8_t)(fabs(fractional) * 0xFF);
+  return result;
 }
 
-static float fixed16ToFloat32(fixed16 val) {
-    float fractional = ((float)val.fractional) / (float)0xFF;
-    return val.integer > 0 ? val.integer + fractional : val.integer - fractional;
+static inline float fixed16ToFloat32(fixed16 val) {
+  float fractional = ((float)val.fractional) / (float)0xFF;
+  return val.integer > 0 ? val.integer + fractional : val.integer - fractional;
 }
 
 /**
