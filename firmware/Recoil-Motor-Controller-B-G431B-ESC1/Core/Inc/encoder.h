@@ -42,8 +42,8 @@ typedef struct {
   uint8_t   i2c_buffer[2];
   uint8_t   UNUSED_0[2];
 
-  uint16_t  i2c_update_counter;
-  uint8_t   UNUSED_1[2];
+  uint16_t  UNUSED_1;  // uint16_t  i2c_update_counter;
+  uint8_t   UNUSED_2[2];
 
   int32_t   cpr;
   float     position_offset;      // in range (-inf, inf)
@@ -51,7 +51,7 @@ typedef struct {
   float     velocity_filter_alpha;
 
   uint16_t  position_raw;         // in range [0, cpr-1]
-  uint8_t   UNUSED_2[2];
+  uint8_t   UNUSED_3[2];
   int32_t   n_rotations;
 
   float     position;             // in range (-inf, inf), with offset

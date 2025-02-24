@@ -82,11 +82,8 @@
 
 /** ======== Timing Configuration ======== **/
 // current control loop frequency (Hz)
-// = SYS_CLK / TIM_AAR / TIM_REPTITION = 160 MHz / 4000 / 2 = 20 kHz
-#define COMMUTATION_FREQ                        20000.f
-
-// position encoder update frequency (Hz), equals I2C packet rate
-#define ENCODER_UPDATE_FREQ                     10000.f
+// = SYS_CLK / TIM_AAR / TIM_REPTITION = 160 MHz / 4000 / 4 = 10 kHz
+#define COMMUTATION_FREQ                        10000.f
 
 // position control loop frequency (Hz)
 #define POSITION_UPDATE_FREQ                    2000.f
