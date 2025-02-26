@@ -216,7 +216,7 @@ void MotorController_setFluxAngle(MotorController *controller, float angle_setpo
 HAL_StatusTypeDef MotorController_loadConfig(MotorController *controller) {
   MotorController *controller_config = (MotorController *)FLASH_CONFIG_ADDRESS;
 
-  controller->firmware_version                                = FIRMWARE_VERSION;
+  controller->firmware_version                                  = FIRMWARE_VERSION;
 
   #if LOAD_CALIBRATION_FROM_FLASH
     if (isnan(controller_config->encoder.flux_offset)) return HAL_ERROR;
@@ -266,7 +266,8 @@ HAL_StatusTypeDef MotorController_loadConfig(MotorController *controller) {
     controller->powerstage.bus_voltage_filter_alpha             = controller_config->powerstage.bus_voltage_filter_alpha;
 
     controller->motor.pole_pairs                                = controller_config->motor.pole_pairs;
-    controller->motor.kv_rating                                 = controller_config->motor.kv_rating;
+    if (isnan(controller_config->motor.torque_constant))                     return HAL_ERROR;
+    controller->motor.torque_constant                           = controller_config->motor.torque_constant;
     controller->motor.phase_order                               = (int8_t)controller_config->motor.phase_order;
     if (isnan(controller_config->motor.max_calibration_current))             return HAL_ERROR;
     controller->motor.max_calibration_current                   = controller_config->motor.max_calibration_current;
@@ -348,12 +349,11 @@ void MotorController_update(MotorController *controller) {
   // this block takes 0.5 us to run (1%)
   controller->position_controller.position_measured = Encoder_getPosition(&controller->encoder) / controller->position_controller.gear_ratio;
   controller->position_controller.velocity_measured = Encoder_getVelocity(&controller->encoder) / controller->position_controller.gear_ratio;
-  // 1.75 is a magic number.... need to find out why it's different from the theoretical value
-  // need to make sure all numbers are float32
-  controller->position_controller.torque_measured = (1.75f * 8.3f)
+
+  controller->position_controller.torque_measured =
+        controller->motor.torque_constant
       * controller->current_controller.i_q_measured
-      * controller->position_controller.gear_ratio
-      / (float)controller->motor.kv_rating;
+      * controller->position_controller.gear_ratio;
 
   // takes 1.3 us to run (3%)
   PositionController_update(&controller->position_controller, controller->mode);
@@ -363,10 +363,10 @@ void MotorController_update(MotorController *controller) {
       || controller->mode == MODE_VELOCITY
       || controller->mode == MODE_TORQUE) {
     // same here, the 1.75 magic number...
-    controller->current_controller.i_q_target = controller->position_controller.torque_setpoint
-        * (float)controller->motor.kv_rating
-        / controller->position_controller.gear_ratio
-        / (1.75f * 8.3f);
+    controller->current_controller.i_q_target =
+        controller->position_controller.torque_setpoint
+        / controller->motor.torque_constant
+        / controller->position_controller.gear_ratio;
     controller->current_controller.i_d_target = 0.f;
   }
   else {
@@ -380,11 +380,11 @@ void MotorController_update(MotorController *controller) {
   PowerStage_updateBusVoltage(&controller->powerstage);
 
   // this block takes 7.3 us maximum to run (15%)
-  // 0.001f is kinda a magic number. Ideally this should be the delay, in seconds, of the encoder signal.
+  // 0.0005f is kinda a magic number. Ideally this should be the delay, in seconds, of the encoder signal.
   // if this value is too large, the motor will become stucky at high speed.
   // if this value is too small, the motor cannot reach high speed.
   float theta = wrapTo2Pi(
-      ((Encoder_getPositionMeasured(&controller->encoder) + 0.001f * Encoder_getVelocity(&controller->encoder))
+      ((Encoder_getPositionMeasured(&controller->encoder) + 0.0005f * Encoder_getVelocity(&controller->encoder))
           * (float)controller->motor.pole_pairs)
       - controller->encoder.flux_offset
       );

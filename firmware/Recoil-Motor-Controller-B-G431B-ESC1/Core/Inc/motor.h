@@ -20,7 +20,7 @@
  */
 typedef struct {
   uint32_t pole_pairs;
-  uint32_t kv_rating;
+  float    torque_constant;
   int32_t  phase_order;
   float    max_calibration_current;
 } Motor;
