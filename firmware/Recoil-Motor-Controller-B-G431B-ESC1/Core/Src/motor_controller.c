@@ -662,12 +662,13 @@ void MotorController_handleCANMessage(MotorController *controller, CAN_Frame *rx
       break;
 
     case FUNC_FLASH:
-      tx_frame.size = 1;
-      if (*((uint8_t *)rx_frame->data)) {
-        *((uint8_t *)tx_frame.data) = (uint8_t)MotorController_storeConfig(controller);
+      if (*((uint8_t *)rx_frame->data) == 1) {
+        // store
+        MotorController_storeConfig(controller);
       }
-      else {
-        *((uint8_t *)tx_frame.data) = (uint8_t)MotorController_loadConfig(controller);
+      else if (*((uint8_t *)rx_frame->data) == 2) {
+        // load
+        MotorController_loadConfig(controller);
       }
       break;
 
