@@ -115,10 +115,10 @@
 typedef enum {
   // these are three safe modes
   MODE_DISABLED                   = 0x00U,
-  MODE_IDLE                       = 0x01U,
+  MODE_IDLE                       = 0x01U,  // operational
 
   // these are special modes
-  MODE_DAMPING                    = 0x02U,
+  MODE_DAMPING                    = 0x02U,  // stopped
   MODE_CALIBRATION                = 0x05U,
 
   // these are closed-loop modes
@@ -132,7 +132,7 @@ typedef enum {
   MODE_VALPHABETA_OVERRIDE        = 0x21U,
   MODE_VQD_OVERRIDE               = 0x22U,
 
-  MODE_DEBUG                      = 0x80U,
+  MODE_DEBUG                      = 0x80U,  // pre-operational
 } Mode;
 
 /**
@@ -161,22 +161,21 @@ typedef enum {
  * @brief CAN FrameFunction definition.
  */
 typedef enum {
-  FUNC_ESTOP                    = 0x00U,
-  FUNC_INFO                     = 0x01U,
-  FUNC_SAFETY_WATCHDOG          = 0x02U,
-  FUNC_PING                     = 0x04U,
-  FUNC_MODE                     = 0x05U,
-  FUNC_FLASH                    = 0x0EU,
-  FUNC_PARAM_READ               = 0x10U,
-  FUNC_PARAM_WRITE              = 0x11U,
-  FUNC_USR_FAST_FRAME_0         = 0x12U,
-  FUNC_USR_FAST_FRAME_1         = 0x13U,
-  FUNC_USR_FAST_FRAME_2         = 0x14U,
-  FUNC_USR_FAST_FRAME_3         = 0x15U,
-  FUNC_USR_FAST_FRAME_4         = 0x16U,
-  FUNC_USR_FAST_FRAME_5         = 0x17U,
-  FUNC_USR_FAST_FRAME_6         = 0x18U,
-  FUNC_USR_FAST_FRAME_7         = 0x19U,
+  FUNC_NMT                      = 0b0000U,
+  FUNC_SYNC_EMCY                = 0b0001U,
+  FUNC_TIME                     = 0b0010U,
+  FUNC_TRANSMIT_PDO_1           = 0b0011U,
+  FUNC_RECEIVE_PDO_1            = 0b0100U,
+  FUNC_TRANSMIT_PDO_2           = 0b0101U,
+  FUNC_RECEIVE_PDO_2            = 0b0110U,
+  FUNC_TRANSMIT_PDO_3           = 0b0111U,
+  FUNC_RECEIVE_PDO_3            = 0b1000U,
+  FUNC_TRANSMIT_PDO_4           = 0b1001U,
+  FUNC_RECEIVE_PDO_4            = 0b1010U,
+  FUNC_TRANSMIT_SDO             = 0b1011U,
+  FUNC_RECEIVE_SDO              = 0b1100U,
+  FUNC_FLASH                    = 0b1101U,
+  FUNC_HEARTBEAT                = 0b1110U,
 } FrameFunction;
 
 /**

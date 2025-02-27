@@ -75,24 +75,6 @@ static inline Mode MotorController_getMode(MotorController *controller) {
   return controller->mode;
 }
 
-static inline void MotorController_handleCANRead(MotorController *controller, CAN_Frame *rx_frame, CAN_Frame *tx_frame) {
-  uint16_t parameter_id = *((uint16_t *)rx_frame->data);
-  if (parameter_id >= sizeof(MotorController)) {
-    controller->error |= ERROR_CAN_RX_FAULT;
-    return;
-  }
-  *((uint32_t *)tx_frame->data + 1) = *((uint32_t *)((uint8_t *)controller + parameter_id));
-}
-
-static inline void MotorController_handleCANWrite(MotorController *controller, CAN_Frame *rx_frame) {
-  uint16_t parameter_id = *((uint16_t *)rx_frame->data);
-  if (parameter_id >= sizeof(MotorController)) {
-    controller->error |= ERROR_CAN_RX_FAULT;
-    return;
-  }
-  *((uint32_t *)((uint8_t *)controller + parameter_id)) = *((uint32_t *)rx_frame->data + 1);
-}
-
 /**
  * @brief Initialize the MotorController instance.
  *
@@ -126,5 +108,9 @@ void MotorController_updateService(MotorController *controller);
 void MotorController_runCalibrationSequence(MotorController *controller);
 
 void MotorController_handleCANMessage(MotorController *controller, CAN_Frame *rx_frame);
+
+void MotorController_handleNMT(MotorController *controller, CAN_Frame *rx_frame);
+
+void MotorController_handleSDO(MotorController *controller, CAN_Frame *rx_frame, CAN_Frame *tx_frame);
 
 #endif /* INC_MOTOR_CONTROLLER_H_ */
