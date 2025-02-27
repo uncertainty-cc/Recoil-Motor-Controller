@@ -343,7 +343,7 @@ void MotorController_update(MotorController *controller) {
   HAL_StatusTypeDef status = Encoder_update(&controller->encoder);
   if (status != HAL_OK) {
     controller->error |= ERROR_ENCODER_FAULT;
-    MotorController_setMode(&controller, MODE_DAMPING);
+    MotorController_setMode(controller, MODE_DAMPING);
   }
 
   // this block takes 0.5 us to run (1%)
