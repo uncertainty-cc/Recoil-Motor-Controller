@@ -1,0 +1,3 @@
+../Core/Src/can.c:11:19:CAN_init	1
+../Core/Src/can.c:29:6:CAN_getRxFrame	9
+../Core/Src/can.c:60:19:CAN_putTxFrame	9

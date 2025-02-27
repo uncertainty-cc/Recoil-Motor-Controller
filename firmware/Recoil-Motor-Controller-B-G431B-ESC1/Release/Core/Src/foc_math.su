@@ -1,0 +1,4 @@
+../Core/Src/foc_math.c:10:6:FOC_clarkTransform	0	static
+../Core/Src/foc_math.c:15:6:FOC_parkTransform	0	static
+../Core/Src/foc_math.c:20:6:FOC_invParkTransform	0	static
+../Core/Src/foc_math.c:25:6:FOC_invClarkSVPWM	32	static
