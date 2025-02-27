@@ -16,8 +16,8 @@ HAL_StatusTypeDef Encoder_init(Encoder *encoder, I2C_HandleTypeDef *hi2c) {
 
   encoder->position_offset = 0.f;
 
-  // defaults to be 500 Hz cutoff, out of 10 kHz loop
-  encoder->velocity_filter_alpha = 0.2695973f;
+  // defaults to be 2000 Hz cutoff, out of 10 kHz loop
+  encoder->velocity_filter_alpha = 0.7153904566639707f;
 
   encoder->position_raw = 0;
   encoder->n_rotations = 0;
