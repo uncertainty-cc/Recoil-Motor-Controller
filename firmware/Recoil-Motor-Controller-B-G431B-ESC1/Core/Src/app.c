@@ -113,6 +113,13 @@ void APP_init() {
 
   MotorController_init(&controller);
 
+
+//  HAL_Delay(1000);
+//
+//  controller.position_controller.gear_ratio = 1.f;
+//  controller.position_controller.torque_limit = 1.f;
+//  MotorController_setMode(&controller, MODE_TORQUE);
+
 }
 
 uint8_t APP_getUserButton() {
@@ -127,26 +134,37 @@ float APP_getUserPot() {
 void APP_main() {
   MotorController_updateService(&controller);
 
-//  char str[128];
 //  if (APP_getUserButton()) {
 //    MotorController_setMode(&controller, MODE_CALIBRATION);
 //  }
 
 
 //  controller.current_controller.i_q_target = 5 * APP_getUserPot();
-//  controller.position_controller.velocity_target = 30 * APP_getUserPot();
-//    controller.position_controller.position_target = 20 * APP_getUserPot();
+//  controller.position_controller.torque_target = -1 * APP_getUserPot();
+//  controller.position_controller.position_target = 20 * APP_getUserPot();
 
 
+//  char str[128];
+
+//  sprintf(str, "i_tar:%f,i_meas:%f,i_set:%f\r\n",
+//      controller.current_controller.i_q_target,
+//      controller.current_controller.i_q_measured,
+//      controller.current_controller.i_q_setpoint);
 
 //  sprintf(str, "vel_tar:%f,vel_meas:%f,torque:%f\r\n",
 //      controller.position_controller.velocity_target,
 //      controller.position_controller.velocity_measured,
 //      controller.position_controller.torque_setpoint);
-//
 
+//  sprintf(str, "pos_tar:%f,pos_meas:%f,vel_meas:%f,torque:%f,iq:%f\r\n",
+//      controller.position_controller.position_target,
+//      controller.position_controller.position_measured,
+//      controller.position_controller.velocity_measured,
+//      controller.position_controller.torque_setpoint,
+//      controller.current_controller.i_q_setpoint);
 
 //  HAL_UART_Transmit(&huart2, (uint8_t *)str, strlen(str), 1000);
+
   HAL_Delay(50);
 }
 
