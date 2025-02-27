@@ -343,7 +343,7 @@ void MotorController_update(MotorController *controller) {
   HAL_StatusTypeDef status = Encoder_update(&controller->encoder);
   if (status != HAL_OK) {
     controller->error |= ERROR_ENCODER_FAULT;
-    MotorController_setMode(&controller, MODE_DAMPING);
+    MotorController_setMode(controller, MODE_DAMPING);
   }
 
   // this block takes 0.5 us to run (1%)
@@ -362,7 +362,6 @@ void MotorController_update(MotorController *controller) {
   if (controller->mode == MODE_POSITION
       || controller->mode == MODE_VELOCITY
       || controller->mode == MODE_TORQUE) {
-    // same here, the 1.75 magic number...
     controller->current_controller.i_q_target =
         controller->position_controller.torque_setpoint
         / controller->motor.torque_constant
@@ -380,11 +379,11 @@ void MotorController_update(MotorController *controller) {
   PowerStage_updateBusVoltage(&controller->powerstage);
 
   // this block takes 7.3 us maximum to run (15%)
-  // 0.0005f is kinda a magic number. Ideally this should be the delay, in seconds, of the encoder signal.
+  // 0.0001f is kinda a magic number. Ideally this should be the delay, in seconds, of the encoder signal.
   // if this value is too large, the motor will become stucky at high speed.
   // if this value is too small, the motor cannot reach high speed.
   float theta = wrapTo2Pi(
-      ((Encoder_getPositionMeasured(&controller->encoder) + 0.0005f * Encoder_getVelocity(&controller->encoder))
+      ((Encoder_getPositionMeasured(&controller->encoder) + 0.0001f * Encoder_getVelocity(&controller->encoder))
           * (float)controller->motor.pole_pairs)
       - controller->encoder.flux_offset
       );
@@ -597,87 +596,46 @@ void MotorController_runCalibrationSequence(MotorController *controller) {
 }
 
 void MotorController_handleCANMessage(MotorController *controller, CAN_Frame *rx_frame) {
-  uint16_t device_id = (rx_frame->id) & 0b111111;
+  uint16_t device_id = (rx_frame->id) & 0b1111111;
   if (device_id && device_id != controller->device_id) {
     return;
   }
 
-  uint16_t func_id = (rx_frame->id) >> 6;
+  uint16_t func_id = (rx_frame->id) >> 7;
 
   CAN_Frame tx_frame;
-  tx_frame.id = rx_frame->id;
+  tx_frame.id = controller->device_id;
   tx_frame.id_type = CAN_ID_STANDARD;
   tx_frame.frame_type = CAN_FRAME_DATA;
   tx_frame.size = 0;
 
   switch (func_id) {
-    case FUNC_ESTOP:            // 0x00
-      MotorController_setMode(controller, MODE_DISABLED);
-      tx_frame.size = 2;
-      *((uint16_t *)tx_frame.data) = 0xDEAD;
+    case FUNC_NMT:
+      MotorController_handleNMT(controller, rx_frame);
       break;
-
-    case FUNC_INFO:             // 0x01
-      if (rx_frame->size) {
-        controller->device_id = *((uint8_t *)rx_frame->data);
-      }
-      tx_frame.size = 8;
-      *((uint8_t *)(tx_frame.data)) = controller->device_id;
-      *((uint32_t *)tx_frame.data + 1) = controller->firmware_version;
-      break;
-
-    case FUNC_SAFETY_WATCHDOG:  // 0x02
-      __HAL_TIM_SET_COUNTER(&htim2, 0);
-      break;
-
-    case FUNC_PING:             // 0x04
+    
+    case FUNC_SYNC_EMCY:
       tx_frame.size = 1;
       *((uint8_t *)tx_frame.data) = controller->device_id;
       break;
 
-    case FUNC_MODE:             // 0x05 [mode, error] -> [mode, clear_error?]
-      if (rx_frame->size) {
-        MotorController_setMode(controller, *((uint16_t *)rx_frame->data));
-        if (*((uint16_t *)rx_frame->data + 1)) {
-          MotorController_clearError(controller);
-        }
-      }
-      tx_frame.size = 4;
-      *((uint16_t *)tx_frame.data) = (uint16_t)MotorController_getMode(controller);
-      *((uint16_t *)tx_frame.data + 1) = (uint16_t)MotorController_getError(controller);
+    case FUNC_RECEIVE_SDO:
+      MotorController_handleSDO(controller, rx_frame, &tx_frame);
       break;
 
-    case FUNC_FLASH:            // 0x0E [0/1]
-      tx_frame.size = 1;
-      if (*((uint8_t *)rx_frame->data)) {
-        *((uint8_t *)tx_frame.data) = (uint8_t)MotorController_storeConfig(controller);
-      }
-      else {
-        *((uint8_t *)tx_frame.data) = (uint8_t)MotorController_loadConfig(controller);
-      }
-      break;
-
-    case FUNC_PARAM_READ:       // 0x10
+    case FUNC_RECEIVE_PDO_1:
+      // echo back the received data
+      tx_frame.id = (FUNC_TRANSMIT_PDO_1 << 7) | controller->device_id;
       tx_frame.size = 8;
-      *((uint16_t *)tx_frame.data) = *((uint16_t *)rx_frame->data);
-      MotorController_handleCANRead(controller, rx_frame, &tx_frame);
+      *((uint32_t *)tx_frame.data + 0) = *((uint32_t *)rx_frame->data + 0);
+      *((uint32_t *)tx_frame.data + 1) = *((uint32_t *)rx_frame->data + 1);
+      __HAL_TIM_SET_COUNTER(&htim2, 0);
       break;
 
-    case FUNC_PARAM_WRITE:      // 0x11
-      MotorController_handleCANWrite(controller, rx_frame);
-
-      __HAL_TIM_SET_AUTORELOAD(&htim2, (controller->watchdog_timeout * 10) - 1);
-      if (controller->fast_frame_frequency)
-        __HAL_TIM_SET_AUTORELOAD(&htim8, (10000 / controller->fast_frame_frequency) - 1);
-      else {
-        // by default running at 100Hz
-        __HAL_TIM_SET_AUTORELOAD(&htim8, (10000 / 100) - 1);
-      }
-      break;
-
-    case FUNC_USR_FAST_FRAME_0: // 0x12
+    case FUNC_RECEIVE_PDO_2:
       // receive [position_target, velocity_target]
       // send [position_measured, velocity_measured]
+      tx_frame.id = (FUNC_TRANSMIT_PDO_2 << 7) | controller->device_id;
       tx_frame.size = 8;
       PositionController_setPositionTarget(&controller->position_controller, *((float *)rx_frame->data + 0));
       PositionController_setVelocityTarget(&controller->position_controller, *((float *)rx_frame->data + 1));
@@ -686,19 +644,10 @@ void MotorController_handleCANMessage(MotorController *controller, CAN_Frame *rx
       __HAL_TIM_SET_COUNTER(&htim2, 0);
       break;
 
-    case FUNC_USR_FAST_FRAME_1: // 0x13
-      tx_frame.size = 4;
-      PositionController_setPositionTarget(&controller->position_controller, fixed16ToFloat32(*((fixed16 *)rx_frame->data)));
-      __HAL_TIM_SET_COUNTER(&htim2, 0);
-      break;
-
-    case FUNC_USR_FAST_FRAME_2: // 0x14
-      // fast-frame transmit-only
-      break;
-
-    case FUNC_USR_FAST_FRAME_3: // 0x15
+    case FUNC_RECEIVE_PDO_3:
       // receive [position_target, torque_target]
       // send [position_measured, torque_measured]
+      tx_frame.id = (FUNC_TRANSMIT_PDO_3 << 7) | controller->device_id;
       tx_frame.size = 8;
       PositionController_setPositionTarget(&controller->position_controller, *((float *)rx_frame->data + 0));
       PositionController_setTorqueTarget(&controller->position_controller, *((float *)rx_frame->data + 1));
@@ -707,28 +656,86 @@ void MotorController_handleCANMessage(MotorController *controller, CAN_Frame *rx
       __HAL_TIM_SET_COUNTER(&htim2, 0);
       break;
 
-    case FUNC_USR_FAST_FRAME_4: // 0x16
-      // receive [position_kp, position_kd]
-      PositionController_setPositionTarget(&controller->position_controller, *((float *)rx_frame->data + 0));
-      PositionController_setVelocityTarget(&controller->position_controller, *((float *)rx_frame->data + 1));
+    case FUNC_RECEIVE_PDO_4:
+      // fast-frame transmit-only
+      break;
+
+    case FUNC_FLASH:
+      if (*((uint8_t *)rx_frame->data) == 1) {
+        // store
+        MotorController_storeConfig(controller);
+      }
+      else if (*((uint8_t *)rx_frame->data) == 2) {
+        // load
+        MotorController_loadConfig(controller);
+      }
+      break;
+
+    case FUNC_HEARTBEAT:
       __HAL_TIM_SET_COUNTER(&htim2, 0);
-      break;
-
-    case FUNC_USR_FAST_FRAME_5: // 0x17
-      break;
-
-    case FUNC_USR_FAST_FRAME_6: // 0x18
-      // TODO: MIT-style frames
-//      *((fixed16 *)tx_frame.data + 0) = float32ToFixed16(PositionController_getPositionMeasured(&controller->position_controller));
-//      *((fixed16 *)tx_frame.data + 1) = float32ToFixed16(PositionController_getVelocityMeasured(&controller->position_controller));
-      break;
-
-    case FUNC_USR_FAST_FRAME_7: // 0x19
       break;
   }
 
   if (tx_frame.size) {
     CAN_putTxFrame(&hfdcan1, &tx_frame);
+  }
+}
+
+void MotorController_handleNMT(MotorController *controller, CAN_Frame *rx_frame) {
+  if (!rx_frame->size) {
+    controller->error |= ERROR_CAN_RX_FAULT;
+    return;
+  }
+
+  uint8_t requested_state = *((uint8_t *)rx_frame->data);
+  uint8_t addressed_node = *((uint8_t *)rx_frame->data + 1);
+
+  if (addressed_node != controller->device_id) {
+    return;
+  }
+  
+  MotorController_setMode(controller, requested_state);
+}
+
+void MotorController_handleSDO(MotorController *controller, CAN_Frame *rx_frame, CAN_Frame *tx_frame) {
+  if (!rx_frame->size) {
+    controller->error |= ERROR_CAN_RX_FAULT;
+    return;
+  }
+
+  uint8_t command = *((uint8_t *)rx_frame->data);
+
+  // bits 5-7 in byte 1 is the client command specifier
+  uint8_t ccs = command >> 5;
+
+  // byte 1-2 is the OD index
+  uint16_t parameter_id = *((uint16_t *)((uint8_t *)rx_frame->data + 1));
+
+  if (parameter_id >= sizeof(MotorController)) {
+    controller->error |= ERROR_CAN_RX_FAULT;
+    return;
+  }
+
+  if (ccs == 1) {
+    // download (write)
+    *((uint32_t *)((uint8_t *)controller + parameter_id)) = *((uint32_t *)rx_frame->data + 1);
+
+    // update the fast frame frequency
+    if (controller->fast_frame_frequency)
+      __HAL_TIM_SET_AUTORELOAD(&htim8, (10000 / controller->fast_frame_frequency) - 1);
+    else {
+      // by default running at 100Hz to reduce overhead
+      __HAL_TIM_SET_AUTORELOAD(&htim8, (10000 / 100) - 1);
+    }
+  }
+  else if (ccs == 2) {
+    // upload (read)
+    tx_frame->id = (FUNC_TRANSMIT_SDO << 7) | controller->device_id;
+    tx_frame->size = 4;
+    *((uint32_t *)tx_frame->data) = *((uint32_t *)((uint8_t *)controller + parameter_id));
+  }
+  else {
+    controller->error |= ERROR_CAN_RX_FAULT;
   }
 }
 
