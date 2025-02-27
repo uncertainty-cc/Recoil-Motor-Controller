@@ -362,7 +362,6 @@ void MotorController_update(MotorController *controller) {
   if (controller->mode == MODE_POSITION
       || controller->mode == MODE_VELOCITY
       || controller->mode == MODE_TORQUE) {
-    // same here, the 1.75 magic number...
     controller->current_controller.i_q_target =
         controller->position_controller.torque_setpoint
         / controller->motor.torque_constant
@@ -380,11 +379,11 @@ void MotorController_update(MotorController *controller) {
   PowerStage_updateBusVoltage(&controller->powerstage);
 
   // this block takes 7.3 us maximum to run (15%)
-  // 0.0005f is kinda a magic number. Ideally this should be the delay, in seconds, of the encoder signal.
+  // 0.0001f is kinda a magic number. Ideally this should be the delay, in seconds, of the encoder signal.
   // if this value is too large, the motor will become stucky at high speed.
   // if this value is too small, the motor cannot reach high speed.
   float theta = wrapTo2Pi(
-      ((Encoder_getPositionMeasured(&controller->encoder) + 0.0005f * Encoder_getVelocity(&controller->encoder))
+      ((Encoder_getPositionMeasured(&controller->encoder) + 0.0001f * Encoder_getVelocity(&controller->encoder))
           * (float)controller->motor.pole_pairs)
       - controller->encoder.flux_offset
       );
