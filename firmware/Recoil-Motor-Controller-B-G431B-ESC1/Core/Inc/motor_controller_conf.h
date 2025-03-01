@@ -246,7 +246,7 @@ typedef enum {
   PARAM_POWERSTAGE_BUS_VOLTAGE_FILTER_ALPHA             = 0x0FCU,
   PARAM_POWERSTAGE_BUS_VOLTAGE_MEASURED                 = 0x100U,
   PARAM_MOTOR_POLE_PAIRS                                = 0x104U,
-  PARAM_MOTOR_KV_RATING                                 = 0x108U,
+  PARAM_MOTOR_TORQUE_CONSTANT                           = 0x108U,
   PARAM_MOTOR_PHASE_ORDER                               = 0x10CU,
   PARAM_MOTOR_MAX_CALIBRATION_CURRENT                   = 0x110U,
   PARAM_ENCODER_HI2C                                    = 0x114U,
